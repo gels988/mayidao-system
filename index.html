@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G2-GOLD V3.2 Mobile</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        /* New Styles for Phase 3 */
+        .pattern-tag {
+            background-color: #e91e63;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 5px;
+            display: inline-block;
+        }
+        .accuracy-box {
+            background: #2a2a2a;
+            padding: 5px 10px;
+            border-radius: 15px;
+            border: 1px solid #444;
+            font-size: 14px;
+            color: #4caf50;
+        }
+        .active-patterns {
+            margin-top: 10px;
+            border-top: 1px dashed #444;
+            padding-top: 5px;
+        }
+
+        /* Stats Panel */
+        #statistics-panel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            background: #f1f1f1;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #333;
+        }
+        .stat-item {
+            display: flex;
+            align-items: center;
+            margin: 2px 5px;
+        }
+        .stat-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            margin-right: 4px;
+        }
+        .stat-blue { background: #007bff; }
+        .stat-red { background: #dc3545; }
+        .stat-green { background: #28a745; }
+
+        .dot.blue-pair {
+            background-color: #007bff;
+            top: 2px;
+            right: 2px; /* Standard: Blue dot on bottom-right? Prompt says: "Blue Pair: Blue circle bottom-right" */
+            /* User prompt says: "闲对子：在蓝色圆圈右下角加一个 🔵 小蓝点。" */
+            bottom: 2px; 
+            right: 2px;
+            top: auto;
+        }
+        
+        .dot.red-pair {
+            background-color: #dc3545;
+            top: 2px;
+            left: 2px; /* Prompt: "庄对子：在红色圆圈左上角加一个 🔴 小红点。" */
+        }
+
+        /* Tie Slash */
+        .slash {
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background-color: #28a745; /* Green */
+            transform: rotate(-45deg);
+            top: 0;
+            left: 50%;
+            margin-left: -1px;
+        }
+
+        /* Crown */
+        .crown-icon {
+            font-size: 12px;
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            z-index: 15;
+        }
+        
+        /* Prediction Panel Styling */
+        #prediction-panel {
+            background: #333;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        /* --- History & Bagua Panel (New) --- */
+        #history-panel {
+            display: flex;
+            justify-content: space-between;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 5px;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+
+        .history-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 40px;
+            margin: 0 2px;
+            border-right: 1px dashed #eee;
+        }
+        .history-col:last-child { border-right: none; }
+
+        .hist-score {
+            font-size: 10px;
+            color: #555;
+            margin-bottom: 4px;
+            font-family: monospace;
+        }
+
+        .hist-bagua {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px; /* Square-ish or circle? User said "number" */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            position: relative;
+        }
+
+        /* Bagua Text Colors */
+        .bagua-blue { color: #007bff; } /* 1, 2, 3, 5 */
+        .bagua-red { color: #dc3545; }  /* 4, 6, 7, 8 */
+
+        /* Slashes */
+        .slash-overlay {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            left: 0;
+            transform: rotate(-45deg);
+        }
+        .slash-green { background-color: #28a745; height: 3px; }
+        .slash-red { background-color: #dc3545; height: 3px; }
+        
+        .pred-visual {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-bottom: 5px;
+        }
+        .pred-visual.player { background-color: #007bff; border: 3px solid #fff; }
+        .pred-visual.banker { background-color: #dc3545; border: 3px solid #fff; }
+        
+        .confidence-bar {
+            height: 6px;
+            background: #555;
+            border-radius: 3px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+        .confidence-fill {
+            height: 100%;
+            background: #ffc107;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Dashboard Screen (Visible by default) -->
+        <div id="dashboard-screen">
+            <div class="header">
+                <div>
+                    <span id="user-id-display" style="display:block; font-size:12px; color:#888;">User</span>
+                    <span class="coin-badge">G-Gas: <span id="g-coin-display">0</span></span>
+                </div>
+                <div class="accuracy-box">
+                    熵分析准确率: <span id="accuracy-display">0.0% (0/0)</span>
+                </div>
+                <button id="btn-logout" class="small-btn">Exit</button>
+            </div>
+
+            <div id="status-panel">System Ready</div>
+            <!-- Intelligent Status Area (Phase 3) -->
+            <div id="smart-status" style="text-align:center; font-size:12px; color:#ffd700; margin-bottom:10px; min-height:16px;">
+        <span id="accuracy-display" style="margin-right: 15px;">熵分析准确率: 0.0%</span>
+        <span id="active-pattern-display">Waiting for patterns...</span>
+    </div>
+
+            <!-- Input Controls -->
+            <div class="input-area">
+                <div class="input-group">
+                    <label>Molecular (P)</label>
+                    <input type="number" id="input-player" min="0" max="9" placeholder="0-9">
+                </div>
+                <div class="input-group">
+                    <label>Denominator (B)</label>
+                    <input type="number" id="input-banker" min="0" max="9" placeholder="0-9">
+                </div>
+                <div style="display:flex; flex-direction:column; gap:5px; width:100%;">
+                     <button id="btn-predict" style="width:100%;">熵分析 (20 G-Gas)</button>
+                     <button id="btn-delete" class="secondary-btn" style="width:100%; background:#555; font-size:12px; padding:5px;">DELETE INPUT</button>
+                </div>
+            </div>
+
+            <!-- History Records (Molecular/Denominator Sequence) -->
+            <div id="recent-history" style="overflow-x:auto; white-space:nowrap; padding:5px; background:#222; margin-top:5px; border-radius:4px; min-height:30px; display:flex; align-items:center;">
+                <span style="color:#aaa; font-size:12px; margin-right:5px;">History:</span>
+                <div id="history-scroll" style="display:flex;"></div>
+            </div>
+
+            <!-- History & Bagua Panel -->
+            <div id="history-panel">
+                <!-- Columns injected by JS -->
+                <div style="width:100%; text-align:center; color:#aaa; font-size:12px;">Waiting for data...</div>
+            </div>
+
+            <!-- Results -->
+            <div id="prediction-panel"></div>
+
+            <!-- Molecular/Denominator Panel (New) -->
+            <div id="mol-denom-panel" style="display:none;">
+                <div class="md-box">
+                    <div class="md-label">MOLECULAR (P)</div>
+                    <div class="md-value" id="md-p-val">-</div>
+                </div>
+                <div style="font-size:20px; color:#555;">|</div>
+                <div class="md-box">
+                    <div class="md-label">DENOMINATOR (B)</div>
+                    <div class="md-value" id="md-b-val">-</div>
+                </div>
+            </div>
+            
+            <!-- Matrix -->
+            <div id="game-matrix"></div>
+
+            <!-- Statistics Panel -->
+            <div id="statistics-panel">
+                <div class="stat-item"><div class="stat-dot stat-blue"></div><span id="stat-blue-total">0</span></div>
+                <div class="stat-item"><div class="stat-dot stat-red"></div><span id="stat-red-total">0</span></div>
+                <div class="stat-item"><div class="stat-dot stat-green"></div><span id="stat-tie-total">0</span></div>
+                <div class="stat-item"><span style="color:#007bff; margin-right:4px;">BP</span><span id="stat-blue-pair">0</span></div>
+                <div class="stat-item"><span style="color:#dc3545; margin-right:4px;">RP</span><span id="stat-red-pair">0</span></div>
+            </div>
+            
+            <button id="btn-reset" class="secondary-btn">Reset Road</button>
+        </div>
+
+        <!-- Recharge Modal -->
+        <div id="recharge-modal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <h3>⚡ 节点算力激活</h3>
+                <p style="font-size:12px; color:#aaa; margin-bottom:10px;">输入 USDT，系统按早期贡献者规则发放 G-Gas。</p>
+                <div class="recharge-options">
+                    <button onclick="window.ui.handleRecharge(100)">100 U (≈ 200 G)</button>
+                    <button onclick="window.ui.handleRecharge(200)">200 U (倍率 2.2x)</button>
+                    <button onclick="window.ui.handleRecharge(2000)">2,000 U (倍率 2.6x)</button>
+                    <button onclick="window.ui.handleRecharge(5000)">5,000 U (倍率 2.8x)</button>
+                    <button onclick="window.ui.handleCustomRecharge()" style="background:#444;">自定义金额</button>
+                </div>
+                <div id="recharge-preview" style="margin-top:10px; font-size:12px; color:#ffd700;"></div>
+                <button class="close-btn" onclick="document.getElementById('recharge-modal').style.display='none'">取消</button>
+            </div>
+        </div>
+
+        <!-- Withdraw Modal -->
+        <div id="withdraw-modal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <h3>资金提取</h3>
+                <p>余额需 > 6000 G-Gas</p>
+                <input type="number" id="withdraw-amount" placeholder="数量 (最少 6000)">
+                <button onclick="window.ui.handleWithdraw()">确认提取</button>
+                <button class="close-btn" onclick="document.getElementById('withdraw-modal').style.display='none'">取消</button>
+            </div>
+        </div>
+
+    </div>
+
+    <style>
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #222; padding: 20px; border-radius: 10px;
+            text-align: center; width: 80%; max-width: 300px;
+            border: 1px solid #444; color: white;
+        }
+        .recharge-options button {
+            display: block; width: 100%; margin: 10px 0;
+            padding: 10px; background: #007bff; border: none; color: white;
+            border-radius: 5px; cursor: pointer;
+        }
+        .recharge-options button:hover { background: #0056b3; }
+        .close-btn { background: #555; margin-top: 10px; width: 100%; padding: 8px; border:none; color:white; border-radius:5px;}
+    </style>
+
+    <script src="js/utils.js"></script>
+    <script type="module" src="js/trial.js"></script> <!-- Trial System (Module) -->
+    <script src="js/auth_bridge.js"></script> <!-- Auth & Economy -->
+    <script src="js/bagua_transcoder.js"></script> <!-- Phase 3 Core -->
+    <script src="js/encrypted_logic.js"></script> <!-- High Odds Logic -->
+    <script src="js/core_engine.js"></script>
+    <script src="js/dynamics_engine.js"></script> <!-- Phase 3 -->
+    <script src="js/cloud_sync.js"></script>
+    <script src="js/ui_controller.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            try {
+                navigator.serviceWorker.register('serviceWorker.js').catch(err => {
+                    console.warn('SW Register failed:', err);
+                });
+            } catch (e) {
+                console.warn('SW Init failed:', e);
+            }
+        }
+
+        // Initialize System
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("Bootstrapping G2 System...");
+            const engine = new G2Engine();
+            const auth = new AuthBridge();
+            const ui = new UIController(engine, auth);
+            ui.init();
+            
+            // Expose to window for debugging/onclicks
+            window.engine = engine;
+            window.ui = ui;
+        });
+    </script>
+</body>
+</html>

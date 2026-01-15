@@ -1,0 +1,6 @@
+{
+    "Input": "36",
+    "BinaryBagua": "101010", // Fire (101) -> Water (010)
+    "Elements": "Fire -> Water",
+    "Action": "Balance Cancellation Applied"
+}

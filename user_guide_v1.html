@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>MAYI 熵分析实验平台 用户使用说明书 v1.0（对外版）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body { margin: 0; padding: 0; font-family: "Microsoft YaHei", Arial, Helvetica, sans-serif; color: #222; }
+    .page { width: 800px; margin: 24px auto; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 28px; position: relative; }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    h2 { font-size: 16px; margin: 24px 0 8px; border-left: 4px solid #4caf50; padding-left: 8px; }
+    p, li { line-height: 1.7; font-size: 14px; }
+    ul { padding-left: 20px; }
+    .hr { height: 1px; background: #eee; margin: 16px 0; }
+    .badge { display: inline-block; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 2px 8px; margin-right: 8px; font-size: 12px; }
+    .watermark { position: fixed; inset: 0; pointer-events: none; }
+    .wm { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-20deg); font-size: 48px; color: rgba(200,200,200,0.25); font-weight: 700; user-select: none; }
+    .nocopy { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+  </style>
+</head>
+<body class="nocopy">
+  <div class="watermark"><div class="wm">MAYI User Guide · No Copy</div></div>
+  <div class="page">
+    <h1>MAYI 熵分析实验平台 用户使用说明书 v1.0（对外版）</h1>
+    <div class="hr"></div>
+    <div><span class="badge">更新时间：2026-01-15</span><span class="badge">G-Gas / 熵分析 / 节点激活</span></div>
+
+    <h2>1. 系统简介</h2>
+    <p>欢迎使用 MAYI 熵分析实验平台。本系统为去中心化数据分析沙盒，用户通过激活节点获取 G-Gas（算力积分），用于运行熵分析模型。</p>
+    <ul>
+      <li>所有 G-Gas 仅用于系统内消耗，无任何法币价值。</li>
+      <li>首次使用享有 10 天免费试用期。</li>
+    </ul>
+
+    <h2>2. 快速开始</h2>
+    <h3>2.1 登录/注册</h3>
+    <ul>
+      <li>打开系统首页，输入手机号即可登录。</li>
+      <li>新用户将自动创建账户，无需邮箱或密码。</li>
+    </ul>
+    <h3>2.2 免费试用</h3>
+    <ul>
+      <li>试用期内，每次点击「熵分析」按钮将消耗 20 G-Gas。</li>
+      <li>试用额度用尽后，需激活节点以继续使用。</li>
+    </ul>
+
+    <h2>3. 节点激活（充值）</h2>
+    <h3>3.1 激活流程</h3>
+    <ul>
+      <li>点击右上角「+ 激活」按钮。</li>
+      <li>在弹窗中输入 USDT 金额（例如：100）。</li>
+      <li>点击「确认激活」，系统将按早期贡献者规则发放 G-Gas。</li>
+    </ul>
+    <h3>3.2 示例</h3>
+    <ul>
+      <li>输入 100 USDT → 获得 200 G-Gas</li>
+      <li>输入 5000 USDT → 获得 14,000 G-Gas</li>
+    </ul>
+    <h3>3.3 激活成功</h3>
+    <ul>
+      <li>弹窗提示「节点激活成功」。</li>
+      <li>顶部余额显示更新为「XXX G-Gas」。</li>
+      <li>正式期熵分析仅在预测正确时扣除 1 G-Gas。</li>
+    </ul>
+
+    <h2>4. 熵分析操作</h2>
+    <h3>4.1 提交分析</h3>
+    <ul>
+      <li>在输入框中填写分子/分母（例如：9/0）。</li>
+      <li>点击「熵分析 (X G-Gas)」按钮。</li>
+    </ul>
+    <h3>4.2 结果反馈</h3>
+    <ul>
+      <li>预测正确：状态栏显示「熵分析正确：扣除 1 G-Gas」，余额减少 1 G-Gas。</li>
+      <li>预测错误：状态栏显示「熵分析错误：0 G-Gas」，余额保持不变。</li>
+    </ul>
+    <p>注意：正式期仅正确分析消耗 G-Gas，错误不扣费。</p>
+
+    <h2>5. 余额与状态</h2>
+    <ul>
+      <li>G-Gas 余额：显示在页面顶部，格式为「XXX G-Gas」。</li>
+      <li>准确率统计：系统自动计算并显示历史准确率（例如：78% (35/45)）。</li>
+      <li>远程上分：若管理员为您手动充值，余额将秒级自动更新，无需刷新页面。</li>
+    </ul>
+
+    <h2>6. 重要声明</h2>
+    <ul>
+      <li>本系统为实验性 DAO 沙盒，所有 G-Gas 仅为算力积分，不可提现、不可兑换法币。</li>
+      <li>禁止中国大陆等受限地区用户参与。</li>
+      <li>系统可能随时升级，恕不另行通知。</li>
+    </ul>
+
+    <h2>7. 技术支持</h2>
+    <ul>
+      <li>如遇问题，请联系管理员并提供：手机号、操作步骤截图、浏览器类型（Chrome/Firefox/Safari）。</li>
+      <li>不提供技术原理、算法逻辑或内部机制说明。</li>
+    </ul>
+
+    <h2>附：保密说明</h2>
+    <ul>
+      <li>本说明书仅描述用户可见功能，不包含以下信息：</li>
+      <li>预测模型工作原理；G-Gas 发放与消耗底层逻辑；系统架构与数据流设计；安全机制与风控策略。</li>
+    </ul>
+  </div>
+</body>
+</html>
+

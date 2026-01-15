@@ -1,0 +1,3 @@
+global_input_paradigm: bagua_transit
+bagua_enabled: true
+bagua_representation: binary_trigrams
