@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <title>MAYIJU 总控台 (Local Master)</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: #000; color: #00cc66; font-family: 'Consolas', 'Courier New', monospace; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; border: 1px solid #004422; padding: 20px; box-shadow: 0 0 20px rgba(0, 204, 102, 0.2); }
+        h1 { border-bottom: 1px dashed #00cc66; padding-bottom: 10px; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; }
+        
+        .panel { margin-top: 20px; border: 1px solid #333; padding: 15px; background: #0a0a0a; }
+        .panel h2 { margin-top: 0; color: #fff; font-size: 16px; border-left: 3px solid #00cc66; padding-left: 10px; }
+        
+        input, select { background: #111; border: 1px solid #006633; color: #fff; padding: 8px; font-family: inherit; margin-right: 10px; }
+        input:focus { outline: none; border-color: #00cc66; }
+        
+        button { background: #006633; color: #fff; border: none; padding: 8px 16px; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+        button:hover { background: #00cc66; color: #000; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { border-bottom: 1px solid #222; padding: 8px; text-align: left; }
+        th { color: #888; }
+        tr:hover { background: #111; }
+        
+        .log-area { height: 150px; overflow-y: auto; background: #050505; border: 1px solid #222; padding: 10px; color: #888; font-size: 12px; margin-top: 10px; }
+        .success { color: #00cc66; }
+        .error { color: #ff3333; }
+        .highlight { color: #ffd700; }
+        
+        #auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 999;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+        }
+    </style>
+    <!-- Script moved to body end for performance -->
+</head>
+<body>
+    <script>
+        // CRITICAL INIT
+        window.addEventListener('error', function(e) {
+            console.error('GLOBAL ERROR:', e);
+            alert('SYSTEM ERROR: ' + e.message);
+        });
+        console.log("Admin System Booting...");
+    </script>
+
+    <!-- 🔒 安全锁 -->
+    <div id="auth-overlay">
+        <h2 style="color: #00cc66;">ACCESS CONTROL</h2>
+        <div style="margin-top: 20px;">
+            <input type="password" id="local-pass" placeholder="Enter Access Code">
+            <button id="btn-unlock">UNLOCK</button>
+        </div>
+        <p id="auth-msg" style="color: #ff3333; margin-top: 10px; font-size: 12px;"></p>
+    </div>
+
+    <!-- 🎛️ 主界面 -->
+    <div class="container" id="main-ui" style="display:none; filter: blur(5px); transition: filter 0.5s;">
+        <h1>MAYIJU Operations Center</h1>
+        
+        <!-- 统计概览 -->
+        <div class="panel">
+            <h2>📡 System Status</h2>
+            <div id="stats-display">Connecting to satellite...</div>
+        </div>
+
+        <!-- 充值核心 -->
+        <div class="panel" style="border-color: #ffd700;">
+            <h2 style="border-color: #ffd700; color: #ffd700;">⚡ Quick Recharge (God Mode)</h2>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="text" id="target-phone" placeholder="User Phone Number" style="width: 200px;">
+                <select id="quick-amount">
+                    <option value="300">300 (Standard)</option>
+                    <option value="1000">1,000 (Premium)</option>
+                    <option value="5000">5,000 (VIP)</option>
+                    <option value="99999">99,999 (Master)</option>
+                    <option value="custom">Custom...</option>
+                </select>
+                <input type="number" id="custom-amount" placeholder="Amount" style="width: 100px; display:none;">
+                <button onclick="executeRecharge()" style="background: #ffd700; color: #000;">GRANT GAS</button>
+            </div>
+        </div>
+
+        <!-- 用户列表 -->
+        <div class="panel">
+            <div style="display: flex; justify-content: space-between;">
+                <h2>👥 Citizen Directory</h2>
+                <button onclick="loadUsers()" style="font-size: 12px;">REFRESH</button>
+            </div>
+            <div style="max-height: 300px; overflow-y: auto;">
+                <table id="user-table">
+                    <thead><tr><th>Phone</th><th>Balance (GAS)</th><th>Status</th><th>Last Active</th><th>Action</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 操作日志 -->
+        <div class="log-area" id="console-log">
+            <div>[SYSTEM] System initialized. Waiting for commands...</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ================= CRITICAL AUTH LOGIC =================
+        // Define global variable only once
+        window.supabase = window.supabase || null;
+        let supabaseClient; // Use a distinct name to avoid conflicts
+
+        // 1. Define Functions
+        function doUnlock() {
+            console.log("Unlock triggered");
+            const input = document.getElementById('local-pass').value.trim();
+            const msg = document.getElementById('auth-msg');
+            const btn = document.getElementById('btn-unlock');
+            
+            if(btn) btn.innerText = "Verifying...";
+
+            // Mode 1: Legacy Key
+            if (input.length > 50 && input.startsWith('ey')) {
+                CONFIG.SUPABASE_KEY = input;
+                try { localStorage.setItem('mayiju_admin_key', input); } catch(e){}
+                showMainUI();
+                return;
+            }
+
+            // Mode 2: Code
+            if (input === "88888888" || input === CONFIG.ACCESS_CODE) {
+                showMainUI();
+            } else {
+                if(msg) {
+                    msg.innerText = "ACCESS DENIED: Try '88888888'";
+                    msg.style.color = '#ff3333';
+                }
+                if(btn) btn.innerText = "UNLOCK";
+                alert("Incorrect Password");
+            }
+        }
+
+        function showMainUI() {
+            document.getElementById('auth-overlay').style.display = 'none';
+            const main = document.getElementById('main-ui');
+            if(main) {
+                main.style.display = 'block';
+                setTimeout(() => main.style.filter = 'none', 100);
+                initSystem();
+            }
+        }
+
+        // 2. Bind Events (Safe Method)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Bind Button
+            const btn = document.getElementById('btn-unlock');
+            if(btn) {
+                btn.addEventListener('click', doUnlock);
+                console.log("Button bound");
+            } else {
+                alert("Critical Error: Button not found");
+            }
+
+            // Bind Enter Key
+            const input = document.getElementById('local-pass');
+            if(input) {
+                input.addEventListener('keyup', function(e) {
+                    if(e.key === 'Enter') doUnlock();
+                });
+                // Auto-fill
+                const savedKey = localStorage.getItem('mayiju_admin_key');
+                if (savedKey) {
+                    input.value = savedKey;
+                    // Optional: auto-submit
+                    // setTimeout(doUnlock, 500); 
+                }
+            }
+        });
+
+        // ================= CONFIGURATION =================
+        const CONFIG = {
+            // 默认本地访问密码 (可在此修改)
+            ACCESS_CODE: "88888888", 
+            
+            SUPABASE_URL: 'https://xhfyfkqfykkbbnlwghem.supabase.co',
+            // 使用 Anon Key (经测试具有修改权限)
+            SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZnlma3FmeWtrYmJubHdnaGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0ODA4ODEsImV4cCI6MjA4NDA1Njg4MX0.SVUTAVSWi-skCq3N3KioTetV40IWt0vNkewA0WqEfcg'
+        };
+
+        // Old supabase declaration removed
+        
+        // ================= AUTHENTICATION =================
+        
+        // Auto-login from memory
+        // Handled in DOMContentLoaded above
+        
+        // Old functions removed to prevent conflict
+        
+        // ================= CORE LOGIC =================
+        window.initSystem = function() {
+            try {
+                // Use window.supabase which is the library, and create client into supabaseClient
+                if (window.supabase && window.supabase.createClient) {
+                    supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+                    log("Connected to Supabase Network.", "success");
+                    loadStats();
+                    loadUsers();
+                } else {
+                    log("Supabase library not loaded!", "error");
+                }
+            } catch (e) {
+                log("Connection Failed: " + e.message, "error");
+            }
+        }
+
+        function log(msg, type = "info") {
+            const consoleEl = document.getElementById('console-log');
+            const time = new Date().toLocaleTimeString();
+            let color = "#888";
+            if (type === "success") color = "#00cc66";
+            if (type === "error") color = "#ff3333";
+            if (type === "warn") color = "#ffd700";
+            
+            consoleEl.innerHTML += `<div style="color:${color}">[${time}] ${msg}</div>`;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        // 监听下拉框变化
+        document.getElementById('quick-amount').addEventListener('change', function() {
+            const customInput = document.getElementById('custom-amount');
+            if (this.value === 'custom') {
+                customInput.style.display = 'block';
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+            }
+        });
+
+        async function loadStats() {
+            const { count } = await supabaseClient.from('app_users').select('*', { count: 'exact', head: true });
+            document.getElementById('stats-display').innerHTML = `
+                Active Nodes: <span class="highlight">${count || 0}</span> | 
+                Network Status: <span class="success">ONLINE</span>
+            `;
+        }
+
+        async function loadUsers() {
+            log("Fetching user directory...");
+            const { data, error } = await supabaseClient
+                .from('app_users')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error) return log("Fetch Error: " + error.message, "error");
+
+            const tbody = document.querySelector('#user-table tbody');
+            tbody.innerHTML = data.map(u => `
+                <tr>
+                    <td><span class="highlight">${u.phone_number || 'Unknown'}</span></td>
+                    <td>${u.balance_g}</td>
+                    <td>${u.is_early_adopter ? '🏝️ Islander' : 'Citizen'}</td>
+                    <td>${new Date(u.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button style="padding: 2px 8px; font-size: 10px;" onclick="fillRecharge('${u.phone_number}')">SELECT</button>
+                    </td>
+                </tr>
+            `).join('');
+            log("User directory updated.", "success");
+        }
+
+        function fillRecharge(phone) {
+            document.getElementById('target-phone').value = phone;
+        }
+
+        async function executeRecharge() {
+            const phone = document.getElementById('target-phone').value.trim();
+            const selectVal = document.getElementById('quick-amount').value;
+            let amount = selectVal === 'custom' ? document.getElementById('custom-amount').value : selectVal;
+            
+            if (!phone || !amount) return log("Missing Target or Amount", "error");
+            amount = parseInt(amount);
+
+            log(`Initiating transfer of ${amount} GAS to ${phone}...`);
+
+            // 1. 查找用户
+            const { data: users, error: findError } = await supabaseClient
+                .from('app_users')
+                .select('id, balance_g')
+                .eq('phone_number', phone);
+
+            if (findError) return log("Search Failed: " + findError.message, "error");
+            if (!users || users.length === 0) return log("User Not Found. Create user first.", "error");
+
+            const user = users[0];
+            const newBalance = (user.balance_g || 0) + amount;
+
+            // 2. 更新余额
+            const { error: updateError } = await supabaseClient
+                .from('app_users')
+                .update({ balance_g: newBalance })
+                .eq('id', user.id);
+
+            if (updateError) {
+                log("Transaction Failed: " + updateError.message, "error");
+            } else {
+                log(`✅ SUCCESS! ${phone} Balance: ${user.balance_g} -> ${newBalance}`, "success");
+                loadUsers(); // 刷新列表
+            }
+        }
+    </script>
+</body>
+</html>

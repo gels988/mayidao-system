@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蚂蚁岛预测系统 · 用户手册 v1.0</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            border-left: 5px solid #3498db;
+            padding-left: 10px;
+            margin-top: 30px;
+            background-color: #ecf0f1;
+            padding: 10px;
+            border-radius: 0 5px 5px 0;
+        }
+        h3 {
+            color: #16a085;
+            margin-top: 25px;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        ul, ol {
+            margin-bottom: 15px;
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .note {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .screenshot-placeholder {
+            background-color: #ddd;
+            border: 2px dashed #999;
+            color: #555;
+            padding: 20px;
+            text-align: center;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-style: italic;
+        }
+        code {
+            background-color: #f1f1f1;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: Consolas, monospace;
+            color: #c7254e;
+        }
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        .circle {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .blue { background-color: blue; }
+        .red { background-color: red; }
+        .green { background-color: green; }
+    </style>
+</head>
+<body>
+
+    <h1>蚂蚁岛预测系统 · 用户手册 v1.0</h1>
+
+    <h2>【第一章：快速开始】</h2>
+    <p>欢迎使用蚂蚁岛预测系统。本系统是一款基于高级数学模型构建的辅助决策工具，旨在通过科学计算为您提供参考。</p>
+
+    <h3>1.1 注册与登录</h3>
+    <ol>
+        <li><strong>访问系统</strong>：在手机或电脑浏览器中打开系统网址。</li>
+        <li><strong>注册账号</strong>：
+            <ul>
+                <li>点击首页的“注册”按钮。</li>
+                <div class="screenshot-placeholder">[截图：手机号/邮箱注册界面]</div>
+                <li>输入您的手机号或邮箱（推荐使用邮箱以保护隐私）。</li>
+                <li>设置登录密码。</li>
+            </ul>
+        </li>
+        <li><strong>领取试玩金</strong>：
+            <ul>
+                <li>注册成功后，点击“领取180分试玩”。</li>
+                <li>系统将自动赠送 <span class="highlight">180 G-Gas</span> 到您的账户。</li>
+                <li><strong>说明</strong>：180 G-Gas 足以支持您进行约 180 次预测操作。</li>
+            </ul>
+        </li>
+    </ol>
+
+    <h3>1.2 首次预测操作</h3>
+    <p>进入主界面后，您将看到模拟手机风格的操作面板。</p>
+    <div class="screenshot-placeholder">[截图：主界面标注（分子输入框/分母输入框/输入按钮）]</div>
+
+    <p><strong>操作步骤：</strong></p>
+    <ol>
+        <li><strong>输入分子</strong>：在标有“分子”的输入框中，输入当前的开奖数字（例如：8）。</li>
+        <li><strong>输入分母</strong>：在标有“分母”的输入框中，输入另一个维度的参数或辅助数字（例如：2）。</li>
+        <li><strong>点击预测</strong>：点击中间的“输入”按钮。</li>
+    </ol>
+
+    <p><strong>结果说明：</strong></p>
+    <ul>
+        <li><strong>中间大圆圈</strong>：这是系统的核心预测结果显示区。
+            <ul>
+                <li><span class="circle blue"></span><strong>蓝色</strong>：系统预测下期大概率“闲赢”。</li>
+                <li><span class="circle red"></span><strong>红色</strong>：系统预测下期大概率“庄赢”。</li>
+            </ul>
+        </li>
+        <li><strong>右上角“高倍”提示</strong>：
+            <ul>
+                <li>显示特殊符号（如“红6”、“🐼”）时，代表系统检测到特定高概率事件，详见第二章。</li>
+            </ul>
+        </li>
+        <li><strong>底部网格</strong>：自动记录您的历史路单走势。</li>
+    </ul>
+
+    <h3>1.3 查看历史记录</h3>
+    <div class="screenshot-placeholder">[截图：历史列表区域]</div>
+    <ul>
+        <li>系统会在底部或专门的列表页显示您的预测历史。</li>
+        <li><strong>最新记录</strong>通常显示在列表的最下方。</li>
+        <li>点击“清除”按钮可以重置当前的历史记录（注意：这不会清除您的G-Gas余额）。</li>
+    </ul>
+
+    <h2>【第二章：界面元素解读】</h2>
+
+    <h3>2.1 红蓝预测圆圈</h3>
+    <p>系统通过不同颜色的圆圈和光晕效果，直观地展示预测结果的置信度。</p>
+    <ul>
+        <li><span class="circle blue"></span><strong>实心蓝圈</strong>：🔵 <strong>高置信度</strong>预测 <strong>闲赢</strong>。</li>
+        <li><span class="circle red"></span><strong>实心红圈</strong>：🔴 <strong>高置信度</strong>预测 <strong>庄赢</strong>。</li>
+        <li><span class="circle green"></span><strong>绿圈+蓝晕</strong>：🟢🔵 <strong>中等置信度</strong>预测 <strong>闲赢</strong>。</li>
+        <li><span class="circle green"></span><strong>绿圈+红晕</strong>：🟢🔴 <strong>中等置信度</strong>预测 <strong>庄赢</strong>。</li>
+        <li><span class="circle green"></span><strong>绿圈无晕</strong>：🟢 <strong>低置信度</strong>，系统建议观望，暂不操作。</li>
+    </ul>
+
+    <h3>2.2 高倍提示区域</h3>
+    <p>位于主界面右上角，当特定数学模型条件满足时触发。</p>
+    <ul>
+        <li><strong>显示 "红6"</strong>：提示关注 <strong>庄6</strong> 高概率事件。</li>
+        <li><strong>显示 "蓝7"</strong>：提示关注 <strong>闲7</strong> 高概率事件。</li>
+        <li><strong>显示 "🐼" (熊猫)</strong>：提示关注 <strong>闲8</strong> 事件，这是系统特色的高价值信号。</li>
+        <li><strong>显示 "👑" (皇冠)</strong>：提示关注 <strong>皇冠事件</strong>，通常意味着极高的确定性。</li>
+        <li><strong>显示 "-"</strong>：当前无特殊高概率事件，按常规预测操作即可。</li>
+    </ul>
+
+    <h3>2.3 底部网格 (Big Road)</h3>
+    <p>这是您的路单记录板，用于追踪走势。</p>
+    <ul>
+        <li><span class="circle blue"></span><strong>蓝圈</strong>：代表 <strong>闲赢</strong>。</li>
+        <li><span class="circle red"></span><strong>红圈</strong>：代表 <strong>庄赢</strong>。</li>
+        <li><strong>圆圈+斜杠</strong>：代表 <strong>平局</strong>。</li>
+        <li><strong>左上角蓝点</strong>：表示该局出现 <strong>闲对子</strong>。</li>
+        <li><strong>右下角红点</strong>：表示该局出现 <strong>庄对子</strong>。</li>
+    </ul>
+
+    <h2>【第三章：G-Gas使用规则与生态】</h2>
+
+    <h3>3.1 G-Gas 扣费机制</h3>
+    <p>G-Gas（汽油）是维持蚂蚁岛预测系统运行的燃料。</p>
+    <ul>
+        <li><strong>扣费标准</strong>：<span class="highlight">诚实透明，每次点击“输入”按钮进行预测，系统自动扣除 1 G-Gas</span>。</li>
+        <li><strong>不扣费情况</strong>：有时您会发现并未扣费，这是系统随机触发的“奖励”行为，由系统算法自行决定。</li>
+        <li><strong>余额提醒</strong>：当您的 G-Gas 余额不足时，系统会弹出提示“G-Gas不足，请充值/捐赠”。</li>
+    </ul>
+
+    <h3>3.2 用户捐赠系统</h3>
+    <p>为了维持系统高昂的算力成本，我们引入了“用户捐赠系统”。</p>
+    <ul>
+        <li><strong>操作入口</strong>：点击右上角的“捐赠”按钮。</li>
+        <li><strong>捐赠流程</strong>：
+            <ol>
+                <li>选择您愿意捐赠的额度。</li>
+                <li>支持扫码或复制钱包地址进行转账。</li>
+                <li>捐赠确认后，对应的 G-Gas 将实时充值到您的账户。</li>
+            </ol>
+        </li>
+        <li><strong>意义</strong>：您的捐赠不仅是获取 G-Gas 的方式，更是对蚂蚁岛生态系统的支持，帮助我们持续优化算法。</li>
+    </ul>
+
+    <h3>3.3 180分试玩说明</h3>
+    <ul>
+        <li><strong>新人福利</strong>：所有新注册用户均可免费获得 180 G-Gas。</li>
+        <li><strong>使用时长</strong>：按正常频率，足够您深度体验 3-5 天。</li>
+        <li><strong>无强制消费</strong>：试玩分用完后，您可以选择小额捐赠继续使用，也可以随时停止，没有任何强制消费陷阱。</li>
+    </ul>
+
+    <h2>【第四章：进阶功能与生态管理】</h2>
+
+    <h3>4.1 子民管理系统（个人发展）</h3>
+    <p>蚂蚁岛不仅仅是一个预测工具，更是一个共建的数字生态。通过“子民管理系统”，您可以发展自己的生态圈。</p>
+    <ul>
+        <li><strong>系统入口</strong>：通过主菜单进入“子民管理”或“岛主控制台”。</li>
+        <li><strong>邀请机制</strong>：
+            <ul>
+                <li>您拥有专属的邀请链接。</li>
+                <li>邀请新用户（子民）加入，您可以获得系统奖励的 G-Gas 或贡献值。</li>
+            </ul>
+        </li>
+        <li><strong>管理功能</strong>：
+            <ul>
+                <li>查看子民列表及其活跃状态（活跃/非活跃）。</li>
+                <li>查看子民带来的贡献总额。</li>
+                <li>未来可能开放积分划转等高级互动功能。</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3>4.2 系统自检中心（健康保障）</h3>
+    <p>为了确保预测的准确性和系统的稳定性，我们内置了强大的“自检系统”。</p>
+    <ul>
+        <li><strong>功能定位</strong>：这是系统的“体检中心”，保障系统健康运行和自我完善。</li>
+        <li><strong>操作方法</strong>：
+            <ol>
+                <li>进入“系统自检中心”。</li>
+                <li>点击“执行完整自检”按钮。</li>
+            </ol>
+        </li>
+        <li><strong>检测内容</strong>：
+            <ul>
+                <li><strong>三层架构验证</strong>：确保数据层、逻辑层、表现层交互正常。</li>
+                <li><strong>数学自洽验证</strong>：检查核心算法公式是否出现逻辑悖论。</li>
+                <li><strong>本地运行环境</strong>：确保没有被外部恶意代码劫持。</li>
+            </ul>
+        </li>
+        <li><strong>状态反馈</strong>：
+            <ul>
+                <li>✅ <strong>全绿</strong>：系统极其健康，预测可信度高。</li>
+                <li>⚠️ <strong>黄色警告</strong>：存在轻微延迟或数据同步问题，建议刷新。</li>
+                <li>❌ <strong>红色异常</strong>：系统核心受损，请立即停止使用并联系管理员。</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h2>【第五章：注意事项】</h2>
+
+    <div class="note">
+        <h3>5.1 系统定位</h3>
+        <ul>
+            <li><strong>辅助工具</strong>：本系统严格定位为“基于数学规律的自洽预测辅助工具”。</li>
+            <li><strong>准确率说明</strong>：系统不承诺 100% 准确。历史数据显示，长期平均准确率在 60-75% 之间，准确率是根据公式计算实时显示的。</li>
+            <li><strong>理性使用</strong>：请勿过度依赖。系统给出的只是基于概率的建议，最终决策权在您手中。</li>
+        </ul>
+    </div>
+
+    <h3>5.2 隐私保护</h3>
+    <ul>
+        <li><strong>数据安全</strong>：我们仅存储您的预测记录以便生成路单，<strong>绝不收集</strong>您的真实姓名、身份证号、银行卡号等敏感个人信息。</li>
+        <li><strong>匿名注册</strong>：支持仅使用邮箱注册，最大程度保护您的隐私。</li>
+        <li><strong>本地计算</strong>：核心预测逻辑在本地完成，数据不做非必要的云端上传，杜绝第三方泄露风险。</li>
+    </ul>
+
+    <h3>5.3 免责声明</h3>
+    <ul>
+        <li><strong>风险自担</strong>：预测结果仅供参考，不构成任何投资建议。用户需自行承担使用本系统产生的所有风险和后果。</li>
+        <li><strong>无赔付责任</strong>：系统开发者不对因使用本系统而产生的任何经济损失负责。</li>
+    </ul>
+
+    <h2>【第六章：常见问题解答 (FAQ)】</h2>
+
+    <h3>Q1: 为什么有时候点击预测没有扣除 G-Gas？</h3>
+    <p><strong>A:</strong> 这是一个系统的隐藏彩蛋！为了鼓励用户，系统算法会随机触发“免单奖励”。当您遇到这种情况时，说明您当前的运气值较高，系统免费为您提供了一次服务。</p>
+
+    <h3>Q2: 捐赠后 G-Gas 没有立即到账怎么办？</h3>
+    <p><strong>A:</strong> 通常情况下，区块链网络的确认需要一定时间（1-5分钟）。如果超过30分钟仍未到账，请保留您的转账哈希（Hash）记录，并通过“意见反馈”联系客服。</p>
+
+    <h3>Q3: “子民系统”邀请的朋友充值了，我有奖励吗？</h3>
+    <p><strong>A:</strong> 是的。作为生态共建者，您邀请的子民在进行捐赠或活跃使用时，系统会根据当前的激励系数，向您的账户返还一定比例的 G-Gas 作为“生态贡献奖”。</p>
+
+    <h3>Q4: 系统预测出现连续错误正常吗？</h3>
+    <p><strong>A:</strong> 正常。本系统基于概率学模型，既然是概率，就存在“小概率事件”连续发生的可能。这正如天气预报也会偶尔失准。建议您在连续失准时暂停操作，参考“系统自检中心”查看系统状态，或休息片刻再试。</p>
+
+    <h3>Q5: 我可以把账号借给别人使用吗？</h3>
+    <p><strong>A:</strong> 不建议。系统会根据您的历史操作习惯建立个性化的数据模型（User Profile）。多人混用会导致模型数据杂乱，从而降低针对您个人的预测准确度。</p>
+
+    <footer>
+        <p>文档版本：v1.0 | 更新日期：2026-02-07 | 蚂蚁岛技术团队</p>
+    </footer>
+
+</body>
+</html>

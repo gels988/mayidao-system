@@ -1,23 +1,20 @@
-# Bagua-Gels988-Engine
+# 蚂蚁岛预测系统
 
-### 🌐 System Overview
-This is a professional prediction analysis system based on traditional Oriental mathematical logic combined with modern data science.
+## 系统概述
+基于八卦数字自洽行为与22矩阵四数基因规律的智能预测系统
 
-### ⚙️ Core Logic
-- **Quadrant Balance:** 8x8 Bagua mapping divided into 4 strategic quadrants.
-- **He-9 Cancellation:** Automatic noise filtering using the self-consistency logic ($X+Y=9$).
-- **Sliding Window:** Real-time trend analysis using a 3-step resonance buffer.
-- **Cycle Reset:** Automatic calibration every 64 hexagram cycles.
+## 核心功能
+- 🧠 自学模块：22矩阵四数基因预测
 
-### 🛡️ Safety & Stability
-- **Observation Mode:** Intelligent self-protection (Glow Effect) during high-volatility periods.
-- **Audit System:** Real-time logical verification to maintain a 75% accuracy threshold.
-- **Cloud Sync:** Secure data logging powered by Supabase.
+- 🔮 预测引擎：多模型投票机制
+- 🌐 全球布局：支持海外用户接入
 
-### 🚀 Quick Start
-1. Access the system via the Vercel cloud link.
-2. Monitor the real-time "Audit Panel" for logic verification.
-3. Export CSV reports for historical performance review.
+## 技术栈
+- 前端: HTML5, CSS3, Chart.js
+- 后端: Node.js, Express
+- 数据库: Supabase (PostgreSQL)
+- 部署: Vercel
 
----
-*Disclaimer: This system is for mathematical research and logical analysis purposes only.*
+## 部署信息
+- Vercel: mayidao-gels988.vercel.app
+- Supabase: gels988's Org

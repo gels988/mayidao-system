@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MAYIJU Global Admin Panel (Localhost Only)</title>
+    <meta charset="UTF-8">
+    <style>
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { border-bottom: 1px solid #0f0; padding-bottom: 10px; }
+        .warning { color: #f00; font-weight: bold; border: 1px solid #f00; padding: 10px; margin-bottom: 20px; }
+        input { background: #111; border: 1px solid #0f0; color: #0f0; padding: 8px; width: 300px; }
+        button { background: #0f0; color: #000; border: none; padding: 8px 16px; font-weight: bold; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { color: #fff; }
+        .section { margin-top: 40px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MAYIJU Global Admin Panel (Phase A)</h1>
+        <div class="warning">
+            ⚠️ SECURE ZONE: This tool requires SERVICE_ROLE_KEY. <br>
+            DO NOT DEPLOY THIS FILE TO PUBLIC WEB SERVERS. USE LOCALHOST ONLY.
+        </div>
+
+        <div>
+            <label>Supabase URL:</label>
+            <input type="text" id="url" value="https://xhfyfkqfykkbbnlwghem.supabase.co">
+            <label>Service Role Key:</label>
+            <input type="password" id="key" placeholder="Paste SERVICE_ROLE_KEY here">
+            <button onclick="initAdmin()">Connect</button>
+        </div>
+
+        <div id="dashboard" style="display:none;">
+            <div class="section">
+                <h2>📊 Global Statistics</h2>
+                <div id="stats">Loading...</div>
+            </div>
+
+            <div class="section">
+                <h2>👥 All Users (RLS Bypassed)</h2>
+                <button onclick="loadUsers()">Refresh Users</button>
+                <table id="users-table">
+                    <thead><tr><th>ID</th><th>Email</th><th>GAS Balance</th><th>Donated Count</th><th>Created At</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h2>💰 Private Donations Log</h2>
+                <button onclick="loadDonations()">Refresh Logs</button>
+                <table id="donations-table">
+                    <thead><tr><th>Time</th><th>User ID</th><th>Amount (U)</th><th>GAS Granted</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        let supabase;
+
+        function initAdmin() {
+            const url = document.getElementById('url').value;
+            const key = document.getElementById('key').value;
+            if (!url || !key) return alert("URL and Key required");
+
+            try {
+                // Initialize with Service Role Key
+                supabase = window.supabase.createClient(url, key);
+                document.getElementById('dashboard').style.display = 'block';
+                loadStats();
+                loadUsers();
+                loadDonations();
+            } catch (e) {
+                alert("Connection Error: " + e.message);
+            }
+        }
+
+        async function loadStats() {
+            // Count users
+            const { count: userCount, error: err1 } = await supabase.from('app_users').select('*', { count: 'exact', head: true });
+            // Sum GAS (requires fetching all for now, or RPC if we had one. Simple fetch is fine for Phase A)
+            const { data: users, error: err2 } = await supabase.from('app_users').select('balance_g');
+            
+            if (err1 || err2) return console.error(err1, err2);
+
+            const totalGas = users.reduce((sum, u) => sum + (u.balance_g || 0), 0);
+            
+            document.getElementById('stats').innerHTML = `
+                <p>Total Citizens: <span style="color:#fff">${userCount}</span></p>
+                <p>Total GAS in Circulation: <span style="color:#ffd700">${totalGas}</span></p>
+            `;
+        }
+
+        async function loadUsers() {
+            const { data, error } = await supabase.from('app_users').select('*').order('created_at', { ascending: false }).limit(50);
+            if (error) return alert(error.message);
+            
+            const tbody = document.querySelector('#users-table tbody');
+            tbody.innerHTML = data.map(u => `
+                <tr>
+                    <td>${u.id}</td>
+                    <td>${u.email || 'N/A'}</td>
+                    <td style="color:#ffd700">${u.balance_g}</td>
+                    <td>${u.donated_count || 0}</td>
+                    <td>${new Date(u.created_at).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadDonations() {
+            const { data, error } = await supabase.from('private_donations').select('*').order('created_at', { ascending: false }).limit(50);
+            if (error) return alert(error.message);
+
+            const tbody = document.querySelector('#donations-table tbody');
+            tbody.innerHTML = data.map(d => `
+                <tr>
+                    <td>${new Date(d.created_at).toLocaleString()}</td>
+                    <td>${d.user_id}</td>
+                    <td>${d.amount_u} U</td>
+                    <td style="color:#ffd700">+${d.gas_granted}</td>
+                </tr>
+            `).join('');
+        }
+    </script>
+</body>
+</html>

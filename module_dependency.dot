@@ -1,0 +1,40 @@
+digraph MAYIJU_Architecture {
+    rankdir=TB;
+    node [shape=box, style=filled, fontname="Segoe UI"];
+
+    subgraph cluster_Input {
+        label = "Input Layer";
+        color = "#e0e0e0";
+        Input_Gateway [label="Input_Gateway\n(Molecule/Denominator)", fillcolor="#bbdefb"];
+    }
+
+    subgraph cluster_Calculation {
+        label = "Calculation Layer";
+        color = "#e0e0e0";
+        PyramidCore [label="PyramidCore\n(Three-Axis Logic)", fillcolor="#c8e6c9"];
+        SpecialRules [label="SpecialRules\n(Extension Modules)", fillcolor="#fff9c4"];
+    }
+
+    subgraph cluster_Database {
+        label = "Database Layer";
+        color = "#e0e0e0";
+        Data_Store [label="Data_Store\n(History/G-Gas)", fillcolor="#d1c4e9"];
+    }
+
+    subgraph cluster_UI {
+        label = "UI Layer";
+        color = "#e0e0e0";
+        UI_Builder [label="UI_Builder\n(Grid/Dashboard)", fillcolor="#ffccbc"];
+        HighOdds_Panel [label="HighOdds_Panel\n(Integrated)", fillcolor="#ffccbc"];
+    }
+
+    Input_Gateway -> PyramidCore [label="Raw Data"];
+    PyramidCore -> SpecialRules [label="Base Prediction"];
+    SpecialRules -> Data_Store [label="Save Result"];
+    Data_Store -> PyramidCore [label="Historical Context"];
+    SpecialRules -> UI_Builder [label="Final Output"];
+    UI_Builder -> HighOdds_Panel [label="Render"];
+    
+    edge [style=dashed, color=red];
+    Data_Store -> PyramidCore [label="N-1 Validation"];
+}

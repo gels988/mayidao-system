@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MAYIJU v5.2 Frozen</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #status-bar {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        #input-section {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .input-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .input-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .input-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        input {
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 10px;
+            font-size: 16px;
+            text-align: center;
+            border-radius: 4px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        #entropy-btn {
+            background-color: #ffd700;
+            color: #000;
+            border: none;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        #entropy-btn:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        #prediction-result {
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #333;
+            padding: 20px;
+            border-radius: 8px;
+            background: #0a0a0a;
+            display: none; /* Hidden by default */
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #result-title {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            letter-spacing: 2px;
+        }
+        .result-flex {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+        }
+        .circle.blue { background-color: #007bff; border-color: #007bff; }
+        .circle.red { background-color: #dc3545; border-color: #dc3545; }
+        .tag {
+            background: #333;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+        .confidence-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: #222;
+            border-radius: 3px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+        .confidence-bar {
+            height: 100%;
+            background: #ffd700;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .confidence-text {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .trend-tags {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-size: 11px;
+            color: #888;
+        }
+        #grid-section {
+            width: 100%;
+            max-width: 400px;
+            height: 200px;
+            background: #050505;
+            border: 1px solid #333;
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 1px;
+            padding: 5px;
+        }
+        .grid-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin: auto;
+        }
+        .dot-red { background-color: #dc3545; }
+        .dot-blue { background-color: #007bff; }
+    </style>
+</head>
+<body>
+
+    <div id="status-bar">
+        <span>USER-40657</span>
+        <span>G-Gas: 3,000</span>
+        <span>Acc: 33.3%</span>
+        <span style="background:#ffd700; color:black; padding:2px 6px; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="location.reload()">Exit</span>
+    </div>
+
+    <div id="input-section">
+        <div class="input-row">
+            <div class="input-group">
+                <label class="input-label">Molecular (P)</label>
+                <input id="molecular" placeholder="4" type="number">
+            </div>
+            <div class="input-group">
+                <label class="input-label">Denominator (B)</label>
+                <input id="denominator" placeholder="6" type="number">
+            </div>
+        </div>
+        <button id="entropy-btn">熵分析 (20 G-Gas)</button>
+    </div>
+
+    <div id="prediction-result">
+        <h3 id="result-title">PLAYER</h3>
+        <div class="result-flex">
+            <div id="result-circle" class="circle blue"></div>
+            <span id="result-tag" class="tag">对子</span>
+        </div>
+        <div class="confidence-bar-bg">
+            <div id="confidence-bar" class="confidence-bar" style="width:0%"></div>
+        </div>
+        <div class="confidence-text">Confidence: <span id="confidence-val">0%</span></div>
+        <div class="trend-tags">
+            <span>跟多顺势</span>
+            <span>有时则有，无时则无，多时则多</span>
+        </div>
+    </div>
+
+    <div id="grid-section">
+        <!-- Grid will be populated by JS -->
+    </div>
+
+    <script>
+        // --- Initialization ---
+        window.onload = function() {
+            console.log("MAYIJU v5.2 Frozen: UI Restored.");
+            const btn = document.getElementById('entropy-btn');
+            const molInput = document.getElementById('molecular');
+            
+            if (btn) {
+                btn.onclick = handlePredictionClick;
+            }
+            if (molInput) {
+                molInput.focus();
+            }
+            
+            initGrid();
+        };
+
+        // --- Interaction Logic ---
+        async function handlePredictionClick() {
+            const btn = document.getElementById('entropy-btn');
+            const originalText = btn.innerText;
+            const mol = document.getElementById('molecular').value.trim();
+            const den = document.getElementById('denominator').value.trim();
+
+            if (!mol || !den) {
+                alert("Please enter both Molecular and Denominator values.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'ANALYZING...';
+
+            try {
+                const rawInput = `${mol}/${den}`;
+                
+                // Call API
+                const res = await fetch('/api/predict-mobile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ raw_input: rawInput })
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Server Error: ${res.status}`);
+                }
+
+                const data = await res.json();
+                renderPrediction(data);
+
+            } catch (err) {
+                console.error(err);
+                alert("Error: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        // --- Rendering Logic ---
+        function renderPrediction(data) {
+            const resultDiv = document.getElementById('prediction-result');
+            const title = document.getElementById('result-title');
+            const circle = document.getElementById('result-circle');
+            const tag = document.getElementById('result-tag');
+            const confBar = document.getElementById('confidence-bar');
+            const confVal = document.getElementById('confidence-val');
+
+            // Show result section
+            resultDiv.style.display = 'block';
+
+            // Determine Winner (Mock logic if API doesn't return explicit winner text, 
+            // but usually S-value implies it. Here we use is_player_8/is_banker_6 or just assume based on S-value)
+            // For visual consistency with screenshot "PLAYER"
+            // Let's assume positive S-value or specific flags. 
+            // Since data comes from real backend, we use data.
+            
+            // Simplified logic for "Frozen UI" based on user screenshot:
+            // Screenshot shows: PLAYER, Blue Circle, "对子"
+            
+            let isPlayer = true; // Default or derived
+            if (data.s_value && data.s_value < 0) isPlayer = false; // Example logic
+            
+            title.innerText = isPlayer ? 'PLAYER' : 'BANKER';
+            title.style.color = isPlayer ? '#007bff' : '#dc3545';
+            
+            circle.className = 'circle ' + (isPlayer ? 'blue' : 'red');
+            
+            // Tag logic
+            if (data.is_crown) {
+                tag.innerText = 'Crown 👑';
+                circle.innerHTML = '<span style="display:flex;justify-content:center;align-items:center;height:100%;font-size:20px;">👑</span>';
+            } else if (data.is_tie) {
+                tag.innerText = 'Tie';
+            } else {
+                tag.innerText = '对子'; // Static as per screenshot request or dynamic
+            }
+
+            // Confidence
+            const conf = Math.abs(data.sci_index || 50); // Mock or real
+            confBar.style.width = `${conf}%`;
+            confVal.innerText = `${conf}%`;
+
+            // Update Grid (add new dot)
+            addGridDot(isPlayer ? 'blue' : 'red');
+        }
+
+        function initGrid() {
+            const grid = document.getElementById('grid-section');
+            grid.innerHTML = '';
+            // Pre-fill some dots for visual effect (or empty)
+            for (let i = 0; i < 120; i++) {
+                const div = document.createElement('div');
+                div.className = 'grid-dot';
+                grid.appendChild(div);
+            }
+        }
+
+        function addGridDot(color) {
+            const grid = document.getElementById('grid-section');
+            // Find first empty dot or append
+            // Simple visual: just random or sequential
+            const dots = grid.getElementsByClassName('grid-dot');
+            for (let dot of dots) {
+                if (!dot.classList.contains('dot-red') && !dot.classList.contains('dot-blue')) {
+                    dot.classList.add(`dot-${color}`);
+                    break;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

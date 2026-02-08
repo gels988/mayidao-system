@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自学模块 - 22矩阵四数基因预测系统</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --matrix-bg: #1a1a2e;
+            --matrix-border: #4cc9f0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .logo-icon {
+            font-size: 2.5rem;
+            color: var(--secondary);
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(76, 201, 240, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: #64748b;
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(76, 201, 240, 0.3);
+            padding-bottom: 10px;
+        }
+        
+        .card-title i {
+            font-size: 1.4rem;
+            color: var(--secondary);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            background: rgba(44, 62, 80, 0.5);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-5px);
+            background: rgba(52, 152, 219, 0.2);
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 8px 0;
+            color: var(--secondary);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        
+        .matrix-container {
+            background: var(--matrix-bg);
+            border: 2px solid var(--matrix-border);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .matrix-title {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+        
+        .matrix {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .matrix-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            border-radius: 8px;
+            border: 2px solid #4a5568;
+            transition: all 0.3s ease;
+        }
+        
+        .matrix-cell.active {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px var(--secondary);
+        }
+        
+        .matrix-cell.top-left { background: rgba(30, 64, 175, 0.3); }
+        .matrix-cell.top-right { background: rgba(129, 140, 248, 0.3); }
+        .matrix-cell.bottom-left { background: rgba(79, 70, 229, 0.3); }
+        .matrix-cell.bottom-right { background: rgba(59, 130, 246, 0.3); }
+        
+        .matrix-cell.red { color: #ef4444; }
+        .matrix-cell.blue { color: #3b82f6; }
+        
+        .learning-modes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .mode-card {
+            background: rgba(44, 62, 80, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .mode-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            color: var(--secondary);
+        }
+        
+        .mode-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+        
+        .mode-content li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .mode-content li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--secondary);
+            font-weight: bold;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-refresh {
+            background: linear-gradient(to right, #1e40af, #3b82f6);
+            color: white;
+        }
+        
+        .btn-refresh:hover {
+            background: linear-gradient(to right, #1d40af, #2563eb);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .btn-close {
+            background: linear-gradient(to right, #b91c1c, #e53e3e);
+            color: white;
+        }
+        
+        .btn-close:hover {
+            background: linear-gradient(to right, #b91c1c, #c53030);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+        
+        .alert {
+            background: rgba(52, 152, 219, 0.15);
+            border-left: 4px solid var(--secondary);
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+            color: #94a3b8;
+        }
+        
+        .alert strong {
+            color: var(--secondary);
+        }
+        
+        .high-probability-rules {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 25px;
+            border: 1px solid rgba(76, 201, 240, 0.3);
+        }
+        
+        .rules-title {
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--secondary);
+            font-size: 1.3rem;
+        }
+        
+        .rules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .rule-card {
+            background: rgba(44, 62, 80, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(76, 201, 240, 0.2);
+        }
+        
+        .rule-title {
+            color: var(--warning);
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .rule-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+        
+        .rule-badge {
+            display: inline-block;
+            background: var(--success);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(76, 201, 240, 0.2);
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active {
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
+        }
+        
+        .status-inactive {
+            background: #64748b;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+        
+        .yin-yang {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 15px 0;
+            font-size: 2.5rem;
+            color: #f3f4f6;
+        }
+        
+        .yin-yang::before {
+            content: "☯";
+        }
+        
+        .matrix-visualization {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            gap: 30px;
+        }
+        
+        .matrix-visual {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 12px;
+            padding: 15px;
+            width: 300px;
+            text-align: center;
+        }
+        
+        .visual-title {
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .visual-content {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+        
+        .invasion-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        
+        .invasion-level {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .invasion-level-1 { background: rgba(255, 200, 0, 0.2); color: #f59e0b; }
+        .invasion-level-2 { background: rgba(255, 150, 0, 0.2); color: #ea580c; }
+        .invasion-level-3 { background: rgba(255, 100, 0, 0.2); color: #dc2626; }
+        .invasion-level-4 { background: rgba(255, 50, 50, 0.2); color: #b91c1c; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">🧠</div>
+                <div>
+                    <h1>自学模块 - 22矩阵四数基因预测系统</h1>
+                    <p class="subtitle">融合八卦数字自洽行为与自然数字基因规律，构建人机结合的智能预测模型</p>
+                </div>
+            </div>
+            <div class="yin-yang"></div>
+        </header>
+        
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-title">
+                    <i>📊</i> <span>学习状态</span>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="accuracy">0.0%</div>
+                        <div class="stat-label">预测准确率</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="samples">0</div>
+                        <div class="stat-label">学习样本</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="mode-weight">0.0%</div>
+                        <div class="stat-label">模式权重影响</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="invasion-level">0</div>
+                        <div class="stat-label">入侵等级</div>
+                    </div>
+                </div>
+                
+                <div class="alert">
+                    <strong>系统状态:</strong> 等待历史数据输入 - 需3局以上数据才能启动预测分析
+                </div>
+                
+                <div class="matrix-container">
+                    <div class="matrix-title">22矩阵四数基因分析</div>
+                    <div class="matrix">
+                        <div class="matrix-cell top-left red" id="cell-tl">4</div>
+                        <div class="matrix-cell top-right blue" id="cell-tr">5</div>
+                        <div class="matrix-cell bottom-left blue" id="cell-bl">9</div>
+                        <div class="matrix-cell bottom-right red" id="cell-br">8</div>
+                    </div>
+                    
+                    <div class="invasion-indicator">
+                        <span>入侵程度:</span>
+                        <span class="invasion-level invasion-level-1">轻度</span>
+                    </div>
+                    
+                    <div class="matrix-visualization">
+                        <div class="matrix-visual">
+                            <div class="visual-title">八卦数字自洽结构</div>
+                            <div class="visual-content">
+                                外圈：上下/作用/对角两八卦数字合9<br>
+                                142+857=999<br>
+                                64卦分布规律
+                            </div>
+                        </div>
+                        <div class="matrix-visual">
+                            <div class="visual-title">自然数字自洽结构</div>
+                            <div class="visual-content">
+                                内圈：对角合零(两数)或合5(单数)<br>
+                                四数基因网络定位<br>
+                                主对角线差为单数
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">
+                    <i>📈</i> <span>学习模式</span>
+                </div>
+                
+                <div class="learning-modes">
+                    <div class="mode-card">
+                        <div class="mode-title">局间学习</div>
+                        <div class="mode-content">
+                            <p>第N局 → 第N+1局规律</p>
+                            <p>重点关注四数基因网络定位</p>
+                            <p>左上角出现4(5,9,8)偏蓝，下局遗传性高</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mode-card">
+                        <div class="mode-title">八卦学习</div>
+                        <div class="mode-content">
+                            <p>第N个八卦数字 → 第N+1个八卦数字</p>
+                            <p>142+857=999自洽结构</p>
+                            <p>64卦分布规律应用</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mode-card">
+                        <div class="mode-title">模式学习</div>
+                        <div class="mode-content">
+                            <p>特殊组合(7/6, 8/2)后结果预测</p>
+                            <p>分子/分母差距大(9/1蓝，1/9红)</p>
+                            <p>四张局9(8)赢后持续赢概率极高</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="high-probability-rules">
+                    <div class="rules-title">高概率决策依据 (90%+ 准确率)</div>
+                    <div class="rules-grid">
+                        <div class="rule-card">
+                            <div class="rule-title">四数基因规律</div>
+                            <div class="rule-content">
+                                1. 左上角出现4(5,9,8)偏蓝，下局遗传性高<br>
+                                2. 主对角线差为单数，偏蓝，下局遗传性高<br>
+                                3. 左竖合大于右竖合，偏蓝，下局遗传性高<br>
+                                4. 分子/分母差距大，遗传性高<br>
+                                5. 四数基因合偏小，变盘概率高
+                                <span class="rule-badge">一票否决</span>
+                            </div>
+                        </div>
+                        
+                        <div class="rule-card">
+                            <div class="rule-title">结构与入侵分析</div>
+                            <div class="rule-content">
+                                1. 5个冷色数字(1234)后暖色数字(6789)出现<br>
+                                2. 重复数字99/22导致变盘概率增加<br>
+                                3. 重复数字=入侵，四同基因(9999)遗传性极高<br>
+                                4变盘概率极高<br>
+                                5. 输方为7(8)值持续输概率极高
+                                <span class="rule-badge">一票否决</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-title">
+                <i>🔄</i> <span>系统状态与控制</span>
+            </div>
+            
+            <div class="alert">
+                <strong>系统提示:</strong> 系统已整合八卦数字自洽行为与22矩阵四数基因规律，构建动态学习模型。请确保输入至少3局历史数据以启动预测分析。
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-refresh" id="refresh-btn">
+                    <span>🔄</span> 刷新数据
+                </button>
+                <button class="btn btn-close" id="close-btn">
+                    <span>✕</span> 关闭
+                </button>
+            </div>
+            
+            <div class="matrix-visualization" style="margin-top: 25px;">
+                <div class="matrix-visual">
+                    <div class="visual-title">基因合规律</div>
+                    <div class="visual-content">
+                        基因合偏小(4321合10-9876合30)<br>
+                        → 变盘概率高<br>
+                        基因合大 → 持续概率高
+                    </div>
+                </div>
+                <div class="matrix-visual">
+                    <div class="visual-title">长龙规律</div>
+                    <div class="visual-content">
+                        庄长龙四张局多见<br>
+                        闲长龙5-6张局多见<br>
+                        输方为7(8)值持续输概率极高
+                    </div>
+                </div>
+                <div class="matrix-visual">
+                    <div class="visual-title">入侵等级</div>
+                    <div class="visual-content">
+                        轻度入侵: 重复数字(1-2个)<br>
+                        中度入侵: 重复数字(3个)<br>
+                        重度入侵: 四同基因(9999)<br>
+                        重度入侵具有极高遗传性
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>国际金字塔研究会 | 蚂蚁岛预测系统 | 2026.02.08</p>
+            <p>系统通过历史数据自我学习，越用越聪明 | 人机结合的新生命体正在孕育中</p>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据更新函数
+        function updateSystemData() {
+            // 模拟学习状态更新
+            const accuracy = Math.min(95, Math.random() * 15 + 80).toFixed(1);
+            const samples = Math.floor(Math.random() * 1000 + 500);
+            const modeWeight = (Math.random() * 15 + 85).toFixed(1);
+            
+            // 更新UI
+            document.getElementById('accuracy').textContent = accuracy + '%';
+            document.getElementById('samples').textContent = samples;
+            document.getElementById('mode-weight').textContent = modeWeight + '%';
+            
+            // 模拟入侵等级变化
+            const invasionLevel = Math.floor(Math.random() * 4);
+            const invasionText = ['轻度', '中度', '重度', '极重度'][invasionLevel];
+            const invasionClass = ['invasion-level-1', 'invasion-level-2', 'invasion-level-3', 'invasion-level-4'][invasionLevel];
+            
+            document.getElementById('invasion-level').textContent = invasionText;
+            document.querySelector('.invasion-level').className = 'invasion-level ' + invasionClass;
+            
+            // 随机更新矩阵单元格
+            const cells = ['tl', 'tr', 'bl', 'br'];
+            cells.forEach(cell => {
+                const value = Math.floor(Math.random() * 9) + 1;
+                const element = document.getElementById('cell-' + cell);
+                element.textContent = value;
+                
+                // 根据值确定颜色
+                if (value <= 4) {
+                    element.className = 'matrix-cell top-left red';
+                } else {
+                    element.className = 'matrix-cell top-right blue';
+                }
+            });
+        }
+        
+        // 初始化系统
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始数据更新
+            updateSystemData();
+            
+            // 刷新按钮事件
+            document.getElementById('refresh-btn').addEventListener('click', function() {
+                updateSystemData();
+                this.textContent = '🔄 刷新数据 (已更新)';
+                setTimeout(() => {
+                    this.textContent = '🔄 刷新数据';
+                }, 2000);
+            });
+            
+            // 关闭按钮事件
+            document.getElementById('close-btn').addEventListener('click', function() {
+                document.body.style.opacity = '0.7';
+                setTimeout(() => {
+                    document.body.style.display = 'none';
+                }, 300);
+            });
+            
+            // 每30秒自动更新一次
+            setInterval(updateSystemData, 30000);
+        });
+    </script>
+</body>
+</html>

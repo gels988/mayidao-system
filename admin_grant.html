@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第一岛民权限授予工具</title>
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: #eee; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: #2a2a2a; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center; max-width: 500px; width: 100%; }
+        h1 { color: #00cc66; }
+        .status { margin-top: 20px; padding: 15px; background: #333; border-radius: 5px; text-align: left; font-family: monospace; min-height: 100px; }
+        button { background: #00cc66; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 20px; }
+        button:hover { background: #00b359; }
+        button:disabled { background: #555; cursor: not-allowed; }
+    </style>
+    <!-- Load Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <div class="card">
+        <h1>🏝️ 第一岛民权限授予</h1>
+        <p>目标用户: <strong>18080860669</strong></p>
+        <p>操作: 充值 99999 分 + 开通新用户权限 (岛民)</p>
+        <button id="btnGrant" onclick="startGrant()">立即执行</button>
+        <div class="status" id="logArea">等待操作...</div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://xhfyfkqfykkbbnlwghem.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZnlma3FmeWtrYmJubHdnaGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0ODA4ODEsImV4cCI6MjA4NDA1Njg4MX0.SVUTAVSWi-skCq3N3KioTetV40IWt0vNkewA0WqEfcg';
+        const TARGET_PHONE = '18080860669';
+
+        function log(msg) {
+            const el = document.getElementById('logArea');
+            el.innerHTML += `<div>> ${msg}</div>`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        async function startGrant() {
+            const btn = document.getElementById('btnGrant');
+            btn.disabled = true;
+            btn.innerText = "执行中...";
+            log("正在初始化连接...");
+
+            try {
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                
+                log(`查找用户: ${TARGET_PHONE}...`);
+                const { data: users, error: searchError } = await supabase
+                    .from('app_users')
+                    .select('*')
+                    .eq('phone_number', TARGET_PHONE);
+
+                if (searchError) throw searchError;
+
+                let userId;
+                if (users && users.length > 0) {
+                    const user = users[0];
+                    userId = user.id;
+                    log(`用户已存在 (ID: ${userId.slice(0,6)}...)`);
+                    
+                    const updates = {
+                        balance_g: 99999,
+                        is_early_adopter: true
+                    };
+                    
+                    if (!user.referral_code) {
+                        updates.referral_code = `ISLAND_${TARGET_PHONE.slice(-4)}`;
+                        log(`生成邀请码: ${updates.referral_code}`);
+                    }
+
+                    log("正在更新权限和余额...");
+                    const { error: updateError } = await supabase
+                        .from('app_users')
+                        .update(updates)
+                        .eq('id', userId);
+
+                    if (updateError) throw updateError;
+                    log("✅ 更新成功！");
+
+                } else {
+                    log("用户不存在，正在创建新岛民...");
+                    const newCode = `ISLAND_${TARGET_PHONE.slice(-4)}`;
+                    const { data: newUser, error: insertError } = await supabase
+                        .from('app_users')
+                        .insert([{
+                            phone_number: TARGET_PHONE,
+                            balance_g: 99999,
+                            is_early_adopter: true,
+                            referral_code: newCode
+                        }])
+                        .select();
+
+                    if (insertError) throw insertError;
+                    log(`✅ 创建成功！邀请码: ${newCode}`);
+                }
+
+                log("🎉 授权完成！您现在是第一位岛民。");
+                btn.innerText = "完成";
+                
+            } catch (err) {
+                console.error(err);
+                log(`❌ 失败: ${err.message}`);
+                btn.disabled = false;
+                btn.innerText = "重试";
+            }
+        }
+    </script>
+</body>
+</html>

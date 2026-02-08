@@ -1,6 +1,6 @@
-global_input_paradigm: bagua_transit
-bagua_enabled: true
-bagua_representation: binary_trigrams
-system_version: 2.0.0
-last_update: "2026-01-10"
-broadcast_channel: "D:/WebVersion1/broadcast/"
+system_role: cognitive_hub
+version: 2.1.0
+last_updated: 2026-02-04
+modules:
+  - name: NexusCore
+    status: active

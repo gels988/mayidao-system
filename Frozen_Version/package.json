@@ -1,0 +1,22 @@
+{
+  "name": "webversion1",
+  "version": "1.0.0",
+  "description": "### 🌐 Project Overview This project is a personal experimental sandbox for researching the **142857 numerical structure**. It is designed to record, display, and observe the researcher's understanding of the 142/857 digital cycles and their self-coherence properties. All system outputs are **visualizations of the research process** and do not constitute any conclusions, suggestions, or real-world directives.",
+  "main": "server.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.91.0",
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3"
+  }
+}

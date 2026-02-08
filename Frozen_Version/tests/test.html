@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>MAYIJU System - Automated Test Suite</title>
+    <style>
+        body { background: #1a1a1a; color: #fff; font-family: monospace; padding: 20px; }
+        .test-suite { margin-bottom: 20px; border: 1px solid #333; padding: 10px; background: #222; }
+        .test-suite h2 { margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        .test-case { margin: 5px 0; padding: 5px; border-left: 3px solid #555; }
+        .pass { border-left-color: #0f0; color: #cfc; }
+        .fail { border-left-color: #f00; color: #fcc; }
+        .summary { font-size: 1.2em; font-weight: bold; margin-top: 20px; padding: 10px; border-top: 2px solid #fff; }
+        .btn-run { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; font-size: 16px; }
+        .btn-run:hover { background: #0056b3; }
+        #log-output { height: 200px; overflow-y: scroll; background: #000; border: 1px solid #444; padding: 10px; margin-top: 10px; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ MAYIJU System - 自动化验证终端</h1>
+    <button class="btn-run" onclick="runAllTests()">▶ 运行全量测试 (Run All Tests)</button>
+    <div id="test-results"></div>
+    <div id="summary" class="summary"></div>
+    
+    <h3>System Log:</h3>
+    <div id="log-output"></div>
+
+    <!-- Mocks for Dependencies -->
+    <script>
+        // Mock minimal DOM elements required by JS files
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="hidden-mocks" style="display:none;">
+                <div id="accuracy-display"></div>
+                <div id="stat-accuracy"></div>
+                <div id="stat-econ"></div>
+                <div id="stat-res-detail"></div>
+                <div id="stat-sci"></div>
+                <div id="stat-resonance"></div>
+                <div id="stat-he9"></div>
+                <div id="stat-phase-he9"></div>
+                <div id="stat-cycle"></div>
+                <div id="logic-status"></div>
+                <div id="prediction-circle"></div>
+                <div id="prediction-note"></div>
+                <div id="prediction-strategy"></div>
+                <div id="high-odds-display"></div>
+                <input id="input-player" value="">
+                <input id="input-banker" value="">
+                <div id="g-coin-display"></div>
+                <div id="user-id-display"></div>
+            </div>
+        `);
+        
+        // Mock MAYIJU_STATE if missing
+        window.MAYIJU_STATE = {
+            update: function(k, v) { console.log(`[STATE] ${k} -> ${v}`); },
+            subscribe: function(k, cb) { }
+        };
+    </script>
+
+    <!-- Core System Files (Order Matters) -->
+    <script src="../js/utils.js"></script>
+    <script src="../js/state_hub.js"></script>
+    <script src="../js/core_engine.js"></script>
+    <script src="../js/encrypted_logic.js"></script>
+    <script src="../js/dynamics_engine.js"></script>
+    <script src="../js/bagua_auditor.js"></script>
+    <script src="../js/ui_controller.js"></script>
+    
+    <!-- Test Runner -->
+    <script src="test_runner.js"></script>
+</body>
+</html>

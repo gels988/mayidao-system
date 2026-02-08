@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>142857 数字结构研究沙盒</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <script>
+        if (!localStorage.getItem("registered")) {
+            window.location.href = "register.html";
+        }
+    </script>
+    <style>
+        /* New Styles for Phase 3 */
+        .pattern-tag {
+            background-color: #e91e63;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 5px;
+            display: inline-block;
+        }
+        .accuracy-box {
+            background: #2a2a2a;
+            padding: 5px 10px;
+            border-radius: 15px;
+            border: 1px solid #444;
+            font-size: 14px;
+            color: #4caf50;
+        }
+        .active-patterns {
+            margin-top: 10px;
+            border-top: 1px dashed #444;
+            padding-top: 5px;
+        }
+
+        /* Visual Grading Effects (New) */
+        .player-solid {
+            background-color: #007bff !important;
+            box-shadow: 0 0 15px #007bff;
+            border: none !important;
+        }
+        .banker-solid {
+            background-color: #dc3545 !important;
+            box-shadow: 0 0 15px #dc3545;
+            border: none !important;
+        }
+        .neutral-evolving {
+            box-shadow: 0 0 10px #28a745;
+            animation: breathe 2s infinite;
+        }
+        .glow-blue {
+            box-shadow: 0 0 30px 10px rgba(0, 102, 255, 0.8) !important;
+            animation: glow-pulse-blue 2s infinite ease-in-out;
+        }
+        .glow-red {
+            box-shadow: 0 0 30px 10px rgba(255, 0, 0, 0.8) !important;
+            animation: glow-pulse-red 2s infinite ease-in-out;
+        }
+
+        /* 呼吸动画 */
+        @keyframes breathe {
+            0% { box-shadow: 0 0 5px #28a745; }
+            50% { box-shadow: 0 0 15px #28a745; }
+            100% { box-shadow: 0 0 5px #28a745; }
+        }
+        @keyframes glow-pulse-blue {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px 5px rgba(0, 102, 255, 0.6); }
+            50% { transform: scale(1.05); box-shadow: 0 0 40px 15px rgba(0, 102, 255, 0.9); }
+        }
+        @keyframes glow-pulse-red {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px 5px rgba(255, 0, 0, 0.6); }
+            50% { transform: scale(1.05); box-shadow: 0 0 40px 15px rgba(255, 0, 0, 0.9); }
+        }
+        
+        /* High Confidence Pulse */
+        .high-confidence-pulse {
+            animation: confidence-pulse 1s infinite alternate;
+        }
+        
+        /* [USER REQUEST] "跟多顺势" Style: Red Neon Text on Blue Background */
+        .trend-fluorescent {
+            background-color: #0000CC !important; /* Blue Background */
+            color: #FF0033 !important; /* Red Neon Text */
+            text-shadow: 0 0 5px #FF0000, 0 0 10px #FF0000, 0 0 20px #FF0000 !important;
+            border: 2px solid #0000FF;
+            box-shadow: 0 0 15px #0000FF inset;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        @keyframes confidence-pulse {
+            0% { opacity: 0.8; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.1); }
+        }
+
+        /* Stats Panel */
+        #statistics-panel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            background: #f1f1f1;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #333;
+        }
+        .stat-item {
+            display: flex;
+            align-items: center;
+            margin: 2px 5px;
+        }
+        .stat-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            margin-right: 4px;
+        }
+        .stat-blue { background: #007bff; }
+        .stat-red { background: #dc3545; }
+        .stat-green { background: #28a745; }
+
+        .dot.blue-pair {
+            background-color: #007bff;
+            top: 2px;
+            right: 2px; /* Standard: Blue dot on bottom-right? Prompt says: "Blue Repeated: Blue circle bottom-right" */
+            bottom: 2px; 
+            right: 2px;
+            top: auto;
+        }
+        
+        .dot.red-pair {
+            background-color: #dc3545;
+            top: 2px;
+            left: 2px; /* Prompt: "红重复：在红色圆圈左上角加一个 🔴 小红点。" */
+        }
+
+        /* Tie Slash */
+        .slash {
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background-color: #28a745; /* Green */
+            transform: rotate(-45deg);
+            top: 0;
+            left: 50%;
+            margin-left: -1px;
+        }
+
+        /* Crown */
+        .crown-icon {
+            font-size: 12px;
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            z-index: 15;
+        }
+        
+        /* Prediction Panel Styling */
+        #prediction-panel {
+            background: #333;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        /* --- History & Bagua Panel (New) --- */
+        #history-panel {
+            display: flex;
+            justify-content: space-between;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 5px;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+
+        .history-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 40px;
+            margin: 0 2px;
+            border-right: 1px dashed #eee;
+        }
+        .history-col:last-child { border-right: none; }
+
+        .hist-score {
+            font-size: 10px;
+            color: #555;
+            margin-bottom: 4px;
+            font-family: monospace;
+        }
+
+        .hist-bagua {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px; /* Square-ish or circle? User said "number" */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            position: relative;
+        }
+
+        /* Bagua Text Colors */
+        .bagua-blue { color: #007bff; } /* 1, 2, 3, 5 */
+        .bagua-red { color: #dc3545; }  /* 4, 6, 7, 8 */
+
+        /* Slashes */
+        .slash-overlay {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            left: 0;
+            transform: rotate(-45deg);
+        }
+        .slash-green { background-color: #28a745; height: 3px; }
+        .slash-red { background-color: #dc3545; height: 3px; }
+        
+        .pred-visual {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-bottom: 5px;
+            box-shadow: none;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+        }
+        .pred-visual.player { background-color: #007bff; border: 3px solid #004a99; }
+        .pred-visual.banker { background-color: #dc3545; border: 3px solid #8b1a2b; }
+        .pred-visual.neutral { background-color: transparent; border: 3px solid #28a745; }
+        
+        /* Visual Grading Effects */
+        .player-solid {
+            background-color: #007bff !important;
+            box-shadow: 0 0 15px #007bff;
+            border: none !important;
+        }
+        .banker-solid {
+            background-color: #dc3545 !important;
+            box-shadow: 0 0 15px #dc3545;
+            border: none !important;
+        }
+        .neutral-evolving {
+            box-shadow: 0 0 10px #28a745;
+            animation: breathe 2s infinite;
+        }
+        .glow-blue {
+            box-shadow: 0 0 12px #007bff;
+            animation: breathe-blue 2s infinite;
+        }
+        .glow-red {
+            box-shadow: 0 0 12px #dc3545;
+            animation: breathe-red 2s infinite;
+        }
+
+        @keyframes breathe {
+            0% { box-shadow: 0 0 5px #28a745; }
+            50% { box-shadow: 0 0 15px #28a745; }
+            100% { box-shadow: 0 0 5px #28a745; }
+        }
+        @keyframes breathe-blue {
+            0% { box-shadow: 0 0 5px #007bff; }
+            50% { box-shadow: 0 0 15px #007bff; }
+            100% { box-shadow: 0 0 5px #007bff; }
+        }
+        @keyframes breathe-red {
+            0% { box-shadow: 0 0 5px #dc3545; }
+            50% { box-shadow: 0 0 15px #dc3545; }
+            100% { box-shadow: 0 0 5px #dc3545; }
+        }
+        
+        .confidence-bar {
+            height: 6px;
+            background: #555;
+            border-radius: 3px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+        .confidence-fill {
+            height: 100%;
+            background: #007bff;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Login Modal -->
+        <div id="login-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
+            <div style="background:#222; padding:20px; border-radius:10px; text-align:center; color:#fff; width:80%; max-width:300px; border:1px solid #444;">
+                <h3>🔐 身份验证</h3>
+                <p style="font-size:12px; color:#aaa; margin-bottom:15px;">请输入手机号以同步云端燃料 (G)</p>
+                <input type="tel" id="login-phone" placeholder="例如: 13800000000" style="width:90%; padding:10px; margin-bottom:15px; border-radius:5px; border:1px solid #555; background:#333; color:#fff; text-align:center;">
+                <button id="btn-login-confirm" style="width:100%; padding:10px; background:#28a745; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">立即进入</button>
+            </div>
+        </div>
+
+        <!-- Dashboard Screen (Visible by default) -->
+        <div id="dashboard-screen">
+            <div class="header">
+                <div>
+                    <span id="user-id-display" style="display:block; font-size:12px; color:#888;">未登录用户</span>
+                    <span class="coin-badge">GAS：<span id="g-coin-display">--</span></span>
+                    <span style="font-size:10px; color:#aaa; margin-left:4px;">(每局消耗 1 GAS)</span>
+                </div>
+                <div class="accuracy-box">
+                    熵分析准确率: <span id="accuracy-display">0.0% (0/0)</span>
+                </div>
+                <button id="btn-logout" class="small-btn">退出</button>
+            </div>
+
+            <div id="status-panel">跟多顺势，有时则有，多时则多</div>
+            <div id="heartbeat-indicator" style="width:8px; height:8px; background-color:#333; border-radius:50%; margin: 5px auto; transition: background-color 0.5s;" title="系统心跳"></div>
+            <!-- Intelligent Status Area (Phase 3) -->
+            <div id="smart-status" style="text-align:center; font-size:12px; color:#ffd700; margin-bottom:10px; min-height:16px;">
+                <span id="active-pattern-display">正在扫描...</span>
+            </div>
+
+            <!-- Desktop Input Area (High Precision) -->
+            <div id="desktop-input" style="text-align: center; margin: 10px 0;">
+                <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 10px;">
+                    <input type="number" id="p1" placeholder="闲1" style="width: 50px; padding: 5px; text-align: center;">
+                    <input type="number" id="p2" placeholder="闲2" style="width: 50px; padding: 5px; text-align: center;">
+                    <span style="font-weight: bold; padding-top: 5px;">VS</span>
+                    <input type="number" id="b1" placeholder="庄1" style="width: 50px; padding: 5px; text-align: center;">
+                    <input type="number" id="b2" placeholder="庄2" style="width: 50px; padding: 5px; text-align: center;">
+                </div>
+                <button onclick="submitDesktopInput()" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">提交高精度数据</button>
+            </div>
+            
+            <script>
+            function submitDesktopInput() {
+                try {
+                    const p1 = parseInt(document.getElementById('p1').value) || 0;
+                    const p2 = parseInt(document.getElementById('p2').value) || 0;
+                    const b1 = parseInt(document.getElementById('b1').value) || 0;
+                    const b2 = parseInt(document.getElementById('b2').value) || 0;
+                    
+                    if (window.ui && window.ui.handleDesktopInput) {
+                        window.ui.handleDesktopInput(p1, p2, b1, b2);
+                        // Clear inputs
+                        document.getElementById('p1').value = '';
+                        document.getElementById('p2').value = '';
+                        document.getElementById('b1').value = '';
+                        document.getElementById('b2').value = '';
+                    } else {
+                        alert("系统正在初始化，请稍候...");
+                    }
+                } catch (e) {
+                    if (window.AHS_onError) window.AHS_onError(e);
+                    console.error(e);
+                }
+            }
+
+            // AHS Node-4 Restoration Function
+            window.renderDesktopUI = function() {
+                console.log("[AHS] Restoring Desktop UI...");
+                const dashboard = document.getElementById('dashboard-screen');
+                if (!dashboard) return;
+                
+                // Check if desktop-input exists
+                if (document.getElementById('desktop-input')) return;
+                
+                // Recreate it
+                const div = document.createElement('div');
+                div.id = 'desktop-input';
+                div.style.textAlign = 'center';
+                div.style.margin = '10px 0';
+                div.innerHTML = `
+                    <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 10px;">
+                        <input type="number" id="p1" placeholder="闲1" style="width: 50px; padding: 5px; text-align: center;">
+                        <input type="number" id="p2" placeholder="闲2" style="width: 50px; padding: 5px; text-align: center;">
+                        <span style="font-weight: bold; padding-top: 5px;">VS</span>
+                        <input type="number" id="b1" placeholder="庄1" style="width: 50px; padding: 5px; text-align: center;">
+                        <input type="number" id="b2" placeholder="庄2" style="width: 50px; padding: 5px; text-align: center;">
+                    </div>
+                    <button onclick="submitDesktopInput()" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">提交高精度数据</button>
+                `;
+                
+                // Insert after smart-status
+                const smartStatus = document.getElementById('smart-status');
+                if (smartStatus && smartStatus.nextSibling) {
+                    dashboard.insertBefore(div, smartStatus.nextSibling);
+                } else {
+                    dashboard.appendChild(div);
+                }
+            };
+            </script>
+            <script src="js/ahs_daemon.js"></script>
+
+
+            <!-- History Records (Molecular/Denominator Sequence) -->
+            <div id="recent-history" style="overflow-x:auto; white-space:nowrap; padding:5px; background:#222; margin-top:5px; border-radius:4px; min-height:30px; display:flex; align-items:center;">
+                <span style="color:#aaa; font-size:12px; margin-right:5px;">历史输入:</span>
+                <div id="history-scroll" style="display:flex;"></div>
+            </div>
+
+            <!-- History & Bagua Panel -->
+            <div id="history-panel">
+                <!-- Columns injected by JS -->
+                <div style="width:100%; text-align:center; color:#aaa; font-size:12px;">等待数据 (至少 3 局)...</div>
+            </div>
+
+            <!-- Results -->
+            <div id="prediction-panel" style="display: flex; justify-content: space-around; align-items: flex-start; gap: 10px;">
+                <!-- Left: Structure Bias -->
+                <div id="prediction-container-bias" style="display:flex; flex-direction:column; align-items:center; gap:10px; flex: 1; border-right: 1px dashed #555;">
+                     <div style="font-size:14px; color:#aaa;">下一局结构偏向</div>
+                     <div id="prediction-circle" class="pred-visual" style="width:60px; height:60px; border-width:4px;"></div>
+                     <div id="prediction-strategy" style="font-size:12px; color:#666;">Dynamics [SCI: INIT]</div>
+                </div>
+
+                <!-- Right: High Odds -->
+                <div id="prediction-container-high-odds" style="display:flex; flex-direction:column; align-items:center; gap:10px; flex: 1;">
+                     <div style="font-size:14px; color:#aaa;">高倍信号区</div>
+                     <!-- New High Odds Display Element -->
+                     <div id="high-odds-display" style="width:60px; height:60px; border: 2px solid #555; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-weight: bold; font-size: 14px;">
+                        等待
+                     </div>
+                     <div id="prediction-note" style="font-size:14px; font-weight:bold; color:#fff; min-height: 20px;">-</div>
+                </div>
+            </div>
+
+            <!-- Molecular/Denominator Panel (New) -->
+            <div id="mol-denom-panel" style="display:none;">
+                <div class="md-box">
+                    <div class="md-label">蓝点数 (P)</div>
+                    <div class="md-value" id="md-p-val">-</div>
+                </div>
+                <div style="font-size:20px; color:#555;">|</div>
+                <div class="md-box">
+                    <div class="md-label">红点数 (B)</div>
+                    <div class="md-value" id="md-b-val">-</div>
+                </div>
+            </div>
+            
+            <!-- Matrix -->
+            <div id="game-matrix"></div>
+
+            <!-- Statistics Panel -->
+            <div id="statistics-panel">
+
+                <!-- 临时简化：只保留熵分析准确率与红蓝圆圈相关
+                <div class="stat-item"><div class="stat-dot stat-blue"></div><span id="stat-blue-total">0</span></div>
+                <div class="stat-item"><div class="stat-dot stat-red"></div><span id="stat-red-total">0</span></div>
+                <div class="stat-item"><div class="stat-dot stat-green"></div><span id="stat-tie-total">0</span></div>
+                <div class="stat-item"><span style="color:#007bff; margin-right:4px;">BP</span><span id="stat-blue-pair">0</span></div>
+                <div class="stat-item"><span style="color:#dc3545; margin-right:4px;">RP</span><span id="stat-red-pair">0</span></div>
+                <div class="stat-item"><span style="color:#ffd700; margin-right:4px;">熊猫</span><span id="stat-panda-acc">0.00%</span></div>
+                <div class="stat-item"><span style="color:#ffd700; margin-right:4px;">对子</span><span id="stat-dui-acc">0.00%</span></div>
+                <div class="stat-item"><span style="color:#ffd700; margin-right:4px;">趋势</span><span id="stat-trend-acc">0.00%</span></div>
+                -->
+                <div class="stat-item" style="width: 100%; justify-content: center;">
+                    <span style="color:#aaa;">熵分析准确率:</span>
+                    <span id="entropy-accuracy" style="color:#fff; margin-left:5px; font-weight:bold;">0.00% (0/0)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compliance Modal -->
+        <div id="compliance-modal" class="modal" style="display:none; z-index: 9999;">
+            <div class="modal-content" style="text-align: left; max-width: 350px;">
+                <h3 style="text-align: center; color: #fff;">欢迎进入研究沙盒</h3>
+                <p style="font-size: 13px; color: #ddd; line-height: 1.6;">这是一个用于观察数字结构与自洽循环的个人研究系统。</p>
+                <p style="font-size: 13px; color: #ddd; line-height: 1.6;">屏幕上的蓝、红、绿圆圈，并不是答案，也不是建议，而是研究模型呈现出的结构偏向：</p>
+                <ul style="font-size: 13px; color: #ccc; padding-left: 20px; margin: 10px 0;">
+                    <li><strong style="color: #007bff;">蓝</strong>：偏向 142 的结构模式</li>
+                    <li><strong style="color: #dc3545;">红</strong>：偏向 857 的结构模式</li>
+                    <li><strong style="color: #28a745;">绿</strong>：结构抵消或平衡观察阶段</li>
+                </ul>
+                <p style="font-size: 13px; color: #ddd; line-height: 1.6;">本系统不预测结果，不指导任何现实行为。仅用于理解随机现象中可能存在的结构秩序。</p>
+                <p style="text-align: center; margin-top: 15px; font-weight: bold; color: #fff;">请以观察者的心态使用本研究沙盒。</p>
+                <button class="close-btn" style="background: #28a745; margin-top: 15px;" onclick="document.getElementById('compliance-modal').style.display='none'; localStorage.setItem('compliance_agreed', 'true');">我已知晓，进入沙盒</button>
+            </div>
+        </div>
+
+        <!-- Recharge Modal -->
+        <div id="recharge-modal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <h3>⚡ 为研究之车补充燃料</h3>
+                <p style="font-size:12px; color:#aaa; margin-bottom:10px;">私人捐赠用于维持系统运行，自动兑换燃料分。</p>
+                <div class="recharge-options">
+                    <button onclick="window.ui.handleDonation(100)">捐赠 100 U (获得 200 燃料分)</button>
+                    <button onclick="window.ui.handleDonation(200)">捐赠 200 U (获得 440 燃料分)</button>
+                    <button onclick="window.ui.handleDonation(2000)">捐赠 2,000 U (获得 5200 燃料分)</button>
+                    <button onclick="window.ui.handleDonation(5000)">捐赠 5,000 U (获得 14000 燃料分)</button>
+                    <button onclick="window.ui.handleCustomDonation()" style="background:#444;">自定义捐赠金额</button>
+                </div>
+                <div style="margin-top:10px; font-size:12px; color:#ccc; text-align:left;">
+                    <div style="margin-bottom:4px;">捐赠说明：</div>
+                    <div id="recharge-request-contact" style="margin-bottom:4px; font-size:11px; color:#888;">当前客户：未登录</div>
+                    <p style="font-size:10px; color:#666;">所有捐赠均为自愿行为，不承诺任何投资回报。</p>
+                </div>
+                <div id="recharge-preview" style="margin-top:10px; font-size:12px; color:#ffd700;"></div>
+                <button class="close-btn" onclick="document.getElementById('recharge-modal').style.display='none'">关闭</button>
+            </div>
+        </div>
+
+    </div>
+
+    <style>
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #222; padding: 20px; border-radius: 10px;
+            text-align: center; width: 80%; max-width: 300px;
+            border: 1px solid #444; color: white;
+        }
+        .recharge-options button {
+            display: block; width: 100%; margin: 10px 0;
+            padding: 10px; background: #007bff; border: none; color: white;
+            border-radius: 5px; cursor: pointer;
+        }
+        .recharge-options button:hover { background: #0056b3; }
+        .close-btn { background: #555; margin-top: 10px; width: 100%; padding: 8px; border:none; color:white; border-radius:5px;}
+    </style>
+
+    <script src="js/utils.js"></script>
+    <script type="module" src="js/trial.js"></script>
+    <!-- Tracker & Feedback (New) -->
+    <script src="js/state_hub.js"></script>
+    <script type="module" src="js/tracker.js"></script>
+    <script type="module" src="js/feedback_system.js"></script>
+    
+    <!-- AuthBridge: Switched to Cloud Version for Production -->
+    <script type="module" src="js/auth_bridge.js?v=s_fix_final_v2"></script>
+    
+    <script src="js/bagua_transcoder.js?v=1"></script> <!-- Phase 3 Core -->
+    <script src="js/encrypted_logic.js?v=s_fix_final_v3"></script> <!-- High Odds Logic -->
+    <script src="js/core_engine.js?v=1"></script>
+    <script src="js/dynamics_engine.js?v=1"></script> <!-- Phase 3 -->
+    <script src="js/bagua_auditor.js?v=1"></script> <!-- Logic Audit -->
+    <script src="js/cloud_sync.js?v=1"></script>
+    <script type="module" src="js/tracker.js"></script>
+    <script src="js/ui_controller.js?v=s_fix_final_v2"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            try {
+                navigator.serviceWorker.register('serviceWorker.js').catch(err => {
+                    console.warn('SW Register failed:', err);
+                });
+            } catch (e) {
+                console.warn('SW Init failed:', e);
+            }
+        }
+
+        // Initialize System with Robust Error Handling
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("🚀 System Bootstrapping...");
+            try {
+                // 1. Init Engine
+                const engine = new G2Engine();
+                window.engine = engine;
+                console.log("✅ Engine Initialized");
+
+                // 2. Init Auth (with fallback)
+                let auth;
+                try {
+                    auth = new AuthBridge();
+                    window.Economy = auth; // Ensure global access
+                    console.log("✅ AuthBridge Initialized");
+                } catch (e) {
+                    console.error("⚠️ AuthBridge Failed:", e);
+                    // Fallback dummy auth to allow UI to work
+                    auth = {
+                        user: { id: 'offline', balanceG: 0 },
+                        init: async () => {},
+                        getAccountStatus: async () => ({ balance: 0, vip_level: 0 }),
+                        deductGCoins: async () => ({ success: true }), // Allow offline play
+                        recharge: async () => ({ success: false, error: "Offline" })
+                    };
+                }
+
+                // 3. Init UI
+                const ui = new UIController(engine, auth);
+                ui.init();
+                window.ui = ui;
+                console.log("✅ UI Controller Initialized");
+
+                // 4. Force Bind Logout (Safety Net)
+                const logoutBtn = document.getElementById('btn-logout');
+                if (logoutBtn) {
+                    // Remove old listeners by cloning
+                    const newBtn = logoutBtn.cloneNode(true);
+                    logoutBtn.parentNode.replaceChild(newBtn, logoutBtn);
+                    newBtn.addEventListener('click', () => {
+                        console.log("🔘 Logout Clicked (Force Bind)");
+                        if (window.ui) window.ui.handleExit();
+                        else window.location.reload();
+                    });
+                }
+                
+                // 5. Force Bind Predict (Safety Net)
+                const predictBtn = document.getElementById('btn-predict');
+                if (predictBtn) {
+                     // Don't clone here to keep original listeners if they worked, just add logging
+                     predictBtn.addEventListener('click', () => console.log("🔘 Predict Clicked"));
+                }
+
+            } catch (criticalError) {
+                console.error("🔥 CRITICAL SYSTEM FAILURE:", criticalError);
+                alert("系统初始化失败，请检查控制台日志。\n" + criticalError.message);
+            }
+        });
+    </script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        (function () {
+            const SB_URL = 'https://xhfyfkqfykkbbnlwghem.supabase.co';
+            const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZnlma3FmeWtrYmJubHdnaGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0ODA4ODEsImV4cCI6MjA4NDA1Njg4MX0.SVUTAVSWi-skCq3N3KioTetV40IWt0vNkewA0WqEfcg';
+            if (!window.supabase || !SB_URL || !SB_KEY) {
+                return;
+            }
+            const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+            const getPhone = function () {
+                return localStorage.getItem('user_phone') || localStorage.getItem('phone') || '';
+            };
+
+            let lastRule = null;
+
+            async function fetchRule() {
+                if (lastRule && Date.now() - lastRule.ts < 30000) {
+                    return lastRule.data;
+                }
+                const { data } = await sb
+                    .from('billing_rule')
+                    .select('real_cost, subsidy')
+                    .eq('id', 1)
+                    .single();
+                lastRule = { data: data || null, ts: Date.now() };
+                return data || null;
+            }
+
+            async function syncBalance() {
+                const p = getPhone();
+                if (!p) return null;
+                const { data } = await sb
+                    .from('app_users')
+                    .select('balance_g')
+                    .eq('phone_number', p)
+                    .maybeSingle();
+                const bal = data && typeof data.balance_g === 'number' ? data.balance_g : 0;
+                localStorage.setItem('cloud_balance', String(bal));
+                const el = document.getElementById('g-coin-display');
+                if (el) {
+                    el.innerText = Math.floor(bal).toLocaleString();
+                    el.style.display = '';
+                    el.style.visibility = 'visible';
+                }
+                if (window.ui && typeof window.ui.updateBalance === 'function') {
+                    window.ui.updateBalance(bal);
+                }
+                return bal;
+            }
+
+            (async function install() {
+                while (!window.ui || !window.ui.auth || typeof window.ui.auth.deductGCoins !== 'function') {
+                    await new Promise(function (resolve) { setTimeout(resolve, 200); });
+                }
+                const nativeDeduct = window.ui.auth.deductGCoins.bind(window.ui.auth);
+                window.ui.auth.deductGCoins = async function (amount) {
+                    const p = getPhone();
+                    if (!p || !sb) {
+                        return nativeDeduct(amount);
+                    }
+
+                    const rule = await fetchRule();
+                    const real = rule && typeof rule.real_cost === 'number' ? rule.real_cost : amount;
+                    const subsidy = rule && typeof rule.subsidy === 'number' ? rule.subsidy : (amount - real);
+
+                    const { error: err1 } = await sb.rpc('deduct_g_gas', { p_phone: p, p_amount: real });
+                    if (err1) {
+                        return { success: false, error: 'DB deduct failed' };
+                    }
+
+                    if (subsidy > 0) {
+                        await sb.from('billing_subsidy').insert({
+                            phone: p,
+                            amount: subsidy,
+                            created_at: new Date().toISOString()
+                        });
+                    }
+
+                    const newBal = await syncBalance();
+                    return { success: true, new_balance: newBal };
+                };
+            })();
+
+            window.cloudPatch = {
+                pullBalance: syncBalance,
+                pushRecharge: async function (phone, amt) {
+                    await sb.from('billing_log').insert({
+                        phone: phone,
+                        type: 'recharge',
+                        amount: amt,
+                        created_at: new Date().toISOString()
+                    });
+                    return syncBalance();
+                }
+            };
+
+            document.addEventListener('DOMContentLoaded', function () {
+                syncBalance();
+                setInterval(syncBalance, 30000);
+            });
+        })();
+    </script>
+    <script>
+        // System Self-Check on Load
+        window.addEventListener('load', function() {
+            setTimeout(() => { // Wait for scripts to fully execute
+                console.log("🔍 [System Check] Initiating...");
+                
+                const checks = [
+                    { name: "EncryptedLogic", condition: !!window.EncryptedLogic },
+                    { name: "MultiModelVote", condition: !!(window.EncryptedLogic && window.EncryptedLogic.MultiModelVote) },
+                    { name: "UIController", condition: !!window.ui },
+                    { name: "BaguaAuditor", condition: !!window.baguaAuditor }
+                ];
+                
+                let allPass = true;
+                checks.forEach(c => {
+                    if (c.condition) {
+                        console.log(`✅ ${c.name}: OK`);
+                    } else {
+                        console.error(`❌ ${c.name}: MISSING`);
+                        allPass = false;
+                    }
+                });
+                
+                if (allPass) {
+                    console.log("✅ All System Checks Passed");
+                } else {
+                    console.error("⚠️ System Integrity Check Failed");
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>

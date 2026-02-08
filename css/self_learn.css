@@ -1,0 +1,17 @@
+.settings-btn.info { 
+   background: #00cc66; 
+   border-color: #00cc66; 
+   color: #000; 
+ } 
+ 
+ #selfLearnPanel h3 { 
+   color: #00cc66; 
+   margin: 0 0 15px 0; 
+   text-align: center; 
+ } 
+ 
+ #selfLearnInsights div { 
+   padding: 5px 0; 
+   color: #fff; 
+   font-size: 14px; 
+ }

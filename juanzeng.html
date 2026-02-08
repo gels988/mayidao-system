@@ -1,0 +1,893 @@
+<<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-CN">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⛽ 私人捐赠 - G-Gas充值系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/db_client.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            color: #e0e0e0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding-bottom: 40px;
+        }
+        
+        /* 警告横幅 - 强调无经济价值 */
+        .warning-banner {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            border: 2px solid #ff6b6b;
+            box-shadow: 0 4px 15px rgba(255, 75, 43, 0.4);
+            animation: pulse 2s infinite;
+            line-height: 1.6;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(255, 75, 43, 0.4); }
+            50% { box-shadow: 0 4px 25px rgba(255, 75, 43, 0.7); }
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 25px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            font-size: 26px;
+            color: #ffd700;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .header .subtitle {
+            font-size: 13px;
+            color: #a0a0a0;
+        }
+        
+        .close-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+        
+        .close-btn:hover {
+            background: rgba(255, 75, 75, 0.8);
+            transform: translateY(-2px);
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        
+        .card h2 {
+            font-size: 18px;
+            color: #ffd700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* GAS余额显示 */
+        .gas-display {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(255,215,0,0.05) 100%);
+            border-radius: 12px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+        
+        .gas-label {
+            font-size: 14px;
+            color: #a0a0a0;
+            margin-bottom: 10px;
+        }
+        
+        .gas-amount {
+            font-size: 48px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 2px 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        .gas-unit {
+            font-size: 16px;
+            color: #ffd700;
+            opacity: 0.8;
+        }
+        
+        /* 钱包区域 */
+        .wallet-section {
+            text-align: center;
+        }
+        
+        .qr-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .qr-container img {
+            width: 220px;
+            height: 220px;
+            display: block;
+        }
+        
+        .wallet-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .wallet-address {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #ffd700;
+            word-break: break-all;
+            margin-bottom: 10px;
+            border: 1px dashed rgba(255,215,0,0.3);
+        }
+        
+        .copy-btn {
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+        }
+        
+        .network-tag {
+            display: inline-block;
+            background: #627eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        /* 奖励政策表格 */
+        .reward-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .reward-table th {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+            padding: 12px;
+            text-align: left;
+            font-size: 13px;
+        }
+        
+        .reward-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 14px;
+        }
+        
+        .reward-table tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .tier-range {
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .tier-multiplier {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .tier-highlight {
+            background: rgba(233, 69, 96, 0.15) !important;
+            border-left: 4px solid #e94560;
+        }
+        
+        .tier-highlight .tier-range {
+            color: #ffd700;
+        }
+        
+        .recommended-badge {
+            background: #e94560;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        
+        /* 捐赠操作区 */
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            color: #a0a0a0;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+        }
+        
+        .estimate-box {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+            border: 1px solid rgba(255,215,0,0.2);
+        }
+        
+        .estimate-label {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        
+        .estimate-value {
+            font-size: 36px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+        }
+        
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,215,0,0.4);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .note {
+            font-size: 11px;
+            color: #666;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+        
+        /* 记录列表 */
+        .record-item {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 3px solid #627eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .record-amount { font-weight: bold; color: #ffd700; }
+        .record-gas { color: #00cc66; font-weight: bold; }
+        .record-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .status-pending { background: #ff9800; color: #000; }
+        .status-completed { background: #00cc66; color: #fff; }
+        .status-rejected { background: #ff4444; color: #fff; }
+        
+        .record-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        /* 通知 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(0,0,0,0.9);
+            color: #fff;
+            padding: 15px 30px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,215,0,0.3);
+            z-index: 9999;
+            transition: transform 0.3s;
+            text-align: center;
+        }
+        
+        .notification.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        .notification.success { border-color: #00cc66; color: #00cc66; }
+        .notification.error { border-color: #ff4444; color: #ff4444; }
+        
+        .hidden { display: none; }
+        
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            .qr-container img { width: 180px; height: 180px; }
+        }
+    </style>
+</head>
+<body>
+    <button class="close-btn" onclick="closeWindow()">✕ 关闭</button>
+    
+    <div class="container">
+        <!-- 重要警告 -->
+        <div class="warning-banner">
+            ⚠️ <strong>重要声明</strong> ⚠️<br>
+            "G-Gas" 仅为本预测系统内部燃烧的虚拟汽油单位，<br>
+            <strong>无任何经济价值、不可交易、不可提现</strong>，<br>
+            仅用于激活和使用预测服务。
+        </div>
+        
+        <!-- 头部 -->
+        <div class="header">
+            <h1>⛽ 私人捐赠系统</h1>
+            <div class="subtitle">为研究贡献燃料 · 获取G-Gas汽油</div>
+            <div style="margin-top: 10px; font-size: 12px; color: #888;">
+                当前用户: <span id="user-email">加载中...</span>
+            </div>
+        </div>
+        
+        <!-- GAS余额 -->
+        <div class="card">
+            <h2>💰 我的 G-Gas 余额</h2>
+            <div class="gas-display" id="balance-card">
+                <div class="gas-label">当前可用汽油</div>
+                <div class="gas-amount">
+                    <span id="gas-balance">0</span>
+                    <span class="gas-unit">G-Gas</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 收款信息 -->
+        <div class="card">
+            <h2>📱 捐赠地址 (仅支持 Ethereum 网络)</h2>
+            <div class="wallet-section">
+                <div class="wallet-label">扫描二维码或复制地址进行捐赠</div>
+                
+                <div class="qr-container">
+                    <!-- 重要：请将您的 donation_qr.jpg 转为 Base64 替换下面的 src -->
+                    <img src="donation_qr.jpg" 
+                         alt="捐赠二维码" 
+                         id="qr-image"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div style="width:220px;height:220px;background:#f0f0f0;display:none;align-items:center;justify-content:center;color:#666;font-size:12px;text-align:center;padding:20px;">
+                        [请插入二维码图片]<br>
+                        地址：<br>0xf3ce...7bd0f80
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 10px;">
+                    <span class="network-tag">🔷 Ethereum USDT</span>
+                </div>
+                
+                <div class="wallet-address" id="wallet-address">
+                    0xf3ce1bb32dcfb11e81c69efa0cc6f5ae7bd0f80
+                </div>
+                
+                <button class="copy-btn" onclick="copyAddress()">
+                    📋 复制钱包地址
+                </button>
+                
+                <div class="note" style="margin-top: 15px; color: #ff6b6b; text-align: center;">
+                    ⚠️ 请务必使用支持 Ethereum (ERC-20) 网络的钱包转账<br>
+                    转错网络将无法找回资产
+                </div>
+            </div>
+        </div>
+        
+        <!-- 奖励政策 -->
+        <div class="card">
+            <h2>🎁 捐赠奖励比例</h2>
+            <table class="reward-table">
+                <thead>
+                    <tr>
+                        <th>捐赠金额 (USDT)</th>
+                        <th>奖励倍数</th>
+                        <th>获得G-Gas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="tier-range">1 - 199 U</td>
+                        <td class="tier-multiplier">2.2x</td>
+                        <td>每U得2.2 Gas</td>
+                    </tr>
+                    <tr class="tier-highlight">
+                        <td class="tier-range">
+                            200 - 1,999 U
+                            <span class="recommended-badge">推荐</span>
+                        </td>
+                        <td class="tier-multiplier">2.6x</td>
+                        <td>每U得2.6 Gas</td>
+                    </tr>
+                    <tr>
+                        <td class="tier-range">2,000 - 4,999 U</td>
+                        <td class="tier-multiplier">2.8x</td>
+                        <td>每U得2.8 Gas</td>
+                    </tr>
+                    <tr class="tier-highlight">
+                        <td class="tier-range">
+                            5,000 U 以上
+                            <span class="recommended-badge">超值</span>
+                        </td>
+                        <td class="tier-multiplier">3.0x</td>
+                        <td>每U得3.0 Gas</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="margin-top: 15px; font-size: 12px; color: #888; text-align: center;">
+                💡 重点奖励200-2000U和5000U以上档次，G-Gas自动叠加至预测主界面
+            </div>
+        </div>
+        
+        <!-- 提交捐赠 -->
+        <div class="card">
+            <h2>📝 提交捐赠凭证</h2>
+            <div class="input-group">
+                <label>捐赠金额 (USDT) *</label>
+                <input type="number" id="donation-amount" placeholder="请输入整数金额" min="1" step="1" oninput="calculateGas()">
+            </div>
+            
+            <div class="input-group">
+                <label>交易哈希 (TXID) *</label>
+                <input type="text" id="tx-hash" placeholder="0x..." style="font-family:monospace;">
+                <div class="note">请在转账完成后从钱包复制交易哈希用于核对</div>
+            </div>
+            
+            <div class="estimate-box">
+                <div class="estimate-label">预计获得</div>
+                <div class="estimate-value"><span id="estimated-gas">0</span> G-Gas</div>
+                <div style="font-size: 11px; color: #666; margin-top: 5px;">
+                    根据 <span id="current-tier" style="color:#ffd700;">--</span> 档计算
+                </div>
+            </div>
+            
+            <button class="submit-btn" onclick="submitDonation()" id="submit-btn">
+                ✓ 提交捐赠申请
+            </button>
+            
+            <div class="note" style="text-align: center; margin-top: 15px;">
+                提交后系统将审核到账情况，审核通过即发放G-Gas至您的账户<br>
+                可在下方查看历史记录
+            </div>
+        </div>
+        
+        <!-- 捐赠记录 -->
+        <div class="card" id="history-card" style="display: none;">
+            <h2>📋 我的捐赠记录</h2>
+            <div id="records-list">
+                <!-- 动态填充 -->
+            </div>
+        </div>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // ==================== 配置 ====================
+        // const SUPABASE_URL = '...'; // Removed hardcoded config
+        // const SUPABASE_KEY = '...';
+        // const { createClient } = supabase;
+        // const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Use shared instance from db_client.js (Supports Real & Mock)
+        const supabaseClient = window.supabaseInstance;
+        
+        // 固定配置
+        const FIXED_WALLET = '0xf3ce1bb32dcfb11e81c69efa0cc6f5ae7bd0f80';
+        
+        // 奖励档次配置（与数据库统一）
+        const REWARD_TIERS = [
+            { min: 0, max: 200, multiplier: 2.2, label: '普通档' },
+            { min: 200, max: 2000, multiplier: 2.6, label: '推荐档(200-2000U)' },
+            { min: 2000, max: 5000, multiplier: 2.8, label: '高级档' },
+            { min: 5000, max: Infinity, multiplier: 3.0, label: '超值档(5000U+)' }
+        ];
+        
+        let currentUser = null;
+        let currentBalance = 0;
+        
+        // ==================== 初始化与权限检查 ====================
+        async function init() {
+            try {
+                // 检查登录状态（同域共享session或URL传token）
+                await checkAuth();
+                
+                if (!currentUser) {
+                    showNotification('未登录 (游客模式)', 'warning');
+                    // setTimeout(() => closeWindow(), 2000); // Disable auto-close for better UX
+                    document.getElementById('user-email').textContent = "游客 (仅浏览)";
+                    const sBtn = document.getElementById('submit-btn');
+                    if(sBtn) {
+                        sBtn.disabled = true;
+                        sBtn.textContent = "请先登录";
+                    }
+                    return;
+                }
+                
+                document.getElementById('user-email').textContent = currentUser.email;
+                await loadBalance();
+                await loadHistory();
+                
+                // 订阅余额实时更新
+                subscribeBalance();
+                
+            } catch (e) {
+                console.error('初始化失败:', e);
+                showNotification('系统初始化失败', 'error');
+            }
+        }
+        
+        async function checkAuth() {
+            // 方案1: 检查当前session
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                return;
+            }
+            
+            // 方案2: URL参数（主系统传递）
+            const params = new URLSearchParams(window.location.search);
+            const accessToken = params.get('access_token');
+            if (accessToken) {
+                const { data: { user }, error } = await supabaseClient.auth.getUser(accessToken);
+                if (!error && user) {
+                    currentUser = user;
+                    await supabaseClient.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: params.get('refresh_token') || ''
+                    });
+                    return; // Added return
+                }
+            }
+
+            // 方案3 (新增): 本地缓存用户 (离线/Mock模式)
+            const localPhone = localStorage.getItem('mayiju_user_phone');
+            if (localPhone) {
+                // Try to get from DB (Mock or Real)
+                // Note: db_client.js maps 'app_users' queries if needed, but let's try 'users' or 'app_users'
+                // Real DB uses 'app_users', Mock DB uses 'users' but might map.
+                // Best to use 'app_users' as that's the Real DB standard, and ensure Mock handles it.
+                const { data, error } = await supabaseClient
+                    .from('app_users') 
+                    .select('*')
+                    .eq('phone_number', localPhone)
+                    .single();
+                    
+                if (data) {
+                    currentUser = { ...data, email: localPhone + '@mayiju.local', id: data.id };
+                    return;
+                }
+            }
+        }
+        
+        // ==================== 核心功能 ====================
+        
+        // 计算Gas奖励
+        function calculateGas() {
+            const amount = parseFloat(document.getElementById('donation-amount').value);
+            const display = document.getElementById('estimated-gas');
+            const tierDisplay = document.getElementById('current-tier');
+            
+            if (!amount || amount <= 0) {
+                display.textContent = '0';
+                tierDisplay.textContent = '--';
+                return 0;
+            }
+            
+            // 找到对应档次
+            let multiplier = 2.2;
+            let tierLabel = '普通档';
+            
+            for (const tier of REWARD_TIERS) {
+                if (amount >= tier.min && amount < tier.max) {
+                    multiplier = tier.multiplier;
+                    tierLabel = tier.label;
+                    break;
+                }
+            }
+            
+            const gas = Math.floor(amount * multiplier);
+            display.textContent = gas.toLocaleString();
+            tierDisplay.textContent = `${tierLabel} (${multiplier}x)`;
+            
+            return gas;
+        }
+        
+        // 提交捐赠申请
+        async function submitDonation() {
+            const amount = parseFloat(document.getElementById('donation-amount').value);
+            const txHash = document.getElementById('tx-hash').value.trim();
+            const btn = document.getElementById('submit-btn');
+            
+            // 校验
+            if (!amount || amount < 1) {
+                showNotification('请输入有效的捐赠金额', 'error');
+                return;
+            }
+            if (!txHash || txHash.length < 10) {
+                showNotification('请输入有效的交易哈希', 'error');
+                return;
+            }
+            if (!txHash.startsWith('0x')) {
+                showNotification('交易哈希应以0x开头', 'error');
+                return;
+            }
+            
+            const gasAmount = calculateGas();
+            
+            btn.disabled = true;
+            btn.textContent = '提交中...';
+            
+            try {
+                // 检查TXID是否已存在（防重复）
+                const { data: existing } = await supabaseClient
+                    .from('donations')
+                    .select('id')
+                    .eq('tx_hash', txHash)
+                    .maybeSingle();
+                
+                if (existing) {
+                    showNotification('该交易哈希已提交过', 'error');
+                    return;
+                }
+                
+                // 插入捐赠记录（待审核）
+                const { error } = await supabaseClient
+                    .from('donations')
+                    .insert({
+                        user_id: currentUser.id,
+                        amount_u: amount,
+                        gas_reward: gasAmount,
+                        tx_hash: txHash,
+                        to_wallet: FIXED_WALLET,
+                        status: 'pending',
+                        created_at: new Date().toISOString()
+                    });
+                
+                if (error) throw error;
+                
+                showNotification('✓ 捐赠申请已提交，审核通过后将自动到账', 'success');
+                
+                // 清空表单
+                document.getElementById('donation-amount').value = '';
+                document.getElementById('tx-hash').value = '';
+                calculateGas();
+                
+                // 刷新记录
+                await loadHistory();
+                
+            } catch (e) {
+                console.error(e);
+                showNotification('提交失败: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✓ 提交捐赠申请';
+            }
+        }
+        
+        // 加载当前余额（实时同步至预测主界面）
+        async function loadBalance() {
+            const { data, error } = await supabaseClient
+                .from('users')
+                .select('balance_g')
+                .eq('id', currentUser.id)
+                .single();
+            
+            if (!error && data) {
+                currentBalance = data.balance_g || 0;
+                document.getElementById('gas-balance').textContent = currentBalance.toLocaleString();
+                
+                // 如果有变化，通知 opener（主系统）
+                if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({ type: 'gas-updated', balance: currentBalance }, '*');
+                }
+            }
+        }
+        
+        // 实时订阅余额变更（Supabase Realtime）
+        function subscribeBalance() {
+            supabaseClient
+                .channel('balance-changes')
+                .on('postgres_changes', 
+                    { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${currentUser.id}` },
+                    (payload) => {
+                        const newBalance = payload.new.balance_g;
+                        document.getElementById('gas-balance').textContent = newBalance.toLocaleString();
+                        
+                        // 通知主系统更新
+                        if (window.opener && !window.opener.closed) {
+                            window.opener.postMessage({ type: 'gas-updated', balance: newBalance }, '*');
+                        }
+                    }
+                )
+                .subscribe();
+        }
+        
+        // 加载捐赠历史
+        async function loadHistory() {
+            const { data, error } = await supabaseClient
+                .from('donations')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: false })
+                .limit(10);
+            
+            if (error || !data || data.length === 0) {
+                return;
+            }
+            
+            document.getElementById('history-card').style.display = 'block';
+            const container = document.getElementById('records-list');
+            
+            container.innerHTML = data.map(record => {
+                const date = new Date(record.created_at).toLocaleDateString('zh-CN');
+                let statusClass = 'status-pending';
+                let statusText = '审核中';
+                
+                if (record.status === 'completed') {
+                    statusClass = 'status-completed';
+                    statusText = '已完成';
+                } else if (record.status === 'rejected') {
+                    statusClass = 'status-rejected';
+                    statusText = '已拒绝';
+                }
+                
+                return `
+                    <div class="record-item">
+                        <div>
+                            <div class="record-amount">${record.amount_u} USDT</div>
+                            <div class="record-time">${date} | TX: ${record.tx_hash.substring(0,10)}...</div>
+                        </div>
+                        <div style="text-align:right">
+                            <div class="record-gas">+${record.gas_reward} Gas</div>
+                            <span class="record-status ${statusClass}">${statusText}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // ==================== 工具函数 ====================
+        
+        function copyAddress() {
+            navigator.clipboard.writeText(FIXED_WALLET).then(() => {
+                showNotification('✓ 钱包地址已复制', 'success');
+            }).catch(() => {
+                // 降级
+                const input = document.createElement('input');
+                input.value = FIXED_WALLET;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showNotification('✓ 钱包地址已复制', 'success');
+            });
+        }
+        
+        function showNotification(msg, type) {
+            const el = document.getElementById('notification');
+            el.textContent = msg;
+            el.className = `notification ${type} show`;
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+        
+        function closeWindow() {
+            if (window.opener) {
+                window.close();
+            } else {
+                window.history.back();
+            }
+        }
+        
+        // 安全检查：如果不是从主系统打开（没有opener且没有session），显示警告
+        window.onload = () => {
+            setTimeout(() => {
+                if (!window.opener && !currentUser) {
+                    console.warn('建议从预测主系统打开此页面以确保登录态同步');
+                }
+                init();
+            }, 100);
+        };
+    </script>
+</body>
+</html>

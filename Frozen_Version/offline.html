@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>离线模式 - MAYIJU</title>
+    <style>
+        body { background: #111; color: #fff; font-family: sans-serif; text-align: center; padding-top: 50px; }
+        h1 { color: #dc3545; }
+        p { color: #aaa; }
+        .retry-btn { margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🚫 网络连接断开</h1>
+    <p>当前处于离线状态，自主健康系统 (AHS) 正在守护您的数据。</p>
+    <p>请检查网络连接后重试。</p>
+    <button class="retry-btn" onclick="window.location.reload()">重试连接</button>
+</body>
+</html>

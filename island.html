@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MAYIJU Island - Island Owner Console</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: #1a1a2e; color: #e94560; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 500px; }
+        .card { background: #16213e; padding: 20px; margin-bottom: 20px; border-radius: 12px; border: 1px solid #0f3460; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        h1 { font-size: 24px; text-align: center; margin-bottom: 20px; color: #fff; }
+        h2 { font-size: 18px; color: #a2a8d3; margin-top: 0; }
+        .stat-box { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .stat-value { font-size: 32px; font-weight: bold; color: #ffd700; }
+        input { width: 100%; padding: 12px; margin: 8px 0; background: #0f3460; border: 1px solid #533483; color: #fff; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; margin-top: 10px; background: #e94560; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #ff2e63; }
+        .list-item { background: #0f3460; padding: 10px; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .status { margin-top: 10px; font-size: 14px; word-break: break-all; text-align: center; }
+        .nav-link { text-align: center; display: block; margin-top: 20px; color: #a2a8d3; text-decoration: none; }
+        .login-section { display: none; }
+        .main-section { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏝️ MAYIJU Island</h1>
+        
+        <!-- Login Section -->
+        <div id="login-section" class="card login-section" style="display:block;">
+            <h2>Island Owner Login</h2>
+            <input type="email" id="email" placeholder="Email (Island Owner)">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">Enter Island</button>
+            <button onclick="signup()" style="background:#533483; margin-top:10px;">Register New Island</button>
+            <p id="login-status" class="status"></p>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="main-section" class="card main-section">
+            <div class="stat-box">
+                <div>
+                    <h2>My GAS (Fuel)</h2>
+                    <div class="stat-value" id="gas-balance">Loading...</div>
+                </div>
+                <div style="text-align:right;">
+                    <h2>Citizens</h2>
+                    <div class="stat-value" id="follower-count">0</div>
+                </div>
+            </div>
+
+            <hr style="border-color: #0f3460; margin: 20px 0;">
+
+            <h3>💎 Private Donation (Recharge)</h3>
+            <div style="background:#0f3460; padding:10px; border-radius:6px; font-size:12px; margin-bottom:10px;">
+                <p style="margin:0 0 5px 0; color:#aaa;">Exchange Rate (U → GAS):</p>
+                <div style="display:flex; justify-content:space-between;"><span>1-200 U</span> <span style="color:#ffd700;">x 2.2</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>201-4999 U</span> <span style="color:#ffd700;">x 2.6</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>5000+ U</span> <span style="color:#ffd700;">x 2.8</span></div>
+            </div>
+            
+            <input type="number" id="u-amount" placeholder="Amount (U)" oninput="updateEstimate()">
+            <div id="estimate-display" style="font-size:12px; color:#aaa; margin-bottom:5px; display:none;">
+                Grant: <span id="estimate-gas" style="color:#fff;">0</span> GAS
+            </div>
+            <button onclick="simulateDonation()" style="background:#533483;">Simulate Donation</button>
+            <p id="donation-status" class="status"></p>
+
+            <div style="background:#16213e; border:1px solid #ffd700; padding:10px; border-radius:6px; margin-top:15px; text-align:center;">
+                <div style="font-size:12px; color:#aaa;">System Capacity</div>
+                <div style="font-size:14px; color:#fff; margin-top:5px;">
+                    You can activate <span id="potential-citizens" style="color:#ffd700; font-weight:bold; font-size:18px;">...</span> more citizens
+                </div>
+            </div>
+
+            <hr style="border-color: #0f3460; margin: 20px 0;">
+
+            <h3>⛽ Private Donation (Activate Citizen)</h3>
+            <p style="font-size:12px; color:#aaa; margin-bottom:10px;">Donate GAS to invite a new citizen to your island.</p>
+            <div style="background:#0f3460; padding:10px; border-radius:6px; margin-bottom:10px; color:#ffd700;">
+                Next Donation Cost: <span id="next-donation" style="font-weight:bold; font-size:18px;">Calculating...</span> GAS
+            </div>
+            <input type="email" id="new-follower-email" placeholder="Citizen Email">
+            <!-- Amount is now dynamic, so we hide or disable the input, or just show it as readonly -->
+            <input type="number" id="donation-amount" placeholder="Amount" disabled style="background:#222; color:#555; display:none;"> 
+            <button onclick="donateGas()">Donate & Activate</button>
+            <p id="status" class="status"></p>
+
+            <h3 style="margin-top: 30px;">👥 My Citizens</h3>
+            <div id="followers-list">
+                <div style="text-align:center; color:#aaa;">Loading list...</div>
+            </div>
+
+            <button onclick="logout()" style="background:#1a1a2e; border:1px solid #533483; margin-top:30px;">Leave Island</button>
+        </div>
+    </div>
+
+    <!-- Load Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://xhfyfkqfykkbbnlwghem.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZnlma3FmeWtrYmJubHdnaGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0ODA4ODEsImV4cCI6MjA4NDA1Njg4MX0.SVUTAVSWi-skCq3N3KioTetV40IWt0vNkewA0WqEfcg';
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let session = null;
+
+        async function checkSession() {
+            const { data } = await supabaseClient.auth.getSession();
+            if (data.session) {
+                session = data.session;
+                showMain();
+            } else {
+                showLogin();
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('main-section').style.display = 'none';
+        }
+
+        function showMain() {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('main-section').style.display = 'block';
+            loadDashboard();
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const status = document.getElementById('login-status');
+            status.innerText = "Verifying...";
+            
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                status.innerText = "Error: " + error.message;
+                status.style.color = '#ff2e63';
+            } else {
+                session = data.session;
+                showMain();
+            }
+        }
+
+        async function signup() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const status = document.getElementById('login-status');
+            status.innerText = "Registering...";
+            
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) {
+                status.innerText = "Error: " + error.message;
+            } else {
+                status.innerText = "Registration successful! Please confirm email or login.";
+            }
+        }
+
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            session = null;
+            showLogin();
+        }
+
+        async function loadDashboard() {
+            if (!session) return;
+            try {
+                const res = await fetch('/api/island-dashboard', {
+                    headers: { 'Authorization': `Bearer ${session.access_token}` }
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    document.getElementById('gas-balance').innerText = data.balance_g;
+                    document.getElementById('follower-count').innerText = data.followers.length;
+                    
+                    // Dynamic Donation Calc
+                    const donatedCount = data.donated_count || 0;
+                    const nextDonation = Math.max(100, 300 - 20 * donatedCount);
+                    document.getElementById('next-donation').innerText = nextDonation;
+
+                    // Calculate Potential
+                    const potential = calculatePotentialCitizens(data.balance_g, donatedCount);
+                    document.getElementById('potential-citizens').innerText = potential;
+
+                    const listEl = document.getElementById('followers-list');
+                    if (data.followers.length === 0) {
+                        listEl.innerHTML = '<div style="text-align:center; color:#aaa;">No citizens yet.</div>';
+                    } else {
+                        listEl.innerHTML = data.followers.map(f => 
+                            `<div class="list-item">
+                                <span>${f.email || 'Anonymous'}</span>
+                                <span style="color:#ffd700;">${f.balance_g} GAS</span>
+                            </div>`
+                        ).join('');
+                    }
+                }
+            } catch (e) {
+                console.error("Dashboard Load Error", e);
+            }
+        }
+
+        function calculateGasReward(uAmount) {
+            if (uAmount <= 200) return Math.floor(uAmount * 2.2);
+            if (uAmount <= 1999) return Math.floor(uAmount * 2.6);
+            if (uAmount <= 5000) return Math.floor(uAmount * 2.8);
+            return Math.floor(uAmount * 3.0);
+        }
+
+        function updateEstimate() {
+            const amount = parseFloat(document.getElementById('u-amount').value);
+            const display = document.getElementById('estimate-display');
+            if (amount > 0) {
+                display.style.display = 'block';
+                document.getElementById('estimate-gas').innerText = calculateGasReward(amount);
+            } else {
+                display.style.display = 'none';
+            }
+        }
+
+        async function simulateDonation() {
+            const amount = parseFloat(document.getElementById('u-amount').value);
+            const status = document.getElementById('donation-status');
+            
+            if (!amount || amount <= 0) {
+                status.innerText = "Please enter valid amount";
+                status.style.color = '#ff2e63';
+                return;
+            }
+
+            status.innerText = "Processing Donation...";
+            status.style.color = '#ffd700';
+
+            try {
+                const res = await fetch('/api/private-donation', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({ u_amount: amount })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    status.innerText = `Success! +${data.gas_granted} GAS. New Balance: ${data.new_balance}`;
+                    status.style.color = '#00ff00';
+                    loadDashboard();
+                    document.getElementById('u-amount').value = '';
+                    updateEstimate();
+                } else {
+                    status.innerText = "Error: " + (data.error || 'Unknown error');
+                    status.style.color = '#ff2e63';
+                }
+            } catch (e) {
+                status.innerText = "Network Error: " + e.message;
+                status.style.color = '#ff2e63';
+            }
+        }
+
+        function calculatePotentialCitizens(balance, currentDonatedCount) {
+             let count = 0;
+             let tempBalance = balance;
+             let tempDonatedCount = currentDonatedCount;
+             
+             while (true) {
+                 const nextCost = Math.max(100, 300 - 20 * tempDonatedCount);
+                 if (tempBalance >= nextCost) {
+                     tempBalance -= nextCost;
+                     count++;
+                     tempDonatedCount++;
+                 } else {
+                     break;
+                 }
+                 if (count > 10000) break; // Safety
+             }
+             return count;
+        }
+
+        async function donateGas() {
+            const email = document.getElementById('new-follower-email').value;
+            // Amount is handled by server now, but we pass 0 or remove it. 
+            // Server ignores passed amount or we should not pass it to avoid confusion.
+            // Let's pass it anyway for compatibility if server expects field structure, 
+            // but server logic now calculates it.
+            const status = document.getElementById('status');
+            
+            if (!email) {
+                alert("Please enter email");
+                return;
+            }
+
+            status.innerText = "Calculating & Processing...";
+            status.style.color = '#ffd700';
+
+            try {
+                const res = await fetch('/api/activate-referral', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({ email: email }) // Removed amount
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    status.innerText = `Success! Donated ${data.donated_amount} GAS.`;
+                    status.style.color = '#00ff00';
+                    loadDashboard();
+                    document.getElementById('new-follower-email').value = '';
+                } else {
+                    status.innerText = "Failed: " + (data.error || 'Unknown error');
+                    status.style.color = '#ff2e63';
+                }
+            } catch (e) {
+                status.innerText = "Network Error: " + e.message;
+            }
+        }
+
+        checkSession();
+    </script>
+</body>
+</html>

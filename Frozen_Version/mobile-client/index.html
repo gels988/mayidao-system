@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MAYIJU Mobile v5.2</title>
+    <meta charset="UTF-8">
+    <meta name="version" content="5.2.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { background: #1a1a2e; color: #e94560; font-family: 'Segoe UI', sans-serif; padding: 10px; margin: 0; }
+        .container { width: 100%; max-width: 100%; box-sizing: border-box; }
+        .card { background: #16213e; padding: 15px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #0f3460; }
+        h1 { font-size: 20px; text-align: center; margin-bottom: 15px; color: #fff; position: relative; }
+        h2 { font-size: 16px; color: #a2a8d3; margin-top: 0; }
+        
+        /* Header & Profile */
+        .profile-btn {
+            position: absolute;
+            right: 0;
+            top: 0;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #a2a8d3;
+        }
+
+        /* Stats Box */
+        .stat-box { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #ffd700; }
+        
+        /* Form Elements */
+        input { width: 100%; padding: 12px; margin: 8px 0; background: #0f3460; border: 1px solid #533483; color: #fff; border-radius: 6px; box-sizing: border-box; transition: border-color 0.3s; }
+        input.error { border-color: #ff2e63; }
+        input:focus { outline: none; border-color: #00d2fc; }
+        button { width: 100%; padding: 12px; margin-top: 10px; background: #e94560; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        button.secondary { background: #533483; }
+        button.danger { background: #ff2e63; margin-top: 20px; }
+
+        .list-item { background: #0f3460; padding: 10px; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; font-size: 14px; }
+        .status { margin-top: 10px; font-size: 12px; text-align: center; word-break: break-all; }
+
+        /* Profile Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #16213e;
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #00d2fc;
+            box-shadow: 0 0 20px rgba(0, 210, 252, 0.2);
+            position: relative;
+        }
+        .close-btn {
+            position: absolute; top: 10px; right: 15px;
+            font-size: 24px; color: #aaa; cursor: pointer;
+        }
+        .wallet-box {
+            background: #0f3460;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 6px;
+            word-break: break-all;
+            font-family: monospace;
+            border: 1px dashed #ffd700;
+            color: #ffd700;
+            text-align: center;
+            cursor: pointer;
+        }
+        .wallet-label { font-size: 12px; color: #a2a8d3; margin-bottom: 5px; display: block; }
+        
+        /* Phase 5.2: Visualization Components */
+        .prediction-circle { 
+            width: 80px; 
+            height: 80px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            color: white; 
+            font-size: 24px; 
+            margin: 0 auto;
+            position: relative;
+            transition: all 0.5s ease;
+        }
+        
+        /* Colors & Halos */
+        .prediction-circle.blue { background: #00d2fc; } 
+        .prediction-circle.red { background: #ff2e63; } 
+        .prediction-circle.green { background: #4CAF50; } 
+        
+        /* Breathing Animations */
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(255, 46, 99, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 46, 99, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 46, 99, 0); }
+        }
+        @keyframes pulse-blue {
+            0% { box-shadow: 0 0 0 0 rgba(0, 210, 252, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 210, 252, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 210, 252, 0); }
+        }
+        
+        .halo-red { animation: pulse-red 2s infinite; }
+        .halo-blue { animation: pulse-blue 2s infinite; }
+        .halo-fast { animation-duration: 1s; } /* High S-value speed */
+        
+        /* Markers */
+        .pair-dot { 
+            position: absolute; 
+            width: 12px; 
+            height: 12px; 
+            border-radius: 50%; 
+            border: 2px solid white;
+            z-index: 10;
+        } 
+        .pair-dot.player { top: 0; left: 0; background: #00d2fc; } 
+        .pair-dot.banker { bottom: 0; right: 0; background: #ff2e63; }
+        
+        .natural-mark {
+            position: absolute;
+            font-size: 12px;
+            background: rgba(0,0,0,0.6);
+            padding: 2px 6px;
+            border-radius: 10px;
+            color: #fff;
+            white-space: nowrap;
+        }
+        .mark-player-7 { bottom: -25px; left: 0; }
+        .mark-banker-6 { bottom: -25px; right: 0; }
+        
+        .crown-mark {
+            position: absolute;
+            top: -25px;
+            width: 100%;
+            text-align: center;
+            color: #ffd700;
+            font-size: 20px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .crown-sub {
+            font-size: 10px;
+            display: block;
+            color: #fff;
+            margin-top: -5px;
+        }
+
+        .gold-8 {
+            color: #ffd700 !important;
+            font-size: 32px !important;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        /* SCI Dashboard */
+        .sci-box {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            border: 1px solid transparent;
+        }
+        .sci-high {
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+        .sci-bar-bg {
+            width: 60px;
+            height: 4px;
+            background: #333;
+            margin-top: 4px;
+            border-radius: 2px;
+        }
+        .sci-bar-fill {
+            height: 100%;
+            background: #aaa;
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+        .sci-high .sci-bar-fill { background: #ffd700; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            🏝️ MAYIJU Mobile
+            <button class="profile-btn" onclick="openProfile()" style="display:none;" id="header-profile-btn">⚙️</button>
+        </h1>
+        
+        <!-- Login Section -->
+        <div id="login-section" class="card" style="display:block;">
+            <h2>Island Login</h2>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">Enter</button>
+            <button onclick="signup()" style="background:#533483; margin-top:10px;">New Island</button>
+            <p id="login-status" class="status"></p>
+        </div>
+
+        <!-- Main Section -->
+        <div id="main-section" class="card" style="display:none;">
+            <!-- Stats -->
+            <div class="stat-box">
+                <div>
+                    <h2>GAS</h2>
+                    <div class="stat-value" id="gas-balance">...</div>
+                </div>
+                <div style="text-align:right;">
+                    <h2>Citizens</h2>
+                    <div class="stat-value" id="follower-count">0</div>
+                </div>
+            </div>
+
+            <hr style="border-color: #0f3460; margin: 15px 0;">
+
+            <!-- Prediction Oracle (Phase 5.1) -->
+            <h3>🔮 Oracle Prediction</h3>
+            <div style="text-align:center; padding: 10px; background: #0f3460; border-radius: 12px;">
+                
+                <!-- Input Section (Phase 5.2: Enhanced Validation) -->
+                <div style="margin: 15px 0;"> 
+                   <label style="color:#a2a8d3;">输入分子/分母</label><br> 
+                   <input type="text" id="rawInput" placeholder="格式: 123/303 (四数基因)" 
+                          style="width: 100%; padding: 12px; font-size: 18px; text-align: center; margin-top: 5px; letter-spacing: 1px;"> 
+                   <div id="inputPreview" style="color: #a2a8d3; margin-top: 5px; min-height: 20px; font-size: 14px;"></div> 
+                </div> 
+                
+                <button onclick="makePrediction()" 
+                        style="padding: 12px 20px; background: linear-gradient(45deg, #ff2e63, #00d2fc); color: white; border: none; border-radius: 25px; font-weight: bold; width: 80%; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);"> 
+                  🔮 预测下一局 
+                </button>
+                
+                <!-- 预测结果容器 --> 
+                <div style="display: block; min-height: 120px; margin-top: 30px; position: relative;">
+                    <!-- SCI Dashboard (Top Right of Result Area) -->
+                    <div id="sci-dashboard" class="sci-box" style="display:none;">
+                        <div id="sci-text">SCI: --%</div>
+                        <div class="sci-bar-bg"><div id="sci-bar" class="sci-bar-fill" style="width: 0%"></div></div>
+                    </div>
+                    
+                    <div id="predictionResult" style="position: relative; display: inline-block; margin-top: 10px;"></div> 
+                </div>
+
+                <!-- Feedback Section (Hidden initially) -->
+                <div id="feedback-section" style="display:none; margin-top:15px; border-top: 1px solid #1a1a2e; padding-top:10px;">
+                    <p style="font-size:12px; color:#fff;">What was the actual result?</p>
+                    <div style="display:flex; gap:5px; justify-content: center;">
+                        <button onclick="submitResult('red')" style="background:#ff2e63; padding:8px; width: auto;">Red</button>
+                        <button onclick="submitResult('green')" style="background:#00ff00; color:#000; padding:8px; width: auto;">Green</button>
+                        <button onclick="submitResult('blue')" style="background:#00d2fc; padding:8px; width: auto;">Blue</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid/Roadmap Display -->
+            <h3 style="margin-top:20px;">📜 Oracle Road (History)</h3>
+            <div id="oracle-grid" style="display:grid; grid-template-columns: repeat(6, 1fr); gap:5px; background:#0f3460; padding:10px; border-radius:12px; min-height:60px;">
+                <!-- History items will appear here -->
+            </div>
+
+            <hr style="border-color: #0f3460; margin: 15px 0;">
+
+            <!-- Private Donation (Self-Service Recharge) -->
+            <h3>💎 Get GAS (Private Donation)</h3>
+            <div style="background:#0f3460; padding:10px; border-radius:6px; font-size:12px; margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between;"><span>1-200 U</span> <span style="color:#ffd700;">x 2.2</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>201-1999 U</span> <span style="color:#ffd700;">x 2.6</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>2000-5000 U</span> <span style="color:#ffd700;">x 2.8</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>5001+ U</span> <span style="color:#ffd700;">x 3.0</span></div>
+            </div>
+            
+            <input type="number" id="u-amount" placeholder="Amount (U)" oninput="updateEstimate()">
+            <div id="estimate-display" style="font-size:12px; color:#aaa; margin-bottom:5px; display:none;">
+                Grant: <span id="estimate-gas" style="color:#fff;">0</span> GAS
+            </div>
+            <button onclick="simulateDonation()" style="background:#533483;">Donate & Recharge</button>
+            <p id="donation-status" class="status"></p>
+
+            <hr style="border-color: #0f3460; margin: 15px 0;">
+
+            <!-- Activate Citizen -->
+            <h3>⛽ Activate Citizen</h3>
+            <div style="background:#0f3460; padding:10px; border-radius:6px; margin-bottom:10px; color:#ffd700; font-size:14px;">
+                Cost: <span id="next-donation" style="font-weight:bold;">...</span> GAS
+                <br><span style="font-size:12px; color:#aaa;">(Capacity: <span id="potential-citizens">...</span> more)</span>
+            </div>
+            <input type="email" id="new-follower-email" placeholder="Citizen Email">
+            <button onclick="donateGas()">Activate</button>
+            <p id="status" class="status"></p>
+
+            <!-- My Citizens List -->
+            <h3 style="margin-top: 20px;">👥 My Citizens</h3>
+            <div id="followers-list">
+                <div style="text-align:center; color:#aaa;">Loading...</div>
+            </div>
+
+            <button onclick="logout()" style="background:#1a1a2e; border:1px solid #533483; margin-top:20px;">Logout</button>
+        </div>
+    </div>
+
+    <!-- Profile Modal (Self-Management) -->
+    <div id="profile-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeProfile()">&times;</span>
+            <h2 style="color: #00d2fc; text-align: center;">🛡️ Commander Profile</h2>
+            
+            <div style="margin: 20px 0;">
+                <label style="color:#a2a8d3;">Identity (UUID)</label>
+                <div id="profile-uuid" style="font-size:12px; color:#fff; word-break:break-all; padding:5px; background:#0f3460; border-radius:4px;">Loading...</div>
+            </div>
+
+            <div style="margin: 20px 0;">
+                <label style="color:#a2a8d3;">Current Rank</label>
+                <div style="font-size:16px; color:#ffd700;">⭐ Island Owner</div>
+            </div>
+
+            <div style="margin-top: 30px; border-top: 1px solid #0f3460; padding-top: 15px; text-align: center;">
+                <span class="wallet-label">🪙 Donation Wallet (ETH/ERC20) - Support MAYIJU</span>
+                
+                <!-- QR Code Display -->
+                <div style="background: white; padding: 5px; display: inline-block; border-radius: 8px; margin: 10px 0;">
+                    <img src="donation_qr.jpg" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#000; font-weight:bold;\'>QR Code Placeholder</span>'" alt="Wallet QR" style="width: 140px; height: 140px; display: block;">
+                </div>
+
+                <div class="wallet-box" onclick="copyAddress()" id="wallet-address" style="font-size: 11px;">
+                    0xf3ce1bb32dcfb11e81c69efa0cc6f5ae7bd00f80
+                </div>
+                <div style="text-align:center; font-size:10px; color:#aaa; margin-top:5px;">(Click to Copy Address)</div>
+            </div>
+
+            <button class="danger" onclick="logout()">🛑 Secure Logout</button>
+        </div>
+    </div>
+
+    <!-- Supabase Logic -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Phase 5.2: System Self-Check on Boot
+        async function runSystemSelfCheck() {
+            console.log("🛡️ Initiating System Self-Check...");
+            
+            // 1. UI Consistency Check (Static)
+            const styleSheets = document.styleSheets;
+            let haloFound = false;
+            for (let i = 0; i < styleSheets.length; i++) {
+                try {
+                    const rules = styleSheets[i].cssRules || styleSheets[i].rules;
+                    for (let j = 0; j < rules.length; j++) {
+                        if (rules[j].selectorText && rules[j].selectorText.includes('.halo-red')) {
+                            haloFound = true;
+                        }
+                    }
+                } catch (e) {}
+            }
+            // Note: Inline styles might not be easily traversable this way if CORS, but ours are internal.
+            // Simplified check: create a dummy element
+            const dummy = document.createElement('div');
+            dummy.className = 'halo-red';
+            document.body.appendChild(dummy);
+            const animationName = window.getComputedStyle(dummy).animationName;
+            document.body.removeChild(dummy);
+            
+            const uiCheck = (animationName && animationName.includes('pulse-red'));
+            console.log(`[Self-Check] UI Halo Animation: ${uiCheck ? '✅ Verified' : '❌ Failed'}`);
+
+            if (!session) {
+                console.log("[Self-Check] Skipped backend check (No Session)");
+                return;
+            }
+
+            // 2. Backend Schema & Logic Check
+            try {
+                const res = await fetch('/api/self-check', {
+                    headers: { 'Authorization': `Bearer ${session.access_token}` }
+                });
+                const health = await res.json();
+                console.log("[Self-Check] Backend Health:", health);
+                
+                if (health.status !== 'healthy') {
+                    alert(`⚠️ System Check: ${health.status.toUpperCase()}\nMissing Schema: ${health.healing_instruction || 'Check Logs'}`);
+                } else {
+                    console.log("✅ System Fully Operational (Phase 5.2)");
+                    // Show a small toast or indicator?
+                    showToast("System Verified: Phase 5.2 Ready");
+                }
+            } catch (e) {
+                console.error("[Self-Check] Network Error:", e);
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.style.position = 'fixed';
+            toast.style.bottom = '20px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.background = 'rgba(76, 175, 80, 0.9)';
+            toast.style.color = 'white';
+            toast.style.padding = '10px 20px';
+            toast.style.borderRadius = '20px';
+            toast.style.zIndex = '9999';
+            toast.style.fontSize = '12px';
+            toast.innerText = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        const SUPABASE_URL = 'https://xhfyfkqfykkbbnlwghem.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZnlma3FmeWtrYmJubHdnaGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0ODA4ODEsImV4cCI6MjA4NDA1Njg4MX0.SVUTAVSWi-skCq3N3KioTetV40IWt0vNkewA0WqEfcg';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let session = null;
+
+        // Profile Functions
+        function openProfile() {
+            document.getElementById('profile-modal').style.display = 'flex';
+            if (session) document.getElementById('profile-uuid').innerText = session.user.id;
+        }
+        function closeProfile() {
+            document.getElementById('profile-modal').style.display = 'none';
+        }
+        function copyAddress() {
+            const text = document.getElementById('wallet-address').innerText.trim();
+            navigator.clipboard.writeText(text).then(() => alert('Address Copied!'));
+        }
+
+        // Auth Logic
+        async function checkSession() {
+            const { data } = await supabase.auth.getSession();
+            if (data.session) {
+                session = data.session;
+                showMain();
+                runSystemSelfCheck(); // Trigger Self-Check on Load
+            } else {
+                showLogin();
+            }
+        }
+        function showLogin() {
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('main-section').style.display = 'none';
+        }
+        function showMain() {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('main-section').style.display = 'block';
+            document.getElementById('header-profile-btn').style.display = 'inline-block';
+            loadDashboard();
+            if (session) fetchHistory();
+        }
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const status = document.getElementById('login-status');
+            status.innerText = "Verifying...";
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) status.innerText = "Error: " + error.message;
+            else { session = data.session; showMain(); }
+        }
+        async function signup() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const status = document.getElementById('login-status');
+            status.innerText = "Registering...";
+            const { data, error } = await supabase.auth.signUp({ email, password });
+            if (error) status.innerText = "Error: " + error.message;
+            else status.innerText = "Success! Check email or login.";
+        }
+        async function logout() {
+            await supabase.auth.signOut();
+            session = null;
+            document.getElementById('header-profile-btn').style.display = 'none';
+            document.getElementById('profile-modal').style.display = 'none';
+            showLogin();
+        }
+
+        // Business Logic
+        async function loadDashboard() {
+            if (!session) return;
+            const { data: user, error } = await supabase.from('app_users').select('balance_g, donated_count').eq('id', session.user.id).single();
+            if (user) {
+                document.getElementById('gas-balance').innerText = user.balance_g;
+                const donatedCount = user.donated_count || 0;
+                const nextCost = Math.max(100, 300 - 20 * donatedCount);
+                document.getElementById('next-donation').innerText = nextCost;
+                const potential = calculatePotentialCitizens(user.balance_g, donatedCount);
+                document.getElementById('potential-citizens').innerText = potential;
+                loadCitizens(session.user.id);
+            }
+        }
+
+        async function loadCitizens(userId) {
+            try {
+                const res = await fetch('/api/island-dashboard', {
+                    headers: { 'Authorization': `Bearer ${session.access_token}` }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('gas-balance').innerText = data.balance_g;
+                    document.getElementById('follower-count').innerText = data.followers.length;
+                    
+                    const listEl = document.getElementById('followers-list');
+                    if (data.followers.length === 0) listEl.innerHTML = '<div style="text-align:center; color:#aaa;">No citizens yet.</div>';
+                    else {
+                        listEl.innerHTML = data.followers.map(f => 
+                            `<div class="list-item">
+                                <span>${f.email || 'Anonymous'}</span>
+                                <span style="color:#ffd700;">${f.balance_g} GAS</span>
+                            </div>`
+                        ).join('');
+                    }
+                    const nextCost = Math.max(100, 300 - 20 * (data.donated_count || 0));
+                    document.getElementById('next-donation').innerText = nextCost;
+                    const potential = calculatePotentialCitizens(data.balance_g, data.donated_count || 0);
+                    document.getElementById('potential-citizens').innerText = potential;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // Helpers
+        function calculateGasReward(uAmount) {
+            if (uAmount <= 200) return Math.floor(uAmount * 2.2);
+            if (uAmount <= 1999) return Math.floor(uAmount * 2.6);
+            if (uAmount <= 5000) return Math.floor(uAmount * 2.8);
+            return Math.floor(uAmount * 3.0);
+        }
+        function updateEstimate() {
+            const amount = parseFloat(document.getElementById('u-amount').value);
+            if (amount > 0) {
+                document.getElementById('estimate-display').style.display = 'block';
+                document.getElementById('estimate-gas').innerText = calculateGasReward(amount);
+            } else {
+                document.getElementById('estimate-display').style.display = 'none';
+            }
+        }
+        function calculatePotentialCitizens(balance, currentDonatedCount) {
+             let count = 0;
+             let tempBalance = balance;
+             let tempDonatedCount = currentDonatedCount;
+             while (true) {
+                 const nextCost = Math.max(100, 300 - 20 * tempDonatedCount);
+                 if (tempBalance >= nextCost) {
+                     tempBalance -= nextCost;
+                     count++;
+                     tempDonatedCount++;
+                 } else { break; }
+                 if (count > 10000) break;
+             }
+             return count;
+        }
+
+        // Actions
+        async function simulateDonation() {
+            const amount = parseFloat(document.getElementById('u-amount').value);
+            if (!amount || amount <= 0) return alert("Invalid amount");
+            
+            document.getElementById('donation-status').innerText = "Processing...";
+            try {
+                const res = await fetch('/api/private-donation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                    body: JSON.stringify({ u_amount: amount })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('donation-status').innerText = `Success! +${data.gas_granted} GAS`;
+                    loadCitizens(); 
+                } else {
+                    document.getElementById('donation-status').innerText = "Error: " + data.error;
+                }
+            } catch (e) { alert("Network Error"); }
+        }
+
+        async function donateGas() {
+            const email = document.getElementById('new-follower-email').value;
+            if (!email) return alert("Email required");
+            
+            document.getElementById('status').innerText = "Activating...";
+            try {
+                const res = await fetch('/api/activate-referral', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('status').innerText = "Success! Citizen Activated.";
+                    loadCitizens(); 
+                } else {
+                    document.getElementById('status').innerText = "Error: " + data.error;
+                }
+            } catch (e) { alert("Network Error"); }
+        }
+
+        // Phase 5.2: Enhanced Real-time Logic
+        const rawInput = document.getElementById('rawInput');
+        if (rawInput) {
+            rawInput.addEventListener('input', function() {
+                const input = this.value.trim();
+                const preview = document.getElementById('inputPreview');
+                
+                if (!input) { 
+                    preview.textContent = ''; 
+                    this.classList.remove('error');
+                    return; 
+                }
+                
+                // Strict Format Validation: 123/456 (Numeric Only)
+                // Relaxed for typing: allow digits and slash
+                if (!/^[\d\/]+$/.test(input)) {
+                    preview.innerHTML = '<span style="color:#ff2e63">❌ 仅限数字与斜杠</span>';
+                    this.classList.add('error');
+                    return;
+                }
+
+                try {
+                    const parts = input.split('/');
+                    if (parts.length > 2) throw new Error("多重斜杠");
+                    
+                    if (parts.length === 2) {
+                        const mol = parts[0], den = parts[1];
+                        if (mol && den) {
+                            if (!/^\d{2,3}$/.test(mol) || !/^\d{2,3}$/.test(den)) {
+                                throw new Error("分子/分母需2-3位数字");
+                            }
+                            // Valid Structure Detection
+                            let structure = [];
+                            if (mol.length >= 2 && mol[0] === mol[1]) structure.push("闲对");
+                            if (den.length >= 2 && den[0] === den[1]) structure.push("庄对");
+                            
+                            preview.innerHTML = `✅ 识别: <b>${mol}</b> / <b>${den}</b>` + 
+                                (structure.length ? ` <span style="color:#ffd700">(${structure.join('+')})</span>` : '');
+                            this.classList.remove('error');
+                        } else {
+                             preview.textContent = '输入中...';
+                             this.classList.remove('error');
+                        }
+                    } else {
+                        preview.textContent = '等待分母...';
+                        this.classList.remove('error');
+                    }
+                } catch (e) {
+                    preview.innerHTML = `<span style="color:#ff2e63">⚠️ ${e.message}</span>`;
+                    this.classList.add('error');
+                }
+            });
+        }
+
+        async function makePrediction() {
+            const raw = document.getElementById('rawInput').value.trim();
+            if (!raw || document.getElementById('rawInput').classList.contains('error')) {
+                return alert('请输入正确的格式 (如: 123/303)');
+            }
+            
+            // Clear previous results
+            document.getElementById('predictionResult').innerHTML = '<div style="color:#aaa; padding:10px;">Thinking...</div>';
+            document.getElementById('sci-dashboard').style.display = 'none';
+
+            try {
+                const res = await fetch('/api/predict-mobile', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({ raw_input: raw })
+                });
+                
+                if (!res.ok) throw new Error('Prediction API Failed');
+                const data = await res.json();
+                renderPredictionResult(data);
+                
+                // Add to history list immediately
+                if (data.prediction_id) fetchHistory(); 
+                
+            } catch (err) {
+                alert('Error: ' + err.message);
+                document.getElementById('predictionResult').innerHTML = '';
+            }
+        }
+
+        function renderPredictionResult(data) {
+            const { predicted_color, s_value, sci_index, is_player_pair, is_banker_pair, is_player_7, is_player_8, is_banker_6, is_crown } = data;
+            
+            // 1. SCI Dashboard
+            const sciBox = document.getElementById('sci-dashboard');
+            const sciBar = document.getElementById('sci-bar');
+            const sciText = document.getElementById('sci-text');
+            
+            if (sci_index !== undefined) {
+                sciBox.style.display = 'block';
+                sciBar.style.width = `${sci_index}%`;
+                
+                let label = `SCI: ${sci_index}%`;
+                if (sci_index >= 85) {
+                    sciBox.classList.add('sci-high');
+                    label += ' ★';
+                } else {
+                    sciBox.classList.remove('sci-high');
+                }
+                sciText.innerHTML = label;
+            }
+
+            // 2. Main Circle & Halo
+            let colorClass = 'green';
+            let haloClass = '';
+            const absS = Math.abs(s_value || 0);
+
+            if (predicted_color === 'red') {
+                colorClass = 'red';
+                if (absS >= 0.4) haloClass = 'halo-red';
+            } else if (predicted_color === 'blue') {
+                colorClass = 'blue';
+                if (absS >= 0.4) haloClass = 'halo-blue';
+            }
+            if (absS >= 0.7) haloClass += ' halo-fast';
+
+            // 3. Inner Content
+            let content = '';
+            let extraClass = '';
+            
+            if (is_crown) {
+                // Crown is external overlay, center text might be empty or specific
+                // The crown-mark div handles the icon
+            } else if (is_player_8) {
+                content = '8';
+                extraClass = 'gold-8';
+            } else if (is_player_7) {
+                content = '7';
+            } else if (is_banker_6) {
+                content = '6';
+            }
+
+            let html = `<div class="prediction-circle ${colorClass} ${haloClass} ${extraClass}">${content}`;
+            
+            // 4. Overlays
+            if (is_crown) {
+                html += `<div class="crown-mark">👑<span class="crown-sub">${data.mol_sum}/${data.den_sum}</span></div>`;
+            }
+            
+            if (is_player_pair) html += '<div class="pair-dot player"></div>';
+            if (is_banker_pair) html += '<div class="pair-dot banker"></div>';
+            
+            // Natural Points Labels (if not main content)
+            if (is_player_7 && !is_crown) html += '<div class="natural-mark mark-player-7">闲7</div>';
+            if (is_banker_6 && !is_crown) html += '<div class="natural-mark mark-banker-6">庄6</div>';
+
+            html += '</div>';
+            document.getElementById('predictionResult').innerHTML = html;
+        }
+
+        function renderSCI(sci) {
+            const box = document.getElementById('sci-box');
+            if (!box) return;
+            
+            if (sci === undefined || sci === null) {
+                box.style.display = 'none';
+                return;
+            }
+
+            box.style.display = 'block';
+            const fill = document.getElementById('sci-fill');
+            const text = document.getElementById('sci-text');
+            
+            if (fill) fill.style.width = `${sci}%`;
+            if (text) {
+                text.innerHTML = `<b>${sci}%</b> Self-Consistency`;
+                if (sci >= 85) text.innerHTML += ' <span style="color:#ffd700">★</span>';
+            }
+            
+            if (sci >= 85) {
+                box.classList.add('sci-high-confidence');
+            } else {
+                box.classList.remove('sci-high-confidence');
+            }
+        }
+
+        let currentPredictionId = null;
+
+        // History
+        async function fetchHistory() {
+            if (!session) return;
+            try {
+                const res = await fetch('/api/predictions-history', {
+                    headers: { 'Authorization': `Bearer ${session.access_token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.history) {
+                        const grid = document.getElementById('oracle-grid');
+                        grid.innerHTML = '';
+                        // Reverse to show chronological order left-to-right (if desired), 
+                        // or keep as is (newest first). Usually roads are chronological.
+                        // API returns newest first.
+                        data.history.reverse().forEach(item => {
+                            addToGrid(item.predicted_color);
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error("History fetch failed", e);
+            }
+        }
+
+        function addToGrid(color) {
+            const grid = document.getElementById('oracle-grid');
+            const dot = document.createElement('div');
+            dot.style.width = '30px';
+            dot.style.height = '30px';
+            dot.style.borderRadius = '50%';
+            dot.style.margin = 'auto';
+            
+            if (color === 'red') dot.style.backgroundColor = '#ff2e63';
+            else if (color === 'blue') dot.style.backgroundColor = '#00d2fc';
+            else dot.style.backgroundColor = '#00ff00';
+
+            if (grid.children.length >= 18) {
+                grid.removeChild(grid.firstChild);
+            }
+            grid.appendChild(dot);
+        }
+
+        // Feedback
+        async function submitResult(actualColor) {
+            if (!currentPredictionId) return alert("No active prediction to verify.");
+            // ... (Simple placeholder or actual API if exists)
+            alert("Feedback recorded! (Simulation)");
+            document.getElementById('feedback-section').style.display = 'none';
+        }
+
+        checkSession();
+    </script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MAYIJU Recharge & Referral</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: #121212; color: #ffd700; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 400px; }
+        .card { background: #222; padding: 20px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #444; }
+        h1 { font-size: 20px; text-align: center; margin-bottom: 20px; }
+        input { width: 100%; padding: 10px; margin: 5px 0; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; margin-top: 10px; background: #ffd700; color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        button:hover { background: #ffea00; }
+        .status { margin-top: 10px; font-size: 14px; word-break: break-all; }
+        .login-section { display: none; }
+        .main-section { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Operation Viral-Activation (Phase 1)</h1>
+        
+        <!-- Login Section -->
+        <div id="login-section" class="card login-section" style="display:block;">
+            <h3>Agent Login</h3>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">Login</button>
+            <button onclick="signup()" style="background:#444; color:#fff; margin-top:5px;">Sign Up (Test)</button>
+            <p id="login-status" class="status"></p>
+        </div>
+
+        <!-- Referral Section -->
+        <div id="main-section" class="card main-section">
+            <h3>Activate New User</h3>
+            <p style="font-size:12px; color:#aaa;">Your Balance: <span id="my-balance">Loading...</span></p>
+            <input type="text" id="phone" placeholder="New User Phone">
+            <input type="number" id="amount" placeholder="Initial Transfer Amount (Min 100)">
+            <button onclick="activate()">Activate & Transfer</button>
+            <p id="status" class="status"></p>
+            <button onclick="logout()" style="background:#444; color:#fff; margin-top:20px;">Logout</button>
+        </div>
+    </div>
+
+    <!-- Load Supabase from CDN for UI -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Config from server's public knowledge (or hardcoded for Phase 1 demo)
+        const SUPABASE_URL = 'https://xhfyfkqfykkbbnlwghem.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZnlma3FmeWtrYmJubHdnaGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0ODA4ODEsImV4cCI6MjA4NDA1Njg4MX0.SVUTAVSWi-skCq3N3KioTetV40IWt0vNkewA0WqEfcg';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        let session = null;
+
+        // Check Session
+        async function checkSession() {
+            const { data } = await supabase.auth.getSession();
+            if (data.session) {
+                session = data.session;
+                showMain();
+            } else {
+                showLogin();
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('main-section').style.display = 'none';
+        }
+
+        function showMain() {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('main-section').style.display = 'block';
+            fetchBalance();
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const status = document.getElementById('login-status');
+            status.innerText = "Logging in...";
+            
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                status.innerText = "Error: " + error.message;
+            } else {
+                session = data.session;
+                showMain();
+            }
+        }
+
+        async function signup() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const status = document.getElementById('login-status');
+            status.innerText = "Signing up...";
+            
+            const { data, error } = await supabase.auth.signUp({ email, password });
+            if (error) {
+                status.innerText = "Error: " + error.message;
+            } else {
+                status.innerText = "Sign up successful! Please check email (if enabled) or try login.";
+                // Auto login if session returned
+                if (data.session) {
+                    session = data.session;
+                    // Try to link app_users for testing
+                    try {
+                        await supabase.from('app_users').insert({ id: data.user.id, phone: 'Self'+Date.now(), balance_g: 1000 });
+                    } catch(e) {}
+                    showMain();
+                }
+            }
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            session = null;
+            showLogin();
+        }
+
+        async function fetchBalance() {
+            if (!session) return;
+            const el = document.getElementById('my-balance');
+            const { data, error } = await supabase
+                .from('app_users')
+                .select('balance_g')
+                .eq('id', session.user.id)
+                .single();
+            
+            if (data) {
+                el.innerText = data.balance_g;
+            } else {
+                el.innerText = "Unknown (No app_user record)";
+            }
+        }
+
+        async function activate() {
+            const phone = document.getElementById('phone').value;
+            const amount = parseInt(document.getElementById('amount').value);
+            const status = document.getElementById('status');
+            
+            if (!session) return;
+
+            status.innerText = "Processing...";
+            status.style.color = '#ffd700';
+            
+            try {
+                const res = await fetch('/api/activate-referral', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({ phone, amount })
+                });
+                
+                const data = await res.json();
+                if (res.ok) {
+                    status.innerText = "Success! New User ID: " + data.new_user_id;
+                    status.style.color = '#00ff00';
+                    fetchBalance(); // Refresh balance
+                } else {
+                    status.innerText = "Error: " + (data.error || 'Unknown');
+                    status.style.color = '#ff0000';
+                }
+            } catch (e) {
+                status.innerText = "Network Error: " + e.message;
+                status.style.color = '#ff0000';
+            }
+        }
+
+        checkSession();
+    </script>
+</body>
+</html>

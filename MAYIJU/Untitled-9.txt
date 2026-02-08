@@ -1,1 +1,0 @@
-"X1:" + base64( XOR( JSON.stringify(payload), deviceKey ) )

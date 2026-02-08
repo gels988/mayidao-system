@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="version" content="5.2.0-frozen-predict" />
+    <title>MAYIJU - 预测战场</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        #main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        /* 输入区 */
+        #input-section {
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 16px;
+        }
+        #raw-input {
+            width: 100%;
+            height: 48px;
+            background: #111;
+            border: 1px solid #444;
+            color: #ffcc00;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 2px;
+            box-sizing: border-box;
+        }
+        #raw-input::placeholder {
+            color: #666;
+        }
+        #validation-hint {
+            margin-top: 6px;
+            font-size: 14px;
+            text-align: center;
+            min-height: 18px;
+        }
+        /* 预测结果区 */
+        #prediction-result {
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        #circle-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 12px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: white;
+        }
+        .circle-blue { background: #1e90ff; }
+        .circle-red { background: #ff4500; }
+        .circle-green { background: #32cd32; }
+        #phase5-2-logic {
+            font-size: 14px;
+            color: #aaa;
+            margin-top: 8px;
+        }
+        /* 历史记录 */
+        #history-section {
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 16px;
+        }
+        #history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            text-align: center;
+        }
+        #history-list li {
+            padding: 4px 0;
+            font-size: 14px;
+            color: #888;
+        }
+        /* 网格图 */
+        #grid-section {
+            width: 100%;
+            max-width: 400px;
+            height: 120px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-gap: 2px;
+            padding: 4px;
+            box-sizing: border-box;
+        }
+        .grid-dot { width: 100%; height: 100%; border-radius: 50%; }
+        .dot-red { background: #ff4500; }
+        .dot-blue { background: #1e90ff; }
+        /* 设置图标 */
+        #settings-icon {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            z-index: 100;
+        }
+        /* 模态窗 */
+        #settings-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #111;
+            padding: 24px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 360px;
+        }
+        .modal-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: #333;
+            color: #fff;
+            border: none;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .modal-btn:hover { background: #444; }
+        .modal-btn.danger { background: #500; }
+        .modal-btn.danger:hover { background: #700; }
+    </style>
+</head>
+<body>
+    <!-- 设置入口 -->
+    <div id="settings-icon" style="display:none;">⚙️</div>
+
+    <div id="main-container">
+        <!-- 输入区 -->
+        <div id="input-section">
+            <input type="text" id="raw-input" placeholder="102/303" maxlength="7" />
+            <div id="validation-hint"></div>
+        </div>
+
+        <!-- 预测结果区 -->
+        <div id="prediction-result">
+            <div id="circle-container"></div>
+            <div id="phase5-2-logic"></div>
+        </div>
+
+        <!-- 历史记录 -->
+        <div id="history-section">
+            <h4>历史记录</h4>
+            <ul id="history-list"></ul>
+        </div>
+
+        <!-- 网格图 -->
+        <div id="grid-section">
+            <!-- 点阵将由 JS 动态生成 -->
+        </div>
+    </div>
+
+    <!-- 设置模态窗 -->
+    <div id="settings-modal">
+        <div class="modal-content">
+            <h3>指挥官档案</h3>
+            <div id="user-info">未登录</div>
+            <button id="login-btn" class="modal-btn">登录 / 注册</button>
+            <button id="donate-btn" class="modal-btn" style="display:none;">捐赠奖励</button>
+            <button id="island-btn" class="modal-btn" style="display:none;">我的岛</button>
+            <button id="logout-btn" class="modal-btn danger" style="display:none;">安全登出</button>
+            <button id="close-modal" class="modal-btn">关闭</button>
+        </div>
+    </div>
+
+    <!-- 本地 Supabase（确保已安装 node_modules） -->
+    <script src="/node_modules/@supabase/supabase-js/dist/umd/supabase.js"></script>
+    <script>
+        // ========== 初始化 ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            // 加载历史记录
+            renderHistory();
+            
+            // 绑定输入校验
+            const input = document.getElementById('raw-input');
+            const hint = document.getElementById('validation-hint');
+            input.addEventListener('input', validateInput);
+
+            // 绑定设置图标（仅登录后显示）
+            checkAuthStatus();
+
+            // 绑定模态窗
+            document.getElementById('settings-icon').addEventListener('click', () => {
+                document.getElementById('settings-modal').style.display = 'flex';
+            });
+            document.getElementById('close-modal').addEventListener('click', closeModal);
+            document.getElementById('logout-btn').addEventListener('click', logout);
+        });
+
+        // ========== 输入校验 ==========
+        function validateInput() {
+            const value = this.value.trim();
+            const hint = document.getElementById('validation-hint');
+            const btn = document.getElementById('predict-btn') || null;
+
+            if (!value) {
+                hint.innerText = '';
+                return;
+            }
+
+            // 格式校验
+            if (!/^\d{3}\/\d{3}$/.test(value)) {
+                hint.innerText = '格式错误：请使用 XXX/XXX';
+                hint.style.color = 'red';
+                return;
+            }
+
+            // 拆分牌型
+            const [mol, den] = value.split('/');
+            const molArr = mol.split('').map(Number);
+            const denArr = den.split('').map(Number);
+
+            // 简化规则校验（此处为示例，实际应调用完整 Tableau）
+            try {
+                // 示例：庄家6点 + 闲家第三张=2 → 庄家必须停牌
+                const pSum = (molArr[0] + molArr[1]) % 10;
+                const bSum = (denArr[0] + denArr[1]) % 10;
+                const playerDraw = pSum <= 5;
+                const thirdCard = playerDraw ? molArr[2] : null;
+
+                if (bSum === 6 && thirdCard === 2 && denArr.length === 3) {
+                    throw new Error('庄家6点面对闲家第三张2，不应补牌');
+                }
+
+                hint.innerText = '格式正确';
+                hint.style.color = 'green';
+            } catch (err) {
+                hint.innerText = err.message;
+                hint.style.color = 'red';
+            }
+        }
+
+        // ========== 预测提交 ==========
+        async function submitPrediction() {
+            const input = document.getElementById('raw-input').value.trim();
+            if (!/^\d{3}\/\d{3}$/.test(input)) return;
+
+            try {
+                const res = await fetch('/api/predict-mobile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ raw_input: input })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    renderPrediction(data);
+                    saveHistory(input);
+                    renderHistory();
+                    updateGrid(data);
+                } else {
+                    alert('预测失败：' + (data.error || '未知错误'));
+                }
+            } catch (err) {
+                alert('网络错误：' + err.message);
+            }
+        }
+
+        // ========== 渲染预测结果 ==========
+        function renderPrediction(data) {
+            const circle = document.getElementById('circle-container');
+            const logic = document.getElementById('phase5-2-logic');
+
+            // 清空
+            circle.innerHTML = '';
+            logic.innerHTML = '';
+
+            // 决定颜色
+            let colorClass = 'circle-green';
+            if (data.s_value > 0.3) colorClass = 'circle-red';
+            else if (data.s_value < -0.3) colorClass = 'circle-blue';
+
+            circle.className = colorClass;
+
+            // 显示标记
+            if (data.is_crown) circle.innerText = '👑';
+            else if (data.is_player_8) circle.innerText = '8';
+            else if (data.is_banker_6) circle.innerText = '庄6';
+            else if (data.is_player_pair || data.is_banker_pair) circle.innerText = '对子';
+
+            // 显示 SCI
+            logic.innerHTML = `SCI: ${data.sci_index}%<br>S值: ${data.s_value.toFixed(2)}`;
+        }
+
+        // ========== 历史记录 ==========
+        function saveHistory(input) {
+            let history = JSON.parse(localStorage.getItem('pred_history') || '[]');
+            history.unshift(input);
+            if (history.length > 5) history.pop();
+            localStorage.setItem('pred_history', JSON.stringify(history));
+        }
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            const history = JSON.parse(localStorage.getItem('pred_history') || '[]');
+            list.innerHTML = history.map(item => `<li>${item}</li>`).join('');
+        }
+
+        // ========== 网格图（简化版） ==========
+        function updateGrid(data) {
+            const grid = document.getElementById('grid-section');
+            const dot = document.createElement('div');
+            dot.className = 'grid-dot ' + (data.s_value > 0 ? 'dot-red' : 'dot-blue');
+            grid.prepend(dot);
+            if (grid.children.length > 50) grid.removeChild(grid.lastChild);
+        }
+
+        // ========== 权限控制 ==========
+        function checkAuthStatus() {
+            // 此处应集成 Supabase 会话检查
+            // 为简化，假设已登录则显示设置图标
+            const isLoggedIn = !!localStorage.getItem('supabase.session');
+            document.getElementById('settings-icon').style.display = isLoggedIn ? 'block' : 'none';
+        }
+        function closeModal() {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+        function logout() {
+            localStorage.removeItem('supabase.session');
+            checkAuthStatus();
+            closeModal();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,791 @@
+<<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>子民管理系统 - Island Owner Console</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2 "></script>
+    <script src="js/db_client.js"></script> <!-- 引入数据库客户端 (含Mock支持) -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e94560;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(22, 33, 62, 0.9);
+            border-radius: 15px;
+            border: 2px solid #e94560;
+            box-shadow: 0 8px 20px rgba(233, 69, 96, 0.3);
+        }
+        
+        .header h1 { font-size: 28px; color: #fff; margin-bottom: 10px; }
+        .header .subtitle { font-size: 14px; color: #a2a8d3; }
+        
+        .card {
+            background: #16213e;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 15px;
+            border: 1px solid #0f3460;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+        
+        .card h2 {
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #0f3460;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            background: rgba(15, 52, 96, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-label { font-size: 12px; color: #a2a8d3; display: block; margin-bottom: 5px; }
+        .stat-value { font-size: 28px; font-weight: bold; color: #ffd700; }
+        
+        .invite-link-box {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            word-break: break-all;
+            font-size: 13px;
+            color: #fff;
+            border: 1px dashed #533483;
+        }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .btn-primary { background: #e94560; color: #fff; }
+        .btn-primary:hover { background: #ff2e63; transform: translateY(-2px); }
+        
+        .btn-secondary { background: #533483; color: #fff; }
+        .btn-secondary:hover { background: #6a47a3; transform: translateY(-2px); }
+        
+        .btn-success { background: #00cc66; color: #fff; }
+        .btn-success:hover { background: #00e676; transform: translateY(-2px); }
+        
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 14px; color: #a2a8d3; margin-bottom: 8px; }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            background: #0f3460;
+            border: 1px solid #533483;
+            color: #fff;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .input-group input:focus { outline: none; border-color: #e94560; }
+        
+        .citizen-list { max-height: 500px; overflow-y: auto; }
+        
+        .citizen-item {
+            background: #0f3460;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .citizen-item:hover { background: #1a4a8a; border-left-color: #e94560; }
+        
+        .citizen-info { flex: 1; }
+        .citizen-name { font-size: 16px; color: #fff; font-weight: bold; margin-bottom: 5px; }
+        .citizen-meta { font-size: 12px; color: #a2a8d3; margin-top: 5px; }
+        .citizen-meta span { margin-right: 15px; }
+        
+        .citizen-status { text-align: right; min-width: 100px; }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            margin-left: 5px;
+        }
+        
+        .badge-active { background: #00cc66; color: #fff; }
+        .badge-inactive { background: #666; color: #fff; }
+        .badge-donated { background: #ffd700; color: #333; }
+        
+        .gas-amount { font-size: 20px; color: #ffd700; font-weight: bold; margin-top: 5px; }
+        
+        .action-buttons { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
+        .action-btn { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; }
+        
+        .empty-state { text-align: center; padding: 40px; color: #666; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #e94560;
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px; right: 15px;
+            background: none; border: none; color: #e94560;
+            font-size: 24px; cursor: pointer;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px; right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: bold;
+            z-index: 9999;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .notification.show { transform: translateX(0); }
+        .notification.success { background: #00cc66; }
+        .notification.error { background: #ff4444; }
+        .notification.info { background: #533483; }
+        
+        .back-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: transparent;
+            color: #a2a8d3;
+            border: 2px solid #533483;
+            border-radius: 8px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .back-btn:hover { border-color: #e94560; color: #e94560; }
+        
+        .loading { text-align: center; padding: 40px; color: #a2a8d3; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid #0f3460;
+            border-top-color: #e94560;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f3460; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #533483; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #e94560; }
+        
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .citizen-item { flex-direction: column; align-items: flex-start; }
+            .citizen-status { text-align: left; margin-top: 10px; width: 100%; }
+            .action-buttons { justify-content: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>🏝️ 子民管理系统</h1>
+            <div class="subtitle">Island Owner Console</div>
+            <div style="margin-top: 10px; font-size: 14px; color: #a2a8d3;">
+                岛主: <span id="owner-email">加载中...</span>
+            </div>
+        </div>
+        
+        <!-- 统计面板 -->
+        <div class="card">
+            <h2>📊 岛屿概览</h2>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-label">GAS 汽油量</span>
+                    <span class="stat-value" id="gas-balance">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">子民总数</span>
+                    <span class="stat-value" id="citizen-count">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">活跃子民</span>
+                    <span class="stat-value" id="active-count" style="font-size: 24px;">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">已捐赠子民</span>
+                    <span class="stat-value" id="donated-count" style="font-size: 24px;">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 邀请链接 -->
+        <div class="card">
+            <h2>🔗 我的邀请链接</h2>
+            <p style="font-size: 13px; color: #a2a8d3; margin-bottom: 10px;">
+                分享此链接，新用户注册后自动成为您的子民
+            </p>
+            <div class="invite-link-box" id="invite-link">
+                生成中...
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="copyInviteLink()">📋 复制链接</button>
+                <button class="btn btn-secondary" onclick="generateInviteLink()">🔄 重新生成</button>
+            </div>
+        </div>
+        
+        <!-- 激活新子民 -->
+        <div class="card">
+            <h2>⚡ 激活子民</h2>
+            <p style="font-size: 13px; color: #a2a8d3; margin-bottom: 15px;">
+                向新子民赠送 GAS 汽油以激活其账户（自动建立推荐关系）
+            </p>
+            <div class="input-group">
+                <label>子民邮箱</label>
+                <input type="email" id="new-citizen-email" placeholder="请输入子民的邮箱地址">
+            </div>
+            <div class="input-group">
+                <label>激活 GAS 数量 (最少 800)</label>
+                <input type="number" id="activate-amount" value="800" min="800">
+            </div>
+            <button class="btn btn-success" onclick="activateCitizen()" style="width: 100%;">
+                💝 赠送 GAS 并激活
+            </button>
+        </div>
+        
+        <!-- 子民列表 -->
+        <div class="card">
+            <h2>👥 我的子民列表</h2>
+            <div id="citizens-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    加载子民数据中...
+                </div>
+            </div>
+        </div>
+        
+        <!-- 返回主系统 -->
+        <button class="back-btn" onclick="backToMain()">
+            ← 关闭并返回预测主界面
+        </button>
+    </div>
+    
+    <!-- 转账模态框 -->
+    <div id="transfer-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeTransferModal()">&times;</button>
+            <h3 style="color: #fff; margin-bottom: 20px;">⛽ 转赠 GAS 汽油</h3>
+            <div class="input-group">
+                <label>转赠对象</label>
+                <div id="transfer-target-name" style="color: #fff; font-weight: bold; padding: 10px; background: #0f3460; border-radius: 5px;"></div>
+            </div>
+            <div class="input-group">
+                <label>转赠数量 (最少 300)</label>
+                <input type="number" id="transfer-amount" placeholder="输入数量" min="300">
+            </div>
+            <div style="background: rgba(15,52,96,0.5); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 13px;">
+                当前可用余额: <span id="modal-balance" style="color: #ffd700; font-weight: bold;">0</span> GAS
+            </div>
+            <button class="btn btn-success" onclick="confirmTransfer()" style="width: 100%;">
+                ✅ 确认转赠
+            </button>
+        </div>
+    </div>
+    
+    <!-- 通知 -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // ==================== 配置区域 ====================
+        // 使用 js/db_client.js 提供的统一实例 (支持 Mock 模式)
+        const supabase = window.supabaseInstance;
+        
+        if (!supabase) {
+            console.error("Supabase client not initialized via db_client.js");
+            showNotification('数据库客户端初始化失败', 'error');
+        }
+
+        // 全局状态
+        let currentUser = null;
+        let currentUserData = null;
+        let citizensData = [];
+        let selectedCitizenId = null;
+
+        // ==================== 初始化 ====================
+        async function init() {
+            try {
+                // 尝试从主系统获取登录态（通过 localStorage 或 URL参数）
+                await checkAuth();
+                
+                if (!currentUser) {
+                    showNotification('请先登录主系统', 'error');
+                    setTimeout(() => backToMain(), 2000);
+                    return;
+                }
+                
+                document.getElementById('owner-email').textContent = currentUser.email;
+                await loadData();
+                
+            } catch (error) {
+                console.error('初始化失败:', error);
+                showNotification('系统初始化失败: ' + error.message, 'error');
+            }
+        }
+
+        // 检查登录状态（支持与主系统集成）
+        async function checkAuth() {
+            // 方案1: 检查 Supabase 当前会话
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session) {
+                currentUser = session.user;
+                return;
+            }
+            
+            // 方案2: 从 URL 参数获取 token（主系统传递）
+            const urlParams = new URLSearchParams(window.location.search);
+            const accessToken = urlParams.get('access_token');
+            
+            if (accessToken) {
+                const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+                if (!error && user) {
+                    currentUser = user;
+                    // 保存会话以备后续请求
+                    await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: urlParams.get('refresh_token') || ''
+                    });
+                }
+            }
+            
+            // 方案3: 从 localStorage 获取（与主系统共享存储）
+            if (!currentUser) {
+                const storedSession = localStorage.getItem('supabase.auth.token');
+                if (storedSession) {
+                    try {
+                        const parsed = JSON.parse(storedSession);
+                        if (parsed.currentSession) {
+                            await supabase.auth.setSession({
+                                access_token: parsed.currentSession.access_token,
+                                refresh_token: parsed.currentSession.refresh_token
+                            });
+                            const { data: { user } } = await supabase.auth.getUser();
+                            if (user) currentUser = user;
+                        }
+                    } catch (e) {
+                        console.error('解析存储的会话失败:', e);
+                    }
+                }
+            }
+        }
+
+        // ==================== 数据加载 ====================
+        async function loadData() {
+            try {
+                // 并行加载用户数据
+                const [userRes, citizensRes] = await Promise.all([
+                    supabase.from('users').select('*').eq('id', currentUser.id).single(),
+                    supabase.from('users').select('*').eq('referrer_id', currentUser.id).order('created_at', { ascending: false })
+                ]);
+                
+                if (userRes.error) throw userRes.error;
+                if (citizensRes.error) throw citizensRes.error;
+                
+                currentUserData = userRes.data;
+                citizensData = citizensRes.data || [];
+                
+                updateStats();
+                renderCitizens();
+                generateInviteLink();
+                
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                showNotification('数据加载失败: ' + error.message, 'error');
+            }
+        }
+
+        // 更新统计面板
+        function updateStats() {
+            document.getElementById('gas-balance').textContent = currentUserData?.balance_g || 0;
+            document.getElementById('citizen-count').textContent = citizensData.length;
+            document.getElementById('active-count').textContent = citizensData.filter(c => c.is_active).length;
+            document.getElementById('donated-count').textContent = citizensData.filter(c => c.total_donation > 0).length;
+        }
+
+        // ==================== 邀请链接 ====================
+        function generateInviteLink() {
+            if (!currentUser) return;
+            // 生成包含推荐人ID的注册链接（假设主系统有register页面）
+            const baseUrl = window.location.origin.replace('zixitong', 'index'); // 假设主系统为index
+            const link = `${baseUrl}/register.html?ref=${currentUser.id}`;
+            document.getElementById('invite-link').textContent = link;
+            return link;
+        }
+
+        function copyInviteLink() {
+            const link = document.getElementById('invite-link').textContent;
+            navigator.clipboard.writeText(link).then(() => {
+                showNotification('✅ 邀请链接已复制', 'success');
+            }).catch(() => {
+                // 降级方案
+                const textArea = document.createElement("textarea");
+                textArea.value = link;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textArea);
+                showNotification('✅ 邀请链接已复制', 'success');
+            });
+        }
+
+        // ==================== 子民列表渲染 ====================
+        function renderCitizens() {
+            const container = document.getElementById('citizens-container');
+            
+            if (citizensData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 48px; margin-bottom: 10px;">🏝️</div>
+                        <p>暂无子民</p>
+                        <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                            分享您的邀请链接，发展您的岛屿王国
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '<div class="citizen-list">' + citizensData.map(citizen => {
+                const isActive = citizen.is_active;
+                const hasDonated = citizen.total_donation > 0;
+                const lastActive = citizen.last_active ? formatTime(citizen.last_active) : '从未活跃';
+                
+                return `
+                    <div class="citizen-item">
+                        <div class="citizen-info">
+                            <div class="citizen-name">
+                                ${citizen.email || '未命名岛民'}
+                                ${hasDonated ? '<span class="badge badge-donated">💎 已捐赠</span>' : ''}
+                            </div>
+                            <div class="citizen-meta">
+                                <span>⛽ ${citizen.balance_g || 0} GAS</span>
+                                <span>🕐 ${lastActive}</span>
+                                <span>📅 ${formatDate(citizen.created_at)}</span>
+                            </div>
+                        </div>
+                        <div class="citizen-status">
+                            ${isActive 
+                                ? '<span class="badge badge-active">✅ 活跃</span>' 
+                                : '<span class="badge badge-inactive">⏸️ 未激活</span>'
+                            }
+                            <div class="gas-amount">${citizen.balance_g || 0}</div>
+                            <div class="action-buttons">
+                                <button class="action-btn btn-success" onclick="openTransferModal('${citizen.id}', '${citizen.email}', ${citizen.balance_g})">
+                                    转赠
+                                </button>
+                                <button class="action-btn btn-primary" onclick="viewDetail('${citizen.id}')">
+                                    详情
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('') + '</div>';
+        }
+
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+            
+            if (diff < 60) return '刚刚';
+            if (diff < 3600) return Math.floor(diff / 60) + '分钟前';
+            if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
+            if (diff < 2592000) return Math.floor(diff / 86400) + '天前';
+            return formatDate(dateString);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        }
+
+        // ==================== 激活新子民 ====================
+        async function activateCitizen() {
+            const email = document.getElementById('new-citizen-email').value.trim();
+            const amount = parseInt(document.getElementById('activate-amount').value);
+            
+            if (!email || !amount) {
+                showNotification('请填写完整信息', 'error');
+                return;
+            }
+            
+            if (amount < 800) {
+                showNotification('激活最少需要 800 GAS', 'error');
+                return;
+            }
+            
+            if (amount > (currentUserData?.balance_g || 0)) {
+                showNotification('GAS 余额不足', 'error');
+                return;
+            }
+            
+            try {
+                showNotification('正在处理激活...', 'info');
+                
+                // 检查该邮箱是否已是子民
+                const existingCitizen = citizensData.find(c => c.email === email);
+                if (existingCitizen) {
+                    // 已为子民，直接充值
+                    await transferGas(existingCitizen.id, amount, 'recharge');
+                    showNotification(`已为现有子民 ${email} 充值 ${amount} GAS`, 'success');
+                } else {
+                    // 检查系统中是否已有该邮箱用户
+                    const { data: existingUser } = await supabase
+                        .from('users')
+                        .select('id, referrer_id')
+                        .eq('email', email)
+                        .maybeSingle();
+                    
+                    if (existingUser) {
+                        if (existingUser.referrer_id && existingUser.referrer_id !== currentUser.id) {
+                            showNotification('该用户已经是其他岛主的子民', 'error');
+                            return;
+                        }
+                        // 更新为当前用户的子民并激活
+                        await Promise.all([
+                            supabase.from('users').update({
+                                referrer_id: currentUser.id,
+                                is_active: true,
+                                balance_g: amount
+                            }).eq('id', existingUser.id),
+                            deductGas(amount),
+                            logTransfer(existingUser.id, amount, 'activate_citizen')
+                        ]);
+                    } else {
+                        // 创建新用户（简化版，实际可能需要更多字段）
+                        const { data: newUser, error: createError } = await supabase
+                            .from('users')
+                            .insert({
+                                email: email,
+                                referrer_id: currentUser.id,
+                                balance_g: amount,
+                                is_active: true,
+                                created_at: new Date().toISOString()
+                            })
+                            .select()
+                            .single();
+                        
+                        if (createError) throw createError;
+                        
+                        await Promise.all([
+                            deductGas(amount),
+                            logTransfer(newUser.id, amount, 'activate_new_citizen')
+                        ]);
+                    }
+                    
+                    showNotification(`✅ 成功激活子民 ${email}，赠送 ${amount} GAS`, 'success');
+                }
+                
+                // 清空表单
+                document.getElementById('new-citizen-email').value = '';
+                document.getElementById('activate-amount').value = '800';
+                
+                // 刷新数据
+                await loadData();
+                
+            } catch (error) {
+                console.error('激活失败:', error);
+                showNotification('激活失败: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== GAS 转账功能 ====================
+        function openTransferModal(citizenId, citizenEmail, currentBalance) {
+            selectedCitizenId = citizenId;
+            document.getElementById('transfer-target-name').textContent = citizenEmail;
+            document.getElementById('modal-balance').textContent = currentUserData?.balance_g || 0;
+            document.getElementById('transfer-amount').value = '';
+            document.getElementById('transfer-modal').style.display = 'flex';
+        }
+
+        function closeTransferModal() {
+            document.getElementById('transfer-modal').style.display = 'none';
+            selectedCitizenId = null;
+        }
+
+        async function confirmTransfer() {
+            const amount = parseInt(document.getElementById('transfer-amount').value);
+            
+            if (!amount || amount < 1) {
+                showNotification('转赠数量不能少于 300', 'error');
+                return;
+            }
+            
+            if (amount > (currentUserData?.balance_g || 0)) {
+                showNotification('余额不足', 'error');
+                return;
+            }
+            
+            try {
+                await transferGas(selectedCitizenId, amount, 'gift');
+                closeTransferModal();
+                showNotification(`成功转赠 ${amount} GAS`, 'success');
+                await loadData();
+            } catch (error) {
+                showNotification('转赠失败: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== 数据库操作封装 ====================
+        async function transferGas(toUserId, amount, type) {
+            // 扣除自己的 GAS
+            await deductGas(amount);
+            
+            // 增加对方 GAS
+            const { error } = await supabase.rpc('increment_gas', {
+                user_id: toUserId,
+                amount: amount
+            });
+            
+            // 如果没有 RPC 函数，使用以下替代方案：
+            if (error && error.message.includes('function')) {
+                // 先查询对方当前余额
+                const { data: target } = await supabase
+                    .from('users')
+                    .select('balance_g')
+                    .eq('id', toUserId)
+                    .single();
+                
+                await supabase
+                    .from('users')
+                    .update({ balance_g: (target?.balance_g || 0) + amount })
+                    .eq('id', toUserId);
+            }
+            
+            // 记录日志
+            await logTransfer(toUserId, amount, type);
+        }
+
+        async function deductGas(amount) {
+            const newBalance = (currentUserData?.balance_g || 0) - amount;
+            const { error } = await supabase
+                .from('users')
+                .update({ balance_g: newBalance })
+                .eq('id', currentUser.id);
+            
+            if (error) throw error;
+            currentUserData.balance_g = newBalance;
+        }
+
+        async function logTransfer(toUserId, amount, type) {
+            await supabase.from('gas_transfer_log').insert({
+                from_user_id: currentUser.id,
+                to_user_id: toUserId,
+                amount: amount,
+                type: type,
+                created_at: new Date().toISOString()
+            });
+        }
+
+        // ==================== 工具函数 ====================
+        function viewDetail(citizenId) {
+            const citizen = citizensData.find(c => c.id === citizenId);
+            if (!citizen) return;
+            
+            alert(`子民详情:\n\n邮箱: ${citizen.email}\nGAS余额: ${citizen.balance_g}\n注册时间: ${formatDate(citizen.created_at)}\n最后活跃: ${citizen.last_active ? formatTime(citizen.last_active) : '从未'}\n总捐赠: ${citizen.total_donation || 0}\n状态: ${citizen.is_active ? '活跃' : '未激活'}`);
+        }
+
+        function showNotification(message, type = 'info') {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notif.classList.remove('show');
+            }, 3000);
+        }
+
+        function backToMain() {
+            // 尝试关闭窗口（如果是通过 window.open 打开的）
+            if (window.opener) {
+                window.close();
+            } else {
+                // 否则跳转回主系统（请修改为您的主系统地址）
+                window.location.href = '/index.html';
+            }
+        }
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('transfer-modal');
+            if (event.target === modal) {
+                closeTransferModal();
+            }
+        }
+
+        // 启动
+        window.onload = init;
+    </script>
+</body>
+</html>
