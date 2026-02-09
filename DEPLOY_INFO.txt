@@ -1,0 +1,26 @@
+﻿蚂蚁岛系统部署信息
+===================
+
+部署时间: 2026-02-09 15:53:07
+Vercel项目: mayidao-gels988
+访问地址: https://mayidao-gels988-brown.vercel.app
+
+核心功能:
+- 自学模块: 22矩阵四数基因预测
+- 数据库可视化: 实时监控全球用户数据
+- 多模型投票预测机制
+- 全球布局支持
+
+技术栈:
+- 后端: Node.js + Express + Supabase
+- 前端: HTML5 + Chart.js
+- 认证: JWT令牌保护
+- 部署: Vercel自动部署
+
+环境变量:
+- SUPABASE_URL: 已配置
+- SUPABASE_ANON_KEY: 已配置
+- JWT_SECRET: 已配置
+- NODE_ENV: production
+
+系统状态: ✅ 正常运行

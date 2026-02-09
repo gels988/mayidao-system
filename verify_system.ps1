@@ -1,4 +1,4 @@
-﻿﻿# ==================== 系统运行状态验证脚本 (PowerShell版) ====================
+﻿# ==================== 系统运行状态验证脚本 (PowerShell版) ====================
 
 $ErrorActionPreference = "Stop"
 
@@ -26,8 +26,25 @@ Write-Color "===================================" "Cyan"
 Write-Host ""
 
 # 系统地址
-$BASE_URL = "https://mayidao-gels988.vercel.app"
+$BASE_URL = "https://mayidao-gels988.vercel.app" # Default
+
+# 尝试从 DEPLOY_INFO.txt 读取部署地址
+if (Test-Path "DEPLOY_INFO.txt") {
+    try {
+        $deployInfo = Get-Content "DEPLOY_INFO.txt" -Encoding UTF8
+        # Join lines to search
+        $deployInfoText = $deployInfo -join "`n"
+        if ($deployInfoText -match "访问地址:\s+(https://[^\s]+)") {
+            $BASE_URL = $matches[1]
+            Write-Host "已从部署信息读取地址: $BASE_URL" -ForegroundColor Gray
+        }
+    } catch {
+        Write-Host "读取 DEPLOY_INFO.txt 失败，使用默认地址" -ForegroundColor Gray
+    }
+}
 $API_URL = "$BASE_URL/api"
+Write-Host "当前测试目标: $BASE_URL" -ForegroundColor Gray
+Write-Host ""
 
 # 验证结果统计
 $global:PASSED = 0
@@ -85,7 +102,7 @@ Write-Host ""
 Write-Color "2️⃣  检查API健康状态" "Blue"
 
 # 检查健康接口
-Write-Host "   检查健康接口..."
+Write-Host "   检查健康接口 ($API_URL/health)..."
 try {
     $resp = Invoke-WebRequest -Uri "$API_URL/health" -Method Get -UseBasicParsing -ErrorAction SilentlyContinue
     $json = $resp.Content | ConvertFrom-Json
@@ -106,7 +123,8 @@ if (Test-Path ".env") {
     Write-Host "   测试Supabase连接..."
     # 使用之前创建的 check_supabase_connection.js
     if (Test-Path "check_supabase_connection.js") {
-        node check_supabase_connection.js
+        # 使用 cmd /c 运行 node 以避免可能的 PowerShell 信号处理问题
+        cmd /c "node check_supabase_connection.js"
         if ($LASTEXITCODE -eq 0) {
             Print-Result "Supabase连接成功" "PASS"
         } else {
@@ -121,10 +139,11 @@ if (Test-Path ".env") {
 
 Write-Host ""
 
-# 步骤4: 检查Vercel日志
+# 步骤4: 检查Vercel部署日志
 Write-Color "4️⃣  检查Vercel部署日志" "Blue"
 try {
-    $logs = npx vercel logs --prod mayidao-gels988 --limit 5 2>&1
+    # 使用 cmd /c 运行 npx
+    $logs = cmd /c "npx vercel logs --prod mayidao-gels988 --limit 5 2>&1"
     if ($LASTEXITCODE -eq 0) {
         Print-Result "Vercel部署日志获取成功" "PASS"
         Write-Host "   最近日志:"
