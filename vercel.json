@@ -2,11 +2,11 @@
   "version": 2,
   "name": "mayidao-gels988",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/backend/server.js" },
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
     { "source": "/(.*)", "destination": "/frontend/$1" }
   ],
   "functions": {
-    "backend/server.js": { "maxDuration": 10 }
+    "api/index.js": { "maxDuration": 10 }
   },
   "regions": ["hkg1"]
 }
