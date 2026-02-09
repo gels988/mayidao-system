@@ -1,7 +1,17 @@
-# Ignore dashboard and database files from cloud deployment
-frontend/dashboard.html
-数据库资料.html
-local_only/
-# Ignore self-learn module (local only)
-frontend/self_learn.html
-self_learn.html
+# Local development files
+node_modules/
+.env
+.env.local
+.git/
+.gitignore
+
+# Logs
+logs/
+*.log
+
+# Temp files
+tmp/
+temp/
+
+# Deployment config
+DEPLOY_INFO.txt
