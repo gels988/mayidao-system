@@ -25,10 +25,6 @@
       "dest": "/backend/server.js"
     },
     {
-      "src": "/self_learn.html",
-      "dest": "/frontend/self_learn.html"
-    },
-    {
       "src": "/(.*)",
       "dest": "/frontend/$1"
     }

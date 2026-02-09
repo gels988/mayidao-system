@@ -2,3 +2,6 @@
 frontend/dashboard.html
 数据库资料.html
 local_only/
+# Ignore self-learn module (local only)
+frontend/self_learn.html
+self_learn.html

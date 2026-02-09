@@ -1,4 +1,4 @@
-﻿# ==================== 系统运行状态验证脚本 (PowerShell版) ====================
+﻿﻿# ==================== 系统运行状态验证脚本 (PowerShell版) ====================
 
 $ErrorActionPreference = "Stop"
 
@@ -39,14 +39,14 @@ Write-Color "1️⃣  检查前端页面可访问性" "Blue"
 # 检查主页
 Write-Host "   检查主页..."
 try {
-    $resp = Invoke-WebRequest -Uri "$BASE_URL" -Method Head -ErrorAction SilentlyContinue
+    $resp = Invoke-WebRequest -Uri "$BASE_URL" -Method Head -UseBasicParsing -ErrorAction SilentlyContinue
     if ($resp.StatusCode -eq 200) { Print-Result "主页可访问" "PASS" } else { Print-Result "主页可访问 ($($resp.StatusCode))" "FAIL" }
 } catch { Print-Result "主页可访问" "FAIL" }
 
 # 检查数据库可视化页面 (应为不可访问)
 Write-Host "   检查数据库可视化页面 (安全策略验证)..."
 try {
-    $resp = Invoke-WebRequest -Uri "$BASE_URL/数据库资料.html" -Method Head -ErrorAction SilentlyContinue
+    $resp = Invoke-WebRequest -Uri "$BASE_URL/数据库资料.html" -Method Head -UseBasicParsing -ErrorAction SilentlyContinue
     if ($resp.StatusCode -eq 404 -or $resp.StatusCode -eq 403) {
         Print-Result "数据库可视化页面已隐藏 (安全)" "PASS"
     } else {
@@ -61,12 +61,23 @@ try {
     }
 }
 
-# 检查自学模块页面
-Write-Host "   检查自学模块页面..."
+# 检查自学模块页面 (应为不可访问)
+Write-Host "   检查自学模块页面 (安全策略验证)..."
 try {
-    $resp = Invoke-WebRequest -Uri "$BASE_URL/self_learn.html" -Method Head -ErrorAction SilentlyContinue
-    if ($resp.StatusCode -eq 200) { Print-Result "自学模块页面可访问" "PASS" } else { Print-Result "自学模块页面可访问" "FAIL" }
-} catch { Print-Result "自学模块页面可访问" "FAIL" }
+    $resp = Invoke-WebRequest -Uri "$BASE_URL/self_learn.html" -Method Head -UseBasicParsing -ErrorAction SilentlyContinue
+    if ($resp.StatusCode -eq 404 -or $resp.StatusCode -eq 403) {
+        Print-Result "自学模块页面已隐藏 (安全)" "PASS"
+    } else {
+        Print-Result "自学模块页面仍可访问 ($($resp.StatusCode))" "FAIL"
+    }
+} catch {
+    # 捕获 404 错误
+    if ($_.Exception.Response.StatusCode -eq 404 -or $_.Exception.Response.StatusCode -eq 403) {
+        Print-Result "自学模块页面已隐藏 (安全)" "PASS"
+    } else {
+        Print-Result "自学模块页面仍可访问" "FAIL"
+    }
+}
 
 Write-Host ""
 
@@ -76,7 +87,7 @@ Write-Color "2️⃣  检查API健康状态" "Blue"
 # 检查健康接口
 Write-Host "   检查健康接口..."
 try {
-    $resp = Invoke-WebRequest -Uri "$API_URL/health" -Method Get -ErrorAction SilentlyContinue
+    $resp = Invoke-WebRequest -Uri "$API_URL/health" -Method Get -UseBasicParsing -ErrorAction SilentlyContinue
     $json = $resp.Content | ConvertFrom-Json
     if ($json.status -eq "ok") {
         Print-Result "API健康检查通过" "PASS"
@@ -130,7 +141,7 @@ Write-Host ""
 # 步骤5: 性能测试
 Write-Color "5️⃣  性能测试" "Blue"
 Write-Host "   测试API响应时间..."
-$time = Measure-Command { Invoke-WebRequest -Uri "$API_URL/health" -Method Head -ErrorAction SilentlyContinue }
+$time = Measure-Command { Invoke-WebRequest -Uri "$API_URL/health" -Method Head -UseBasicParsing -ErrorAction SilentlyContinue }
 $ms = $time.TotalMilliseconds
 if ($ms -lt 2000) {
     Print-Result "API响应时间正常 ($([math]::Round($ms, 2)) ms)" "PASS"
