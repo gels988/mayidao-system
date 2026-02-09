@@ -1,0 +1,4 @@
+# Ignore dashboard and database files from cloud deployment
+frontend/dashboard.html
+数据库资料.html
+local_only/

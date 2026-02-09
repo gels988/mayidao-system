@@ -29,10 +29,6 @@
       "dest": "/frontend/self_learn.html"
     },
     {
-      "src": "/数据库资料.html",
-      "dest": "/frontend/dashboard.html"
-    },
-    {
       "src": "/(.*)",
       "dest": "/frontend/$1"
     }
