@@ -1,0 +1,52 @@
+# ==================== Vercel环境变量设置指南 ====================
+
+🔐 Vercel环境变量设置指南
+===================================
+项目: mayidao-gels988
+访问: https://vercel.com/dashboard
+===================================
+
+📋 请按照以下步骤在Vercel控制台设置环境变量：
+
+1. 登录Vercel
+   - 访问: https://vercel.com/login 
+   - 邮箱: gels988@proton.me
+   - 登录后进入项目: mayidao-gels988
+
+2. 进入环境变量设置
+   - 点击左侧菜单 "Settings"
+   - 选择 "Environment Variables"
+   - 选择 "Production" 环境
+
+3. 添加以下环境变量：
+
+   ┌─────────────────────────────────────────────┐
+   │ 变量名称            │ 值                      │
+   ├─────────────────────────────────────────────┤
+   │ SUPABASE_URL        │ [你的Supabase URL]      │
+   │ SUPABASE_ANON_KEY   │ [你的Anon Key]          │
+   │ SUPABASE_SERVICE_KEY│ [你的Service Key]       │
+   │ JWT_SECRET          │ [强随机字符串]          │
+   │ JWT_EXPIRES_IN      │ 24h                     │
+   │ NODE_ENV            │ production              │
+   │ PORT                │ 3001                    │
+   │ ALLOWED_ORIGINS     │ https://mayidao-gels988.vercel.app  │
+   │ RATE_LIMIT_MAX      │ 100                     │
+   │ RATE_LIMIT_WINDOW_MS│ 60000                   │
+   └─────────────────────────────────────────────┘
+
+4. 获取Supabase配置信息
+   - 登录: https://supabase.com 
+   - 项目: gels988's Org
+   - 点击 "Settings" → "API"
+   - 复制以下信息:
+     * Project URL → SUPABASE_URL
+     * anon public → SUPABASE_ANON_KEY
+     * service_role → SUPABASE_SERVICE_KEY
+
+5. 保存并重新部署
+   - 点击 "Save"
+   - 系统会自动触发重新部署
+   - 等待部署完成（约1-2分钟）
+
+💡 提示: 如果不想手动设置，可以使用我们提供的自动化脚本: setup_vercel_env.ps1
