@@ -28,7 +28,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/stats', statsRoutes);
 
 // 健康检查
-app.get('/health', async (req, res) => {
+app.get('/api/health', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('users')

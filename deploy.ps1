@@ -17,7 +17,7 @@ Write-Host ""
 
 # 步骤1: 安装依赖
 Write-Color "📦 步骤1: 安装依赖" "Blue"
-npm install
+cmd /c "npm install"
 Write-Color "✅ 依赖安装完成" "Green"
 Write-Host ""
 
@@ -31,7 +31,6 @@ if (Test-Path ".git") {
 
 核心功能：
 - 🧠 自学模块：22矩阵四数基因预测
-- 
 - 🔮 多模型投票预测机制
 - 🌐 全球布局支持
 
@@ -71,7 +70,7 @@ Write-Host ""
 
 # 检查登录状态
 Write-Host "检查登录状态..."
-npx vercel whoami
+cmd /c "npx vercel whoami"
 if ($LASTEXITCODE -ne 0) {
     Write-Color "❌ 未登录Vercel，请先运行: npx vercel login" "Red"
     exit 1
@@ -79,16 +78,29 @@ if ($LASTEXITCODE -ne 0) {
 
 # 执行部署
 Write-Host "开始部署..."
-# 捕获输出以提取URL
-$deployOutput = npx vercel --prod --name mayidao-gels988 --yes 2>&1 | Out-String
-Write-Host $deployOutput
+$deployLog = "deploy_output.log"
+# 使用 cmd /c 运行并重定向输出到文件，以避免 PowerShell 管道问题
+cmd /c "npx vercel --prod --name mayidao-gels988 --yes > $deployLog 2>&1"
 
-# 尝试从输出中提取URL (https://mayidao-gels988...vercel.app)
-if ($deployOutput -match "(https://mayidao-gels988[a-zA-Z0-9-]*\.vercel\.app)") {
-    $DEPLOY_URL = $matches[1]
+if (Test-Path $deployLog) {
+    $deployOutput = Get-Content $deployLog -Raw
+    Write-Host $deployOutput
+
+    # 尝试从输出中提取URL (优先匹配 Aliased, 然后 Production, 然后 Inspect)
+    # Vercel output example: "Production: https://..." or "Aliased: https://..."
+    if ($deployOutput -match "Aliased:\s+(https://[^\s]+)") {
+        $DEPLOY_URL = $matches[1]
+    } elseif ($deployOutput -match "Production:\s+(https://[^\s]+)") {
+        $DEPLOY_URL = $matches[1]
+    } elseif ($deployOutput -match "(https://mayidao-gels988[a-zA-Z0-9-]*\.vercel\.app)") {
+        $DEPLOY_URL = $matches[1]
+    } else {
+        # 备用：构建标准URL
+        $DEPLOY_URL = "https://mayidao-gels988.vercel.app"
+    }
 } else {
-    # 备用：构建标准URL
-    $DEPLOY_URL = "https://mayidao-gels988.vercel.app"
+    Write-Color "❌ 无法读取部署日志" "Red"
+    exit 1
 }
 
 if (-not $DEPLOY_URL) {
@@ -108,9 +120,11 @@ Write-Host "   $DEPLOY_URL/api"
 Write-Host ""
 Write-Color "📊 管理看板:" "Green"
 Write-Host "   $DEPLOY_URL/数据库资料.html"
+Write-Host "   (⚠️ 仅本地可用 / Local Only)"
 Write-Host ""
 Write-Color "🧠 学习模块:" "Green"
 Write-Host "   $DEPLOY_URL/self_learn.html"
+Write-Host "   (⚠️ 仅本地可用 / Local Only)"
 Write-Color "===================================" "Cyan"
 Write-Host ""
 Write-Color "⏰ 系统将自动运行，每30秒刷新数据" "Yellow"
