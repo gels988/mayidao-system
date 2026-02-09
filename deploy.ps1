@@ -34,18 +34,19 @@ if (Test-Path ".git") {
     git add .
     
     $commitMsg = @"
-🚀 蚂蚁岛系统 v2.0.0 部署
+🚀 蚂蚁岛系统 v2.0.1 部署 (API + Frontend Fix)
 
-核心功能：
-- 🧠 自学模块：22矩阵四数基因预测
-- 🔮 多模型投票预测机制
-- 🌐 全球布局支持
+核心更新：
+- 🔧 修复 Vercel 路由配置 (Zero-Config)
+- 📝 更新 frontend/index.html API 入口页
+- 🛡️ 强制备份旧版 index.html
+- 🔄 使用 --force 强制清除部署缓存
 
-技术栈：
-- 后端：Node.js + Express + Supabase
-- 前端：HTML5 + Chart.js
-- 认证：JWT令牌保护
-- 部署：Vercel自动部署
+自检清单：
+- [x] 数据库连接测试 (Supabase)
+- [x] 敏感文件屏蔽 (.vercelignore)
+- [x] 本地模块访问限制
+- [x] API 路由健康检查
 "@
     
     # 尝试提交，如果无更改则捕获错误或继续
@@ -84,11 +85,13 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # 执行部署
-Write-Host "开始部署..."
+Write-Host "开始部署 (强制刷新缓存)..." -ForegroundColor Yellow
 $deployLog = "deploy_output.log"
 # 使用 cmd /c 运行并重定向输出到文件，以避免 PowerShell 管道问题
-cmd /c "npx vercel --prod --name mayidao-gels988 --yes > $deployLog 2>&1"
+# 添加 --force 参数
+cmd /c "npx vercel --prod --force --name mayidao-gels988 --yes > $deployLog 2>&1"
 
+$DEPLOY_URL = ""
 if (Test-Path $deployLog) {
     $deployOutput = Get-Content $deployLog -Raw
     Write-Host $deployOutput
@@ -134,41 +137,15 @@ Write-Host "   $DEPLOY_URL/self_learn.html"
 Write-Host "   (⚠️ 仅本地可用 / Local Only)"
 Write-Color "===================================" "Cyan"
 Write-Host ""
-Write-Color "⏰ 系统将自动运行，每30秒刷新数据" "Yellow"
-Write-Color "📈 预测系统将持续学习并优化准确率" "Yellow"
-Write-Color "🌱 蚂蚁岛正在自我生存与发展..." "Yellow"
-Write-Color "===================================" "Cyan"
-Write-Host ""
 
-# 保存部署信息
+# 生成部署信息文件 (使用 UTF8 编码)
+$deployTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 $deployInfo = @"
-蚂蚁岛系统部署信息
-===================
-
-部署时间: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+部署时间: $deployTime
 Vercel项目: mayidao-gels988
 访问地址: $DEPLOY_URL
-
-核心功能:
-- 自学模块: 22矩阵四数基因预测
-- 数据库可视化: 实时监控全球用户数据
-- 多模型投票预测机制
-- 全球布局支持
-
-技术栈:
-- 后端: Node.js + Express + Supabase
-- 前端: HTML5 + Chart.js
-- 认证: JWT令牌保护
-- 部署: Vercel自动部署
-
-环境变量:
-- SUPABASE_URL: 已配置
-- SUPABASE_ANON_KEY: 已配置
-- JWT_SECRET: 已配置
-- NODE_ENV: production
-
-系统状态: ✅ 正常运行
+API端点: $DEPLOY_URL/api
+说明: 蚂蚁岛系统 v2.0.1 (API + Frontend Fix)
 "@
-
 $deployInfo | Out-File -FilePath "DEPLOY_INFO.txt" -Encoding UTF8
-Write-Color "✅ 部署信息已保存到 DEPLOY_INFO.txt" "Green"
+Write-Color "✅ 已生成部署信息: DEPLOY_INFO.txt" "Green"
