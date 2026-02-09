@@ -1,5 +1,5 @@
-﻿部署时间: 2026-02-09 16:19:30
+﻿部署时间: 2026-02-09 16:22:39
 Vercel项目: mayidao-gels988
-访问地址: https://mayidao-gels988-prisfv2yh-gels988s-projects.vercel.app
-API端点: https://mayidao-gels988-prisfv2yh-gels988s-projects.vercel.app/api
+访问地址: https://mayidao-gels988-brown.vercel.app
+API端点: https://mayidao-gels988-brown.vercel.app/api
 说明: 蚂蚁岛系统 v2.0.1 (API + Frontend Fix)

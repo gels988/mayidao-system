@@ -3,6 +3,8 @@
   "name": "mayidao-gels988",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/js/(.*)", "destination": "/js/$1" },
+    { "source": "/css/(.*)", "destination": "/css/$1" },
     { "source": "/(.*)", "destination": "/frontend/$1" }
   ],
   "functions": {

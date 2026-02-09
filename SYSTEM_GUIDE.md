@@ -1,61 +1,80 @@
-# 📘 蚂蚁岛预测系统 - 使用指南 (SYSTEM_GUIDE.md)
+# 蚂蚁岛预测系统 - 使用与维护指南
 
-欢迎使用蚂蚁岛预测系统。本系统采用 **混合架构**：后端 API 与公共展示页部署在云端 (Vercel)，而核心管理与自学模块仅限 **本地使用**，以确保最高级别的数据安全。
+## 1. 系统概览
 
-## 🚀 快速开始
+蚂蚁岛预测系统是一个基于 Web 的预测分析平台，包含前端展示、后台管理和自动化预测引擎。
 
-### 1. 公共访问 (云端)
-- **访问地址**: `https://mayidao-gels988.vercel.app` (以实际部署地址为准)
-- **功能**:
-  - 查看公开预测数据
-  - 访问 API 接口 (`/api/health`, `/api/stats`)
-  - 手机端/PC端 通用访问
+**核心组件:**
+*   **云端入口 (Public):** `https://mayidao-gels988.vercel.app` (面向普通用户，仅展示 API 状态或公开信息)
+*   **API 服务:** `https://mayidao-gels988.vercel.app/api` (提供数据支持)
+*   **本地管理 (Admin):** 仅在本地运行，用于数据录入、模型训练和系统监控。
 
-### 2. 管理员操作 (本地仅限)
-以下模块 **未部署到云端**，必须在开发机 (`D:\预测手机端总装11`) 上直接打开文件使用。
+## 2. 日常操作指南
 
-#### 📊 数据库资料 (管理看板)
-- **文件路径**: `d:\预测手机端总装11\数据库资料.html`
-- **打开方式**: 双击文件，使用 Chrome/Edge 浏览器打开。
-- **功能**:
-  - 实时查看全球用户分布图表
-  - 监控数据库连接状态
-  - 执行数据维护操作
+### 2.1 启动本地管理环境
 
-#### 🎓 自学模块 (22矩阵)
-- **文件路径**: `d:\预测手机端总装11\frontend\self_learn.html`
-- **打开方式**: 双击文件打开。
-- **功能**:
-  - 四数基因预测算法演示
-  - 内部算法测试与验证
+由于安全策略，敏感的管理功能只能在本地访问。
 
-## 🛠️ 常用维护命令
+1.  打开项目文件夹: `D:\预测手机端总装11`
+2.  **直接打开 HTML 文件:**
+    *   **数据管理:** 双击 `数据库资料.html` (或 `index_old_backup.html`)
+    *   **自学模块:** 双击 `frontend/self_learn.html`
+3.  **注意:** 请勿将这些文件上传到公共网络。
 
-在项目根目录 (`D:\预测手机端总装11`) 打开 PowerShell 执行：
+### 2.2 部署更新到云端
 
-1. **一键部署更新**:
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\deploy.ps1
-   ```
-   *说明: 自动提交代码、推送到 GitHub 并发布到 Vercel。*
+当你修改了代码 (如后端逻辑或前端公开页面) 并希望发布时：
 
-2. **系统健康自检**:
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\verify_system.ps1
-   ```
-   *说明: 自动检查 API 状态、Supabase 连接及页面可访问性。*
+1.  打开 PowerShell 终端。
+2.  进入项目目录:
+    ```powershell
+    cd D:\预测手机端总装11
+    ```
+3.  运行部署脚本:
+    ```powershell
+    powershell -ExecutionPolicy Bypass -File .\deploy.ps1
+    ```
+4.  脚本会自动执行：
+    *   安装依赖
+    *   Git 提交与推送
+    *   部署到 Vercel
+    *   生成 `DEPLOY_INFO.txt`
 
-## ⚠️ 安全注意事项
+### 2.3 验证系统状态
 
-1. **不要** 将 `.env` 文件分享给任何人或提交到公开仓库。
-2. **不要** 修改 `.vercelignore` 文件中的屏蔽规则，否则可能导致管理后台泄露。
-3. **定期备份** `DEPLOY_INFO.txt` 以记录部署历史。
+部署完成后，建议运行验证脚本确保一切正常：
 
-## 📞 技术支持
+```powershell
+powershell -ExecutionPolicy Bypass -File .\verify_system.ps1
+```
 
-- **架构设计**: 蚂蚁岛第一方面军
-- **部署平台**: Vercel Serverless
-- **数据库**: Supabase (PostgreSQL)
+该脚本会检查：
+*   网站是否可访问
+*   API 是否健康
+*   Supabase 数据库连接
+*   敏感页面是否已正确隐藏
+
+## 3. 故障排查
+
+*   **部署失败:**
+    *   检查 `deploy_output.log` 查看详细错误信息。
+    *   确认网络连接正常 (特别是连接 GitHub 和 Vercel)。
+    *   确认已登录 Vercel (`npx vercel login`)。
+
+*   **API 报错:**
+    *   检查 Vercel 仪表盘中的 Function Logs。
+    *   确认 Supabase 数据库连接配置 (环境变量) 正确。
+
+*   **本地页面无法运行:**
+    *   按 `F12` 打开浏览器控制台查看 Console 错误。
+    *   确认本地文件路径未被移动。
+
+## 4. 安全注意事项
+
+*   **绝对禁止** 将 `.env` 文件提交到 Git 仓库。
+*   **绝对禁止** 将 `数据库资料.html` 和 `self_learn.html` 部署到云端 (已通过 `.vercelignore` 配置屏蔽)。
+*   定期备份 `DEPLOY_INFO.txt` 以记录部署历史。
 
 ---
-*文档生成时间: 2026-02-09*
+**技术支持:** Mayiju Technical Team
+**版本:** 2.0.1

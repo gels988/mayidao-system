@@ -3,67 +3,1401 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>蚂蚁岛预测系统 - API服务</title>
+    <title>智能预测系统 - 修正版</title>
+    <!-- 拦截脚本已移除：高赔率模块已改为原生集成 -->
+    <link rel="stylesheet" href="css/self_learn.css">
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            gap: 20px;
+        }
+
+        /* 左侧说明 */
+        #left-panel {
+            width: 300px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* 右侧模拟手机界面 */
+        #right-panel {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .phone-frame {
+            width: 375px;
+            height: 812px;
+            background: #1a1a1a;
+            border-radius: 40px;
+            padding: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            border-radius: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 状态栏 */
+        .status-bar {
+            height: 30px;
+            background: #2a2a2a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 12px;
+            color: #fff;
+        }
+
+        /* 主界面样式 */
+        .app-container {
+            height: calc(100% - 30px);
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* 顶部导航 */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #2a2a2a;
+            border-bottom: 1px solid #444;
+        }
+        .top-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .user-info {
+            font-size: 10px;
+            color: #888;
+        }
+        .g-gas {
+            color: #ffcc00;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .accuracy {
+            background: #3a3a3a;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            color: #aaa;
+        }
+        .top-right {
+            display: flex;
+            gap: 4px;
+        }
+        .settings-btn {
+            background: #444;
+            color: #fff;
+            border: 1px solid #666;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 9px;
+            cursor: pointer;
+        }
+        .settings-btn.primary {
+            background: #1e90ff;
+            border-color: #1e90ff;
+        }
+        .settings-btn.success {
+            background: #32cd32;
+            border-color: #32cd32;
+            color: #000;
+        }
+        .settings-btn.warning {
+            background: #ff6600;
+            border-color: #ff6600;
+            color: #fff;
+            font-weight: bold;
+        }
+        .exit-btn {
+            background: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 10px;
+        }
+
+        /* 系统状态 */
+        .system-status {
+            text-align: center;
+            padding: 6px;
+            font-size: 12px;
+            color: #aaa;
+        }
+        .accuracy-display {
+            text-align: center;
+            padding: 4px;
+            font-size: 11px;
+            color: #ffcc00;
+        }
+
+        /* 主容器 */
+        .main-container {
+            padding: 10px;
             display: flex;
             flex-direction: column;
+            gap: 10px;
+        }
+
+        /* 输入区域 */
+        .input-section {
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        /* 输入控制行 */
+        .input-control-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            align-items: flex-end;
+        }
+        
+        .input-group-small {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .input-group-small label {
+            font-size: 9px;
+            color: #888;
+            margin-bottom: 3px;
+        }
+        .input-group-small input {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 8px 4px;
+            border-radius: 4px;
+            font-size: 14px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            width: 100%;
+            letter-spacing: 3px;
+        }
+
+        /* 按钮 */
+        .btn-input {
+            background: #1e90ff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 1px;
+            white-space: nowrap;
+        }
+        .btn-clear {
+            background: #ff3333;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 1px;
+            white-space: nowrap;
+        }
+
+        /* 联动记录模块 */
+        .linked-records-module {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .module-title {
+            font-size: 10px;
+            color: #888;
+            font-weight: bold;
+        }
+        .record-count {
+            font-size: 9px;
+            color: #666;
+        }
+        
+        /* 横向滚动容器 */
+        .linked-scroll-container {
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: #444 #1a1a1a;
+        }
+        .linked-scroll-container::-webkit-scrollbar {
+            height: 6px;
+        }
+        .linked-scroll-container::-webkit-scrollbar-track {
+            background: #0d0d0d;
+            border-radius: 3px;
+        }
+        .linked-scroll-container::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 3px;
+        }
+        
+        /* 记录行容器 */
+        .records-wrapper {
+            display: inline-flex;
+            gap: 10px;
+            padding: 4px;
+            min-width: 100%;
+        }
+        
+        /* 单个记录组 */
+        .record-unit {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: #252525;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            flex-shrink: 0;
+            width: 90px;
+            position: relative;
+        }
+        .record-unit.current {
+            border-color: #ffcc00;
+            background: #2a2520;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.2);
+        }
+        .record-index {
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #444;
+            color: #fff;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .record-unit.current .record-index {
+            background: #ffcc00;
+            color: #000;
+        }
+        
+        /* 原始输入行 */
+        .raw-input-row {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+        .raw-box {
+            width: 36px;
+            height: 26px;
+            background: #0d0d0d;
+            border: 1px solid #333;
+            border-radius: 3px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f2f5;
-            color: #333;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
         }
-        .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
+        .raw-box.mol { color: #4da6ff; border-color: #1a4d80; }
+        .raw-box.den { color: #ff6666; border-color: #802a2a; }
+        
+        /* 结构显示行 */
+        .structure-row {
+            display: flex;
+            gap: 3px;
+            justify-content: center;
         }
-        h1 {
-            color: #0070f3;
-            margin-bottom: 1rem;
+        .struct-digit {
+            width: 22px;
+            height: 22px;
+            background: #1a1a1a;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            border: 1px solid #333;
         }
-        p {
-            margin-bottom: 1.5rem;
-            line-height: 1.6;
+        .struct-digit.red { color: #ff3333; border-color: #502020; }
+        .struct-digit.blue { color: #3366ff; border-color: #202050; }
+        
+        /* 圆圈显示 */
+        .mini-circle {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            position: relative;
         }
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            background-color: #e6fffa;
-            color: #00bfa5;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
+        .mini-circle.blue { 
+            background: #1e90ff; 
+            box-shadow: 0 0 8px rgba(30, 144, 255, 0.5);
         }
-        code {
-            background-color: #f1f5f9;
-            padding: 2px 4px;
+        .mini-circle.red { 
+            background: #ff3333; 
+            box-shadow: 0 0 8px rgba(255, 51, 51, 0.5);
+        }
+        .mini-circle.green { 
+            background: #32cd32; 
+            box-shadow: 0 0 8px rgba(50, 205, 50, 0.5);
+        }
+        
+        .mini-slash {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            width: 2px;
+            height: 70%;
+            background: #32cd32;
+            transform: translateX(-50%) rotate(45deg);
+            box-shadow: 0 0 2px #32cd32;
+            z-index: 10;
+        }
+        
+        /* 小标记点 */
+        .mini-dot-tl {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 5px;
+            height: 5px;
+            background: #1e90ff;
+            border-radius: 50%;
+            border: 1px solid #fff;
+        }
+        .mini-dot-br {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 5px;
+            height: 5px;
+            background: #ff3333;
+            border-radius: 50%;
+            border: 1px solid #fff;
+        }
+        .mini-content {
+            z-index: 2;
+            font-size: 12px;
+        }
+
+        /* 八卦数字序列显示区 */
+        .bagua-sequence-module {
+            background: #0d0d0d;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 8px;
+        }
+        
+        /* 八卦数字横向滚动容器 - 独立滑动条 */
+        .bagua-scroll-container {
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: #444 #0d0d0d;
+            white-space: nowrap;
+        }
+        .bagua-scroll-container::-webkit-scrollbar {
+            height: 6px;
+        }
+        .bagua-scroll-container::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 3px;
+        }
+        .bagua-scroll-container::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 3px;
+        }
+        
+        /* 数字序列包装器 */
+        .bagua-numbers-wrapper {
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px;
+        }
+        
+        /* 单个八卦数字 */
+        .bagua-number-box {
+            width: 40px;
+            height: 48px;
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+            border: 1px solid #444;
             border-radius: 4px;
-            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+            flex-shrink: 0;
+            position: relative; /* 支持内部绝对定位元素（如斜杠） */
         }
-        .update-time {
-            font-size: 0.8rem;
+        .bagua-number-box:first-child {
+            border-color: #666;
+            background: linear-gradient(135deg, #333, #222);
+        }
+
+        /* 预测结果 */
+        .prediction-result {
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .prediction-left {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #1a1a1a;
+            border-radius: 6px;
+            border: 1px solid #333;
+            min-height: 80px;
+        }
+        
+        .main-prediction-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .pred-circle-blue { 
+            background: #1e90ff; 
+            box-shadow: 0 0 20px rgba(30, 144, 255, 0.8);
+        }
+        .pred-circle-red { 
+            background: #ff3333; 
+            box-shadow: 0 0 20px rgba(255, 51, 51, 0.8);
+        }
+        .pred-circle-green { 
+            background: #32cd32; 
+            box-shadow: 0 0 20px rgba(50, 205, 50, 0.8);
+        }
+
+        /* 低置信提示：红/蓝晕圈背景（配合绿圆圈） */
+        .halo {
+            position: absolute;
+            width: 66px;
+            height: 66px;
+            border-radius: 50%;
+            filter: blur(2px);
+            opacity: 0.95;
+            z-index: 0;
+        }
+        .hidden { display: none !important; }
+        .halo-blue {
+            background: radial-gradient(circle, rgba(30,144,255,0.75) 0%, rgba(30,144,255,0.25) 55%, rgba(30,144,255,0.0) 72%);
+            box-shadow: 0 0 22px rgba(30,144,255,0.75);
+        }
+        .halo-red {
+            background: radial-gradient(circle, rgba(255,51,51,0.75) 0%, rgba(255,51,51,0.25) 55%, rgba(255,51,51,0.0) 72%);
+            box-shadow: 0 0 22px rgba(255,51,51,0.75);
+        }
+
+        /* 确保主圆圈在晕圈上层 */
+        .main-prediction-circle { z-index: 1; }
+
+        .prediction-right {
+            width: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #1a1a1a;
+            border-radius: 6px;
+            border: 1px solid #444;
+            padding: 8px;
+        }
+        .multiplier-label {
+            font-size: 9px;
             color: #888;
-            margin-top: 2rem;
+            margin-bottom: 4px;
         }
+        .multiplier-box {
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        /* Big Road网格 */
+        .grid-section {
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .grid-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 10px;
+            color: #888;
+        }
+        
+        .big-road-container {
+            display: inline-block;
+            min-width: 100%;
+        }
+        
+        .big-road-grid {
+            display: grid;
+            grid-template-columns: repeat(18, 40px);
+            grid-template-rows: repeat(6, 40px);
+            gap: 3px;
+            background: #1a1a1a;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        
+        .road-bead {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid;
+            background: transparent;
+            box-sizing: border-box;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .bead-hollow-red { 
+            border-color: #ff3333; 
+            box-shadow: 0 0 8px rgba(255, 51, 51, 0.5);
+            color: #ff3333;
+        }
+        .bead-hollow-blue { 
+            border-color: #1e90ff; 
+            box-shadow: 0 0 8px rgba(30, 144, 255, 0.5);
+            color: #1e90ff;
+        }
+        
+        /* 特殊标记 */
+        .dot-tl {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 7px;
+            height: 7px;
+            background: #1e90ff;
+            border-radius: 50%;
+            box-shadow: 0 0 3px #1e90ff;
+            border: 1px solid #fff;
+            z-index: 10;
+        }
+        .dot-br {
+            position: absolute;
+            bottom: 3px;
+            right: 3px;
+            width: 7px;
+            height: 7px;
+            background: #ff3333;
+            border-radius: 50%;
+            box-shadow: 0 0 3px #ff3333;
+            border: 1px solid #fff;
+            z-index: 10;
+        }
+        .slash {
+            position: absolute;
+            width: 2px;
+            height: 70%;
+            background: #32cd32;
+            transform: rotate(45deg);
+            box-shadow: 0 0 4px #32cd32;
+        }
+        .bead-content {
+            z-index: 5;
+            font-size: 16px;
+            position: relative;
+        }
+        .text-gold { color: #ffcc00; }
+        
+        .bead-empty {
+            width: 40px;
+            height: 40px;
+        }
+        .road-bead {
+            border: 2px solid transparent; /* 默认透明 */
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bead-hollow-red { border-color: #ff3333 !important; }
+        .bead-hollow-blue { border-color: #1e90ff !important; }
     </style>
-</head>
+<base target="_blank">
+    <!-- [已移除] 旧版高赔率拦截器：会导致高倍模块无法初始化 -->
 <body>
-    <div class="container">
-        <div class="status-badge">系统运行中</div>
-        <h1>API 服务端点</h1>
-        <p>蚂蚁岛预测系统后端 API 已就绪。</p>
-        <p>鉴于安全策略，管理看板与可视化模块仅允许从<b>本地授权客户端</b>访问。</p>
-        <p>请在本地环境打开 <code>数据库资料.html</code> 进行操作。</p>
-        <div class="update-time">最后更新: 2026-02-09 (Version 2.0.1)</div>
+<!-- 在主界面添加自学面板 --> 
+<div id="selfLearnPanel" style="display:none; position:fixed; top:50px; left:50%; transform:translateX(-50%); background:#1a1a1a; border:2px solid #00cc66; padding:20px; z-index:1000; width:300px;"> 
+  <h3>🧠 自学模块</h3> 
+  <div id="selfLearnStatus">学习中...</div> 
+  <div id="selfLearnInsights"></div> 
+  <button onclick="closeSelfLearn()" style="margin-top:15px; width:100%; padding:8px; background:#444; color:#fff; border:none; cursor:pointer;">关闭</button> 
+</div>
+<!-- ========== 在 <body> 开头添加登录入口 ========== --> 
+<div id="login-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;"> 
+  <div style="background:#16213e; padding:40px; border-radius:15px; border:2px solid #e94560; width:90%; max-width:400px;"> 
+    <h2 style="color:#fff; text-align:center; margin-bottom:30px;">🔐 系统登录</h2> 
+    
+    <div style="margin-bottom:20px;"> 
+      <label style="color:#a2a8d3; display:block; margin-bottom:8px;">邮箱/手机号</label> 
+      <input type="text" id="login-username" placeholder="输入邮箱或手机号" style="width:100%; padding:12px; background:#0f3460; border:1px solid #533483; color:#fff; border-radius:8px; box-sizing:border-box;"> 
+    </div> 
+    
+    <div style="margin-bottom:20px;"> 
+      <label style="color:#a2a8d3; display:block; margin-bottom:8px;">密码</label> 
+      <input type="password" id="login-password" placeholder="输入密码" style="width:100%; padding:12px; background:#0f3460; border:1px solid #533483; color:#fff; border-radius:8px; box-sizing:border-box;"> 
+    </div> 
+    
+    <button onclick="handleLogin()" style="width:100%; padding:15px; background:#e94560; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; margin-bottom:10px;"> 
+      🔑 立即登录 
+    </button> 
+    
+    <button onclick="toggleRegisterMode()" style="width:100%; padding:12px; background:#533483; color:#fff; border:none; border-radius:8px; cursor:pointer;"> 
+      📝 还没有账号？立即注册 
+    </button> 
+    
+    <div id="login-message" style="margin-top:15px; text-align:center; color:#ffd700; min-height:24px;"></div> 
+    <button onclick="closeLoginOverlay()" style="margin-top:10px; background:none; border:none; color:#888; cursor:pointer; width:100%;">暂不登录 (仅浏览)</button>
+  </div> 
+</div> 
+
+<!-- 注册模式 --> 
+<div id="register-mode" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;"> 
+  <div style="background:#16213e; padding:40px; border-radius:15px; border:2px solid #00cc66; width:90%; max-width:400px;"> 
+    <h2 style="color:#fff; text-align:center; margin-bottom:30px;">📝 账号注册</h2> 
+    
+    <div style="margin-bottom:15px;"> 
+      <label style="color:#a2a8d3; display:block; margin-bottom:8px;">邮箱（推荐）</label> 
+      <input type="email" id="register-email" placeholder="输入邮箱地址" style="width:100%; padding:12px; background:#0f3460; border:1px solid #533483; color:#fff; border-radius:8px; box-sizing:border-box;"> 
+    </div> 
+    
+    <div style="margin-bottom:15px;"> 
+      <label style="color:#a2a8d3; display:block; margin-bottom:8px;">手机号（可选）</label> 
+      <input type="tel" id="register-phone" placeholder="输入手机号（可选）" style="width:100%; padding:12px; background:#0f3460; border:1px solid #533483; color:#fff; border-radius:8px; box-sizing:border-box;"> 
+    </div> 
+    
+    <div style="margin-bottom:15px; display:none;"> 
+      <label style="color:#a2a8d3; display:block; margin-bottom:8px;">密码（至少6位）</label> 
+      <input type="password" id="register-password" placeholder="设置密码" style="width:100%; padding:12px; background:#0f3460; border:1px solid #533483; color:#fff; border-radius:8px; box-sizing:border-box;"> 
+    </div> 
+    
+    <div style="margin-bottom:15px; display:none;"> 
+      <label style="color:#a2a8d3; display:block; margin-bottom:8px;">确认密码</label> 
+      <input type="password" id="register-confirm" placeholder="再次输入密码" style="width:100%; padding:12px; background:#0f3460; border:1px solid #533483; color:#fff; border-radius:8px; box-sizing:border-box;"> 
+    </div> 
+    
+    <button onclick="handleRegister()" style="width:100%; padding:15px; background:#00cc66; color:#000; border:none; border-radius:8px; font-weight:bold; cursor:pointer; margin-bottom:10px;"> 
+      ✅ 立即注册 
+    </button> 
+    
+    <button onclick="toggleLoginMode()" style="width:100%; padding:12px; background:#533483; color:#fff; border:none; border-radius:8px; cursor:pointer;"> 
+      ← 已有账号？返回登录 
+    </button> 
+    
+    <div id="register-message" style="margin-top:15px; text-align:center; color:#ffd700; min-height:24px;"></div> 
+  </div> 
+</div>
+
+    <div id="left-panel">
+        <h2>修正说明</h2>
+        <h3>1. 特殊图标显示</h3>
+        <ul>
+            <li>7/6（分子和7，分母和6）→ 👑 皇冠</li>
+            <li>分子和=7 → 显示"7"</li>
+            <li>分子和=8（必须3位输入）→ 🐼 熊猫</li>
+            <li>分母和=6（红圈）→ 显示"6"</li>
+        </ul>
+
+        <h3>2. 八卦数字滑动条</h3>
+        <ul>
+            <li>模块下方有独立滚动条</li>
+            <li>可左右滑动查看所有数字</li>
+        </ul>
+
+        <h3>3. 八卦计算逻辑（不重复）</h3>
+        <ul>
+            <li>每3组记录计算1个数字</li>
+            <li>第1-3组=第1卦</li>
+            <li>第4-6组=第2卦</li>
+            <li>不重叠计算</li>
+        </ul>
     </div>
+
+    <div id="right-panel">
+        <div class="phone-frame">
+            <div class="phone-screen">
+                <!-- 状态栏 -->
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <span>📶 5G 🔋</span>
+                </div>
+
+                <!-- 应用内容 -->
+                <div class="app-container">
+                    <!-- 顶部导航 -->
+                    <div class="top-bar">
+                        <div class="top-left">
+                            <div class="user-info" id="userInfoDisplay" onclick="logout()" style="cursor: pointer; title: '点击退出登录'">Guest</div>
+                            <div class="g-gas">G-Gas: 180</div>
+                            <div class="accuracy">Acc: 33.3%</div>
+                        </div>
+                        <div class="top-right">
+                            <button class="settings-btn" id="btnLogin" onclick="showLoginOverlay()" style="background:#e94560; border-color:#e94560; display:none;">登录</button>
+                            <button class="settings-btn info" onclick="openSelfLearn()">自学</button>
+                            <button class="settings-btn warning" onclick="openSelfCheck()">自检</button>
+                            <button class="settings-btn primary" onclick="openSubSystem()">子系统</button>
+                            <button class="settings-btn success" onclick="openDonation()">捐赠</button>
+                            <button class="exit-btn" onclick="clearAll()">Exit</button>
+                        </div>
+                    </div>
+
+                    <div class="system-status">System Ready</div>
+                    <div class="accuracy-display">熵准确率: 0.0%</div>
+
+                    <!-- 主容器 -->
+                    <div class="main-container">
+                        <!-- 输入区域 -->
+                        <div class="input-section">
+                            <!-- 输入控制 -->
+                            <div class="input-control-row">
+                                <div class="input-group-small">
+                                    <label>分子 (2-3位)</label>
+                                    <input type="text" id="molecularInput" maxlength="3" placeholder="00" oninput="previewCurrent()">
+                                </div>
+                                <div class="input-group-small">
+                                    <label>分母 (2-3位)</label>
+                                    <input type="text" id="denominatorInput" maxlength="3" placeholder="00" oninput="previewCurrent()">
+                                </div>
+                                <button class="btn-input" onclick="addRecord()">输入</button>
+                                <button class="btn-clear" onclick="undoLastRecord()">清除</button>
+                            </div>
+
+                            <!-- 联动记录模块 -->
+                            <div class="linked-records-module">
+                                <div class="module-header">
+                                    <span class="module-title">历史记录查询</span>
+                                    <span class="record-count" id="recordCount">0组</span>
+                                </div>
+                                <div class="linked-scroll-container" id="linkedScroll">
+                                    <div class="records-wrapper" id="recordsWrapper">
+                                    </div>
+                                </div>
+                                
+                                <!-- 八卦数字序列 - 独立滑动条 -->
+                                <div class="bagua-sequence-module" id="baguaModule" style="display: none;">
+                                    <div class="bagua-scroll-container" id="baguaScroll">
+                                        <div class="bagua-numbers-wrapper" id="baguaNumbers">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 预测结果 -->
+                        <div class="prediction-result">
+                            <div class="prediction-left" style="position: relative; display: flex; justify-content: center; align-items: center;">
+                                <div id="halo" class="halo hidden"></div>
+                                <div id="prediction-circle" class="main-prediction-circle pred-circle-blue"></div>
+                                <div id="prediction-text" style="position:absolute; bottom:5px; right:5px; color:#fff; font-size:10px; background:rgba(0,0,0,0.5); padding:2px;"></div>
+                                <div id="anti-effect-indicator" style="position:absolute; top:5px; left:5px; color:#ffcc00; font-size:10px; display:none;"></div>
+                            </div>
+                            <div class="prediction-right">
+                                <div class="multiplier-label">高倍</div>
+                                <div class="multiplier-box" id="multiplierValue">-</div>
+                            </div>
+                        </div>
+
+                        <!-- Big Road网格 -->
+                        <div class="grid-section">
+                            <div class="grid-labels">
+                                <span>Big Road 路单图 (18×6)</span>
+                                <span id="gridCounter">0/108</span>
+                            </div>
+                            <div class="big-road-container">
+                                <div class="big-road-grid" id="bigRoadGrid"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Prediction Modules -->
+    <!-- Security Layer -->
+    <script src="js/decrypt_key.js"></script>
+    <script src="js/decrypt_loader.js"></script>
+    <script src="js/integrity_check.js"></script>
+    <script>
+        window.addEventListener('load', async () => {
+            if (typeof checkIntegrity === 'function') {
+                const isValid = await checkIntegrity();
+                if (!isValid) {
+                    alert('⚠️ 系统文件被篡改，请重新下载！');
+                    // Optional: Disable functionality
+                    // document.body.innerHTML = '<h1>System Compromised</h1>';
+                }
+            }
+        });
+    </script>
+
+    <!-- Encrypted Modules -->
+    <script src="js/encrypted_logic.min.js" defer></script>
+    <script src="js/high_multiple_predictor.js" defer></script>
+
+    <!-- Prediction Logic -->
+    <script src="js/main-integration.js"></script>
+    
+    <!-- Supabase SDK (CDN for Vercel) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="js/db_client.js"></script>
+    <script src="js/gas_manager.js"></script>
+    <script src="js/ui_controller.js"></script>
+    
+    <!-- 🚑 急救方案：引入紧急修复脚本 -->
+    <script src="js/emergency_fix.js"></script>
+    
+    <!-- 🧬 持续进化系统 -->
+    <script src="js/evolution_engine.js"></script>
+    <script src="js/self_learn.js"></script>
+
+    <script>
+        // ==========================================
+        // 数据存储
+        // ==========================================
+        // 使用 window.allRecords (由 emergency_fix.js 管理)
+        // let allRecords = [];        
+        let baguaNumbers = [];      
+        let gridRecords = [];       
+        let lastColor = null;
+        let currentCol = 0;
+        let currentRow = 0;
+        let isFirst = true;
+        let lastPos = null;
+
+        // ==========================================
+        // 系统集成与窗口管理 (Pure Implementation)
+        // ==========================================
+        
+        // Window Tracker
+        let windows = {
+            selfCheck: null,
+            subSystem: null,
+            donation: null
+        };
+        
+        // Wait for Supabase to be available
+        let supabase = null;
+        
+        // ========== 登录/注册逻辑 (User Provided) ========== 
+        let currentUser = null; 
+        
+        // 检查是否已登录 
+        function checkLoginStatus() { 
+            const savedUser = localStorage.getItem('currentUser'); 
+            if (savedUser) { 
+                currentUser = JSON.parse(savedUser); 
+                // 隐藏登录按钮，显示用户信息 
+                updateUserInfoDisplay(); 
+                return true; 
+            } 
+            return false; 
+        } 
+        
+        // Alias for compatibility
+        const checkUserLogin = checkLoginStatus;
+
+        // 显示登录界面 (默认为注册模式)
+        function showLogin() { 
+            // 优先显示注册模式
+            toggleRegisterMode();
+        } 
+        
+        // Alias for compatibility
+        const showLoginOverlay = showLogin;
+        const showLoginModal = showLogin; // Alias for fixLoginEntry
+
+        // 仅修复登录入口（不生成任何文档）
+        function fixLoginEntry() {
+          // 1. 检查是否已登录
+          const user = localStorage.getItem('currentUser');
+          
+          // 2. 未登录则显示登录框（复用现有UI，不新增元素）
+          if (!user) {
+            const gasEl = document.querySelector('.g-gas');
+            if (gasEl) {
+                gasEl.textContent = '点击登录获取G-Gas';
+                gasEl.onclick = showLoginModal; // 复用您之前提供的登录逻辑
+                gasEl.style.cursor = 'pointer';
+                gasEl.style.textDecoration = 'underline';
+            }
+          }
+        }
+
+
+        function closeLoginOverlay() {
+             const overlay = document.getElementById('login-overlay');
+             if (overlay) overlay.style.display = 'none';
+             const regMode = document.getElementById('register-mode');
+             if (regMode) regMode.style.display = 'none';
+        }
+
+        // 切换到注册模式 
+        function toggleRegisterMode() { 
+            document.getElementById('login-overlay').style.display = 'none'; 
+            document.getElementById('register-mode').style.display = 'flex'; 
+            const msg = document.getElementById('register-message');
+            if(msg) msg.textContent = '';
+        } 
+        
+        // 切换回登录模式 
+        function toggleLoginMode() { 
+            document.getElementById('register-mode').style.display = 'none'; 
+            document.getElementById('login-overlay').style.display = 'flex'; 
+            const msg = document.getElementById('login-message');
+            if(msg) msg.textContent = '';
+        } 
+        
+        // 处理登录 
+        async function handleLogin() { 
+            const username = document.getElementById('login-username').value.trim(); 
+            const password = document.getElementById('login-password').value; 
+            const messageEl = document.getElementById('login-message'); 
+            
+            if (!username || !password) { 
+                messageEl.textContent = '❌ 请输入邮箱/手机号和密码'; 
+                messageEl.style.color = '#ff4444'; 
+                return; 
+            } 
+            
+            messageEl.textContent = '⏳ 验证中...'; 
+            messageEl.style.color = '#ffd700'; 
+            
+            try { 
+                // 简化：本地验证（实际应调用Supabase） 
+                let data, error;
+                // Use global supabaseInstance from db_client.js
+                if (window.supabaseInstance && window.supabaseInstance.auth) {
+                     const result = await window.supabaseInstance
+                    .from('users') 
+                    .select('*') 
+                    .or(`email.eq.${username},phone.eq.${username}`) 
+                    .eq('password_hash', password) 
+                    .single(); 
+                    data = result.data;
+                    error = result.error;
+                } else {
+                     // Fallback to dbClient
+                     if (window.dbClient) {
+                         const res = await window.dbClient.login(username, password);
+                         data = { ...res.user, balance_g: res.user.gas_balance }; 
+                     } else {
+                         throw new Error("Supabase client not initialized");
+                     }
+                }
+                
+                if (error || !data) { 
+                    throw new Error('账号或密码错误'); 
+                } 
+                
+                // 保存用户信息 
+                currentUser = { 
+                    id: data.id, 
+                    email: data.email, 
+                    phone: data.phone, 
+                    gas_balance: data.balance_g !== undefined ? data.balance_g : (data.gas_balance || 180)
+                }; 
+                
+                localStorage.setItem('currentUser', JSON.stringify(currentUser)); 
+                
+                // 更新显示 
+                updateUserInfoDisplay(); 
+                
+                // 关闭登录窗口 
+                document.getElementById('login-overlay').style.display = 'none'; 
+                
+                messageEl.textContent = '✅ 登录成功！'; 
+                messageEl.style.color = '#00cc66'; 
+                
+                // 延迟关闭提示 
+                setTimeout(() => { 
+                    messageEl.textContent = ''; 
+                }, 2000); 
+                
+                if(window.refreshGasBalance) window.refreshGasBalance();
+
+            } catch (error) { 
+                messageEl.textContent = `❌ ${error.message}`; 
+                messageEl.style.color = '#ff4444'; 
+            } 
+        } 
+        
+        // 处理注册 
+        async function handleRegister() { 
+            const email = document.getElementById('register-email').value.trim(); 
+            const phone = document.getElementById('register-phone').value.trim(); 
+            // 自动填充默认密码
+            const password = document.getElementById('register-password').value || "123456"; 
+            const confirm = document.getElementById('register-confirm').value || "123456"; 
+            const messageEl = document.getElementById('register-message'); 
+            
+            // 验证输入 
+            if (!email && !phone) { 
+                messageEl.textContent = '❌ 邮箱或手机号至少填一项'; 
+                messageEl.style.color = '#ff4444'; 
+                return; 
+            } 
+            
+            messageEl.textContent = '⏳ 注册中...'; 
+            messageEl.style.color = '#ffd700'; 
+            
+            try { 
+                // 简化：本地注册（实际应调用Supabase） 
+                let data, error;
+                if (window.supabaseInstance && window.supabaseInstance.auth) {
+                    const res = await window.supabaseInstance 
+                    .from('users') 
+                    .insert({ 
+                        email: email, 
+                        phone: phone || null, 
+                        password_hash: password, 
+                        balance_g: 180, // 新用户赠送180G-Gas 
+                        created_at: new Date().toISOString() 
+                    }) 
+                    .select() 
+                    .single(); 
+                    data = res.data;
+                    error = res.error;
+                } else {
+                     const newUser = {
+                        id: 'USER_' + Math.floor(Math.random() * 100000),
+                        email,
+                        phone,
+                        password: password,
+                        balance_g: 180,
+                        created_at: new Date().toISOString()
+                    };
+                    const storedUsers = JSON.parse(localStorage.getItem('registered_users') || '[]');
+                    if (storedUsers.some(u => u.email === email)) throw new Error("Email already registered");
+                    storedUsers.push(newUser);
+                    localStorage.setItem('registered_users', JSON.stringify(storedUsers));
+                    data = newUser;
+                }
+                
+                if (error) throw error; 
+                
+                // 自动登录 
+                currentUser = { 
+                    id: data.id, 
+                    email: data.email, 
+                    phone: data.phone, 
+                    gas_balance: 180 
+                }; 
+                
+                localStorage.setItem('currentUser', JSON.stringify(currentUser)); 
+                
+                // 更新显示 
+                updateUserInfoDisplay(); 
+                
+                // 关闭注册窗口 
+                document.getElementById('register-mode').style.display = 'none'; 
+                
+                messageEl.textContent = '✅ 注册成功！已自动登录'; 
+                messageEl.style.color = '#00cc66'; 
+                
+                // 延迟关闭提示 
+                setTimeout(() => { 
+                    messageEl.textContent = ''; 
+                }, 2000); 
+
+                if(window.refreshGasBalance) window.refreshGasBalance();
+                
+            } catch (error) { 
+                messageEl.textContent = `❌ ${error.message}`; 
+                messageEl.style.color = '#ff4444'; 
+            } 
+        } 
+        
+        // 更新用户信息显示 
+        function updateUserInfoDisplay() { 
+            if (!currentUser) {
+                 const saved = localStorage.getItem('currentUser');
+                 if (saved) currentUser = JSON.parse(saved);
+            }
+
+            if (!currentUser) return; 
+            
+            // 更新G-Gas显示 
+            const gasEl = document.querySelector('.g-gas'); 
+            if (gasEl) { 
+                gasEl.textContent = `G-Gas: ${currentUser.gas_balance || 180}`; 
+                gasEl.style.color = currentUser.gas_balance < 50 ? '#ff3333' : 
+                                    currentUser.gas_balance < 100 ? '#ffcc00' : '#00cc66'; 
+            } 
+            
+            // 显示用户信息（可选） 
+            const userInfoEl = document.querySelector('.user-info'); 
+            if (userInfoEl) { 
+                userInfoEl.textContent = (currentUser.email || currentUser.phone) + ' [退出]'; 
+                userInfoEl.style.display = 'block'; 
+                userInfoEl.style.cursor = 'pointer';
+                userInfoEl.title = '点击退出登录';
+            } 
+            
+            // Also update old UI elements for compatibility
+            const loginBtn = document.getElementById('btnLogin');
+            const userDisplay = document.getElementById('userInfoDisplay');
+            if (userDisplay) {
+                 userDisplay.textContent = (currentUser.email || currentUser.phone) + ' [退出]';
+                 userDisplay.style.color = '#00cc66';
+                 userDisplay.style.cursor = 'pointer';
+            }
+            if (loginBtn) loginBtn.style.display = 'none';
+        } 
+        
+        // Alias for compatibility
+        const updateUserUI = updateUserInfoDisplay;
+
+        // 退出登录 
+        function logout() { 
+            if(!confirm("确定要退出登录吗？")) return;
+            currentUser = null; 
+            localStorage.removeItem('currentUser'); 
+            
+            // 重置显示 
+            const gasEl = document.querySelector('.g-gas'); 
+            if (gasEl) { 
+                gasEl.textContent = 'G-Gas: 180'; 
+                gasEl.style.color = '#00cc66'; 
+            } 
+            
+            const userInfoEl = document.querySelector('.user-info'); 
+            if (userInfoEl) { 
+                userInfoEl.style.display = 'none'; 
+            } 
+            
+            // Update old UI
+            const loginBtn = document.getElementById('btnLogin');
+            const userDisplay = document.getElementById('userInfoDisplay');
+            if (userDisplay) {
+                 userDisplay.textContent = '未登录';
+                 userDisplay.style.color = '#888';
+            }
+            if (loginBtn) loginBtn.style.display = 'inline-block';
+
+            // 显示登录入口 
+            showLogin(); 
+        } 
+        
+        // ========== 页面加载时检查登录状态 ========== 
+        function initAuth() { 
+            // 检查登录状态 
+            const isLoggedIn = checkLoginStatus(); 
+            
+            // 如果未登录，自动显示登录界面 
+            if (!isLoggedIn) { 
+                showLogin(); 
+            } 
+            
+            // Button Logic (Step 3)
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => {
+                if (btn.textContent.includes('自检')) {
+                    btn.onclick = () => openSelfCheck();
+                }
+                if (btn.textContent.includes('子系统')) {
+                    btn.onclick = () => openSubSystem();
+                }
+                if (btn.textContent.includes('捐赠')) {
+                    btn.onclick = () => openDonation();
+                }
+            });
+        }
+        
+        const oldOnload = window.onload;
+        window.onload = function() {
+            if (oldOnload) oldOnload();
+            initAuth();
+            if(window.initGasBalance) initGasBalance(); 
+            if(window.initGrid) initGrid(); 
+        };
+
+        // Re-implement window open functions to use new auth check
+        function openSelfCheck() {
+             window.open('zijian.html', '_blank', 'width=700,height=800'); 
+        }
+
+        function openSubSystem() {
+             if (!checkLoginStatus()) {
+                 showLogin();
+                 return;
+             }
+             window.open('zixitong.html', '_blank', 'width=600,height=800');
+        }
+
+        function openDonation() {
+             if (!checkLoginStatus()) {
+                 showLogin();
+                 return;
+             }
+             window.open('juanzeng.html', '_blank', 'width=600,height=850');
+        }
+
+        function exitSystem() {
+            if (confirm('确定要退出系统吗？')) {
+                logout();
+                window.close();
+            }
+        }
+        
+        // ==========================================
+        // G-Gas Management (Pure Implementation)
+        // ==========================================
+        let currentGas = 180;
+        let currentUserId = null;
+        let supabaseClient = null; // Local instance
+        
+        // Initialize G-Gas
+        async function initGasBalance() {
+            // Ensure Supabase Client from db_client.js or CDN
+            if (window.supabaseInstance) {
+                supabaseClient = window.supabaseInstance;
+            } else if (window.supabase && window.supabase.createClient) {
+                const SUPABASE_URL = 'https://xhfyfkqfykkbbnlwghem.supabase.co';
+                const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZnlma3FmeWtrYmJubHdnaGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0ODA4ODEsImV4cCI6MjA4NDA1Njg4MX0.SVUTAVSWi-skCq3N3KioTetV40IWt0vNkewA0WqEfcg';
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+            
+            // Get User ID
+            if (window.dbClient && window.dbClient.userId) {
+                currentUserId = window.dbClient.userId;
+            } else {
+                const userStr = localStorage.getItem('currentUser');
+                if (userStr) currentUserId = JSON.parse(userStr).id;
+            }
+            
+            // Fetch Balance
+            await refreshGasBalance();
+        }
+        
+        window.refreshGasBalance = async function() {
+            if (!currentUserId) return;
+            try {
+                let balance = 180;
+                if (window.dbClient) {
+                    balance = await window.dbClient.getGasBalance();
+                } else if (supabaseClient) {
+                     const { data, error } = await supabaseClient
+                    .from('users')
+                    .select('gas_balance')
+                    .eq('id', currentUserId)
+                    .single();
+                    if (!error && data) balance = data.gas_balance;
+                }
+                
+                // Update UI
+                const gasEl = document.querySelector('.g-gas');
+                if (gasEl) {
+                     gasEl.textContent = `G-Gas: ${balance}`;
+                     // Color logic
+                     if (balance < 50) gasEl.style.color = '#ff3333';
+                     else if (balance < 100) gasEl.style.color = '#ffcc00';
+                     else gasEl.style.color = '#00cc66';
+                }
+                
+                // Update Local Storage
+                const userStr = localStorage.getItem('currentUser');
+                if (userStr) {
+                    const u = JSON.parse(userStr);
+                    u.gas_balance = balance;
+                    localStorage.setItem('currentUser', JSON.stringify(u));
+                }
+            } catch (e) {
+                console.error("Failed to refresh gas", e);
+            }
+        }
+
+        // Deduct Gas Logic (Called by prediction modules)
+        window.deductGas = async function(amount) {
+            if (!currentUserId) return false;
+            try {
+                if (window.dbClient) {
+                    const success = await window.dbClient.deductGas(amount);
+                    if (success) await window.refreshGasBalance();
+                    return success;
+                }
+                return true; // Fallback
+            } catch (e) {
+                console.error("Gas deduction failed", e);
+                return false;
+            }
+        }
+        
+        // ==========================================
+        // Grid Logic (Pure Implementation)
+        // ==========================================
+        function initGrid() {
+             // Grid initialization if needed
+        }
+
+    </script>
 </body>
 </html>
