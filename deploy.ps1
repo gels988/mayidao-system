@@ -17,6 +17,13 @@ Write-Host ""
 
 # 步骤1: 安装依赖
 Write-Color "📦 步骤1: 安装依赖" "Blue"
+
+# 检查并备份根目录的 index.html，防止覆盖云端入口
+if (Test-Path "index.html") {
+    Write-Color "⚠️ 检测到根目录存在 index.html，正在备份以确保使用 frontend/index.html..." "Yellow"
+    Move-Item -Path "index.html" -Destination "index_old_backup.html" -Force
+}
+
 cmd /c "npm install"
 Write-Color "✅ 依赖安装完成" "Green"
 Write-Host ""

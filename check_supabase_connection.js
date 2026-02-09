@@ -17,10 +17,11 @@ async function checkConnection() {
         if (error) throw error;
 
         console.log(`   ✅ Supabase连接成功，当前用户总数: ${count}`);
-        process.exit(0);
+        // 不再强制调用 process.exit(0)，让 Node.js 自然退出或仅设置 exitCode
+        process.exitCode = 0;
     } catch (error) {
         console.error(`   ❌ Supabase连接失败: ${error.message}`);
-        process.exit(1);
+        process.exitCode = 1;
     }
 }
 
