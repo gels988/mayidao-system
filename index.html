@@ -852,7 +852,7 @@
                     <div class="top-bar">
                         <div class="top-left">
                             <div class="user-info" id="userInfoDisplay" onclick="logout()" style="cursor: pointer; title: '点击退出登录'">Guest</div>
-                            <div class="g-gas">G-Gas: 180</div>
+                            <div class="g-gas" style="color: #ffcc00; font-weight: bold; font-size: 16px;">G-Gas: 加载中...</div>
                             <div class="accuracy">Acc: 33.3%</div>
                         </div>
                         <div class="top-right">
@@ -1467,9 +1467,14 @@
         function updateGasDisplay(balance) {
             const gasEl = document.querySelector('.g-gas');
             if (gasEl) {
+                gasEl.style.display = 'block'; // Ensure visibility
+                gasEl.style.color = '#ffcc00'; // Force color
                 gasEl.textContent = `G-Gas: ${balance}`;
-                gasEl.style.color = balance < 50 ? '#ff3333' : 
-                                   balance < 100 ? '#ffcc00' : '#00cc66';
+                
+                // Color coding
+                if(balance < 50) gasEl.style.color = '#ff3333';
+                else if(balance < 100) gasEl.style.color = '#ffcc00';
+                else gasEl.style.color = '#00cc66';
             }
         }
 
@@ -2741,5 +2746,7 @@
         window.undoLastRecord = undoLastRecord; // 显式绑定撤销函数
 
     </script>
+    <!-- Version Indicator -->
+    <div style="position:fixed; bottom:5px; right:5px; color:rgba(255,255,255,0.3); font-size:10px; z-index:9999; pointer-events:none;">v2.0.4 Mobile</div>
 </body>
 </html>
