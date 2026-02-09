@@ -881,6 +881,15 @@
     </div>
 
     <!-- Core Prediction Modules -->
+    <!-- Original Source (Commented for Security) -->
+    <!-- <script src="js/encrypted_logic.js"></script> -->
+    <!-- <script src="js/high_multiple_predictor.js"></script> -->
+    <!-- <script src="js/predict-banker6.js"></script> -->
+    <!-- <script src="js/predict-tie.js"></script> -->
+    <!-- <script src="js/predict-pair.js"></script> -->
+    <!-- <script src="js/predict-player.js"></script> -->
+    <!-- <script src="js/predict-special.js"></script> -->
+    
     <!-- Security Layer -->
     <script src="js/decrypt_key.js"></script>
     <script src="js/decrypt_loader.js"></script>
@@ -897,16 +906,25 @@
             }
         });
     </script>
+    <!-- <script src="js/anti_debug.js"></script> -->
 
     <!-- Encrypted Modules -->
+    <!-- Switch to non-minified version for development/debugging -->
     <script src="js/encrypted_logic.min.js" defer></script>
     <script src="js/high_multiple_predictor.js" defer></script>
+    <!-- 
+    <script src="js/predict-banker6.min.js" defer></script>
+    <script src="js/predict-tie.min.js" defer></script>
+    <script src="js/predict-pair.min.js" defer></script>
+    <script src="js/predict-player.min.js" defer></script>
+    <script src="js/predict-special.min.js" defer></script>
+    -->
 
     <!-- Prediction Logic -->
+    <!-- Disabled conflicting modules -->
+    <!-- <script src="js/high-odds-predictor.js"></script> -->
+    <!-- <script src="js/high-odds-display.js"></script> -->
     <script src="js/main-integration.js"></script>
-    
-    <!-- Supabase SDK (CDN for Vercel) -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <script src="js/db_client.js"></script>
     <script src="js/gas_manager.js"></script>
@@ -938,17 +956,24 @@
         // ==========================================
         
         // Window Tracker
+        // let windows = { ... } // Removed duplicate declaration
+
+        
+        // ==========================================
+        // 身份验证与窗口管理 (Auth & Windows)
+        // ==========================================
+        
+        // Window Tracker
         let windows = {
             selfCheck: null,
             subSystem: null,
             donation: null
         };
         
-        // Wait for Supabase to be available
-        let supabase = null;
-        
+        const supabase = window.supabaseInstance; // From db_client.js
+
         // ========== 登录/注册逻辑 (User Provided) ========== 
-        let currentUser = null; 
+        // let currentUser = null; // Removed duplicate declaration
         
         // 检查是否已登录 
         function checkLoginStatus() { 
@@ -1034,9 +1059,8 @@
             try { 
                 // 简化：本地验证（实际应调用Supabase） 
                 let data, error;
-                // Use global supabaseInstance from db_client.js
-                if (window.supabaseInstance && window.supabaseInstance.auth) {
-                     const result = await window.supabaseInstance
+                if (supabase && supabase.auth) {
+                     const result = await supabase 
                     .from('users') 
                     .select('*') 
                     .or(`email.eq.${username},phone.eq.${username}`) 
@@ -1106,14 +1130,29 @@
                 return; 
             } 
             
+            // 移除密码验证逻辑，使用默认密码
+            /*
+            if (password.length < 6) { 
+                messageEl.textContent = '❌ 密码至少6位'; 
+                messageEl.style.color = '#ff4444'; 
+                return; 
+            } 
+            
+            if (password !== confirm) { 
+                messageEl.textContent = '❌ 两次密码不一致'; 
+                messageEl.style.color = '#ff4444'; 
+                return; 
+            } 
+            */
+            
             messageEl.textContent = '⏳ 注册中...'; 
             messageEl.style.color = '#ffd700'; 
             
             try { 
                 // 简化：本地注册（实际应调用Supabase） 
                 let data, error;
-                if (window.supabaseInstance && window.supabaseInstance.auth) {
-                    const res = await window.supabaseInstance 
+                if (supabase && supabase.auth) {
+                    const res = await supabase 
                     .from('users') 
                     .insert({ 
                         email: email, 
@@ -1317,10 +1356,8 @@
         
         // Initialize G-Gas
         async function initGasBalance() {
-            // Ensure Supabase Client from db_client.js or CDN
-            if (window.supabaseInstance) {
-                supabaseClient = window.supabaseInstance;
-            } else if (window.supabase && window.supabase.createClient) {
+            // Ensure Supabase Client
+            if (!supabaseClient && window.supabase && window.supabase.createClient) {
                 const SUPABASE_URL = 'https://xhfyfkqfykkbbnlwghem.supabase.co';
                 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZnlma3FmeWtrYmJubHdnaGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0ODA4ODEsImV4cCI6MjA4NDA1Njg4MX0.SVUTAVSWi-skCq3N3KioTetV40IWt0vNkewA0WqEfcg';
                 supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -1334,69 +1371,1317 @@
                 if (userStr) currentUserId = JSON.parse(userStr).id;
             }
             
-            // Fetch Balance
-            await refreshGasBalance();
-        }
-        
-        window.refreshGasBalance = async function() {
-            if (!currentUserId) return;
+            if (!currentUserId) {
+                updateGasDisplay(180); // Default
+                return;
+            }
+
             try {
-                let balance = 180;
-                if (window.dbClient) {
-                    balance = await window.dbClient.getGasBalance();
-                } else if (supabaseClient) {
-                     const { data, error } = await supabaseClient
-                    .from('users')
-                    .select('gas_balance')
-                    .eq('id', currentUserId)
-                    .single();
-                    if (!error && data) balance = data.gas_balance;
-                }
-                
-                // Update UI
-                const gasEl = document.querySelector('.g-gas');
-                if (gasEl) {
-                     gasEl.textContent = `G-Gas: ${balance}`;
-                     // Color logic
-                     if (balance < 50) gasEl.style.color = '#ff3333';
-                     else if (balance < 100) gasEl.style.color = '#ffcc00';
-                     else gasEl.style.color = '#00cc66';
-                }
-                
-                // Update Local Storage
-                const userStr = localStorage.getItem('currentUser');
-                if (userStr) {
-                    const u = JSON.parse(userStr);
-                    u.gas_balance = balance;
-                    localStorage.setItem('currentUser', JSON.stringify(u));
+                // Try Supabase first
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient
+                        .from('users')
+                        .select('balance_g') // Using 'balance_g' as requested (check DB schema, db_client uses 'gas_balance', user code says 'balance_g'. I will trust user code but fallback if needed)
+                        .eq('id', currentUserId)
+                        .single();
+                    
+                    if (!error && data) {
+                        currentGas = data.balance_g !== undefined ? data.balance_g : (data.gas_balance !== undefined ? data.gas_balance : 180);
+                        updateGasDisplay(currentGas);
+                    } else {
+                        // Fallback to dbClient if available
+                        const bal = await window.dbClient.getGasBalance();
+                        currentGas = bal;
+                        updateGasDisplay(currentGas);
+                    }
+                } else {
+                     // Fallback to dbClient
+                     const bal = await window.dbClient.getGasBalance();
+                     currentGas = bal;
+                     updateGasDisplay(currentGas);
                 }
             } catch (e) {
-                console.error("Failed to refresh gas", e);
+                console.error('G-Gas初始化失败:', e);
+                updateGasDisplay(180);
             }
         }
 
-        // Deduct Gas Logic (Called by prediction modules)
-        window.deductGas = async function(amount) {
-            if (!currentUserId) return false;
-            try {
-                if (window.dbClient) {
-                    const success = await window.dbClient.deductGas(amount);
-                    if (success) await window.refreshGasBalance();
-                    return success;
-                }
-                return true; // Fallback
-            } catch (e) {
-                console.error("Gas deduction failed", e);
+        // Update Display
+        function updateGasDisplay(balance) {
+            const gasEl = document.querySelector('.g-gas');
+            if (gasEl) {
+                gasEl.textContent = `G-Gas: ${balance}`;
+                gasEl.style.color = balance < 50 ? '#ff3333' : 
+                                   balance < 100 ? '#ffcc00' : '#00cc66';
+            }
+        }
+
+        // Deduct Gas
+        async function deductGasForPrediction(amount = 1) {
+            // Re-sync currentGas just in case
+            if (currentGas < amount) {
+                alert(`G-Gas不足！当前: ${currentGas}，需 ${amount}`);
                 return false;
+            }
+            
+            if (!currentUserId) {
+                 // Mock mode or not logged in
+                 currentGas -= amount;
+                 updateGasDisplay(currentGas);
+                 return true;
+            }
+
+            try {
+                if (supabaseClient) {
+                    // Try update 'balance_g' first
+                    const { error } = await supabaseClient
+                        .from('users')
+                        .update({ balance_g: currentGas - amount })
+                        .eq('id', currentUserId);
+                    
+                    if (error) {
+                        // Retry with 'gas_balance' if column name differs
+                        const { error: err2 } = await supabaseClient
+                            .from('users')
+                            .update({ gas_balance: currentGas - amount })
+                            .eq('id', currentUserId);
+                        if (err2) throw err2;
+                    }
+                    
+                    currentGas -= amount;
+                    updateGasDisplay(currentGas);
+                    return true;
+                } else if (window.dbClient) {
+                     await window.dbClient.deductGas(amount);
+                     currentGas -= amount;
+                     updateGasDisplay(currentGas);
+                     return true;
+                }
+            } catch (e) {
+                console.error('扣分失败:', e);
+                // Allow continue in demo? No, user said "prevent prediction"
+                // alert('扣分失败');
+                // return false; 
+                // For robustness, if DB fails but local check passed, maybe allow? 
+                // User said: "余额不足时阻止预测". If DB error, maybe safer to block.
+                alert('扣分失败: ' + e.message);
+                return false;
+            }
+            return true;
+        }
+
+        // Refresh Gas
+        async function refreshGasBalance() {
+            if (!currentUserId || !supabaseClient) {
+                if (window.dbClient) {
+                     const bal = await window.dbClient.getGasBalance();
+                     currentGas = bal;
+                     updateGasDisplay(currentGas);
+                }
+                return;
+            }
+            
+            const { data } = await supabaseClient
+                .from('users')
+                .select('balance_g, gas_balance') // Select both to be safe
+                .eq('id', currentUserId)
+                .single();
+            
+            if (data) {
+                currentGas = data.balance_g !== undefined ? data.balance_g : data.gas_balance;
+                updateGasDisplay(currentGas);
             }
         }
         
+        // Expose to window
+        window.initGasBalance = initGasBalance;
+        window.deductGasForPrediction = deductGasForPrediction;
+        window.refreshGasBalance = refreshGasBalance;
+
+
         // ==========================================
-        // Grid Logic (Pure Implementation)
+        // 核心预测模型 (Entropy Core) - Injected to fix missing logic
         // ==========================================
-        function initGrid() {
-             // Grid initialization if needed
+        /* 
+        class MultiModelVote {
+            constructor() {
+                this.name = "EntropyCore";
+            }
+
+            predict(history) {
+                // 如果历史记录不足，返回默认
+                if (!history || history.length < 1) {
+                    return { prediction: 'red', sValue: 0, confidence: 0 }; 
+                }
+
+                // 1. 计算近期熵值 (Entropy of last 12 rounds)
+                const len = Math.min(history.length, 12);
+                const recent = history.slice(-len);
+                const blueCount = recent.filter(r => r.color === 'blue').length;
+                const total = recent.length;
+                const pBlue = blueCount / total;
+                const pRed = 1 - pBlue;
+
+                let entropy = 0;
+                if (pBlue > 0) entropy -= pBlue * Math.log2(pBlue);
+                if (pRed > 0) entropy -= pRed * Math.log2(pRed);
+                // Max entropy is 1. 
+
+                // S-Value: Orderliness (0% = Chaos, 100% = Order)
+                // Normalize: 1 - entropy. 
+                let sValue = (1 - entropy) * 100;
+                if (isNaN(sValue)) sValue = 0;
+
+                // 2. 预测逻辑 (Trend Following + Bagua Reversal)
+                // 简单逻辑：如果 S值高，跟随趋势；如果 S值低，预测反转
+                
+                let prediction = 'red';
+                // Basic Trend
+                if (pBlue > pRed) prediction = 'blue';
+                else if (pRed > pBlue) prediction = 'red';
+                else prediction = history[history.length-1].color; // Follow last
+
+                // 3. 置信度
+                let confidence = 0.5 + (sValue / 200); // 0.5 ~ 1.0
+
+                return {
+                    prediction: prediction,
+                    sValue: parseFloat(sValue.toFixed(1)),
+                    confidence: confidence,
+                    antiEffect: 0
+                };
+            }
         }
+        
+        // 立即实例化，确保全局可用
+        if (!window.MultiModelVote) {
+            window.MultiModelVote = MultiModelVote;
+            window.multiModelVote = new MultiModelVote();
+            console.log('[System] Entropy Core Loaded (Internal).');
+        }
+        */
+
+        // ==========================================
+        // 页面初始化 (Strict Order)
+        // ==========================================
+        window.onload = async () => {
+            console.log("[System] Initializing...");
+            
+            // 1. 初始化数据库连接与G-Gas
+            try {
+                if (window.initGasBalance) {
+                    await window.initGasBalance();
+                } else {
+                    console.warn("gas_manager.js not loaded, using fallback");
+                    document.querySelector('.g-gas').textContent = "G-Gas: ---";
+                }
+            } catch (error) {
+                console.error('初始化失败:', error);
+            }
+            
+            // 2. 初始化数据与网格
+            try {
+                // 恢复数据 (Fix: Load from localStorage)
+                const saved = localStorage.getItem('mayiju_records');
+                if (saved) {
+                    window.allRecords = JSON.parse(saved);
+                    console.log("[System] Loaded " + window.allRecords.length + " records.");
+                }
+            } catch (e) {
+                console.error('Load records failed', e);
+            }
+            
+            initGrid();
+            
+            // 初始化高赔率显示
+            // if (typeof HighOddsDisplay !== 'undefined') {
+            //     window.highOddsDisplay = new HighOddsDisplay();
+            //     window.highOddsDisplay.init();
+            // }
+            
+            // 3. 聚焦输入框
+            document.getElementById('molecularInput').focus();
+            
+            // 4. 启动自检 (如果存在)
+            if (window.startupSelfCheck) {
+                window.startupSelfCheck();
+            }
+            
+            // 5. 绑定Enter键事件
+            document.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addRecord();
+                }
+            });
+            
+            console.log("[System] Ready.");
+        };
+
+        // ========== 全局可用函数绑定 (确保HTML按钮能调用) ========== 
+        window.openSelfCheck = openSelfCheck; 
+        window.openSubSystem = openSubSystem; 
+        window.openDonation = openDonation; 
+        window.exitSystem = exitSystem;
+
+        function initGrid() {
+            // 1. 重置网格状态
+            gridRecords = [];
+            currentCol = 0;
+            currentRow = 0;
+            lastColor = null;
+            isFirst = true;
+            lastPos = null;
+
+            // 2. 重置 DOM
+            const grid = document.getElementById('bigRoadGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            for (let row = 0; row < 6; row++) {
+                for (let col = 0; col < 18; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'bead-empty';
+                    cell.id = `cell-${col}-${row}`;
+                    grid.appendChild(cell);
+                }
+            }
+            
+            // 3. 重建历史记录
+            if (window.allRecords && window.allRecords.length > 0) {
+                console.log("Rebuilding Grid from", window.allRecords.length, "records...");
+                window.allRecords.forEach(rec => addToBigRoad(rec));
+            }
+            
+            // 4. 更新其他视图 (Fix: Full Refresh)
+            renderLinkedRecords();
+            updateBaguaSequenceBlockMode();
+        }
+        
+        // Expose initGrid for external use (e.g. Undo)
+        window.initGrid = initGrid;
+
+        // ==========================================
+        // 实时预览当前输入
+        // ==========================================
+        function previewCurrent() {
+            const molStr = document.getElementById('molecularInput').value || '';
+            const denStr = document.getElementById('denominatorInput').value || '';
+            
+            if (molStr.length >= 2 && denStr.length >= 2) {
+                const molSum = sumDigits(molStr);
+                const denSum = sumDigits(denStr);
+                
+                // Use new ID
+                const predCircle = document.getElementById('prediction-circle');
+                if (!predCircle) return;
+                
+                // 输入中预览：只做颜色预览，不破坏 class 体系
+                predCircle.className = 'main-prediction-circle';
+                const halo = document.getElementById('halo');
+                if (halo) halo.className = 'halo hidden';
+
+                if (molSum > denSum) {
+                    predCircle.classList.add('pred-circle-blue');
+                } else if (molSum < denSum) {
+                    predCircle.classList.add('pred-circle-red');
+                } else {
+                    predCircle.classList.add('pred-circle-green');
+                }
+            }
+        }
+
+        function sumDigits(str) {
+            return str.split('').reduce((a, b) => a + (parseInt(b) || 0), 0) % 10;
+        }
+
+        // ==========================================
+        // 核心：添加记录
+        // ==========================================
+        async function addRecord() {
+            // 1. 获取输入并计算 (Moved to top for Logic)
+            const molInput = document.getElementById('molecularInput');
+            const denInput = document.getElementById('denominatorInput');
+            const molStr = molInput.value.trim();
+            const denStr = denInput.value.trim();
+
+            if (molStr.length < 2 || molStr.length > 3 || denStr.length < 2 || denStr.length > 3) {
+                alert('请输入2-3位数字');
+                return;
+            }
+            
+            const molSum = sumDigits(molStr);
+            const denSum = sumDigits(denStr);
+
+            // ========== 修复：熵准确率与扣分 (User Code) ========== 
+            try { 
+               const lastPrediction = localStorage.getItem('lastPrediction'); 
+               // 只有在有历史预测且有历史记录时才验证 (防止第一局就验证)
+               if (lastPrediction && window.allRecords && window.allRecords.length > 0) { 
+                 const pred = JSON.parse(lastPrediction); 
+                 
+                 // 判定实际胜负 (Blue/Red/Tie)
+                 let actualColor = 'tie';
+                 if (molSum > denSum) actualColor = 'blue';
+                 else if (molSum < denSum) actualColor = 'red';
+                 
+                 // 仅在非和局时进行胜负判定 (或者根据规则和局算输/走水? 用户说"颜色相同扣分", 意味着Tie不扣)
+                 if (actualColor !== 'tie') {
+                     const isCorrect = (pred.color === actualColor); 
+                     
+                     console.log('[熵验证] 预测=' + pred.color + ', 实际=' + actualColor + ', 正确=' + isCorrect); 
+                     
+                     // 核心逻辑：预测正确扣分，错误不扣分
+                     if (isCorrect) { 
+                        if (window.deductGasForPrediction) {
+                            // 调用官方扣费函数
+                            window.deductGasForPrediction(1).then(() => {
+                                console.log("[System] 预测正确 -> 扣除 1 G-Gas");
+                            }).catch(e => console.error("扣费失败:", e));
+                        } else {
+                            // 降级：仅视觉更新
+                            const gasEl = document.querySelector('.g-gas'); 
+                            if (gasEl) { 
+                                let gasText = gasEl.textContent || gasEl.innerText; 
+                                let cGas = parseInt(gasText.replace(/[^0-9]/g, '')); 
+                                if (!isNaN(cGas) && cGas > 0) { 
+                                   cGas -= 1; 
+                                   gasEl.textContent = 'G-Gas: ' + cGas; 
+                                   gasEl.style.color = cGas < 50 ? '#ff3333' : cGas < 100 ? '#ffcc00' : '#00cc66';
+                                }
+                            }
+                        }
+                     } else {
+                        console.log("[System] 预测错误 -> 不扣分 (Free)");
+                     }
+                     
+                     // 更新准确率显示 
+                     let stats = JSON.parse(localStorage.getItem('accuracyStats') || '{"correct":0,"total":0}'); 
+                     stats.total++; 
+                     if (isCorrect) stats.correct++; 
+                     localStorage.setItem('accuracyStats', JSON.stringify(stats)); 
+                     
+                     const accuracyEl = document.querySelector('.accuracy-display'); 
+                     if (accuracyEl) { 
+                       const accuracy = (stats.correct / stats.total * 100).toFixed(1); 
+                       accuracyEl.textContent = '熵准确率: ' + accuracy + '%'; 
+                       // 颜色指示
+                       accuracyEl.style.color = accuracy > 60 ? '#00cc66' : '#ff3333';
+                     }
+                 }
+               } 
+               
+               // 存储本次预测 (为下一局做准备)
+               if (window.multiModelVote && window.allRecords) { 
+                 const currentPrediction = window.multiModelVote.predict(window.allRecords); 
+                 localStorage.setItem('lastPrediction', JSON.stringify({ 
+                   color: currentPrediction.sValue > 0 ? 'blue' : 'red', 
+                   sValue: currentPrediction.sValue, 
+                   confidence: currentPrediction.confidence, 
+                   timestamp: Date.now() 
+                 })); 
+               } 
+            } catch (e) { 
+               console.error('[熵验证] 错误:', e); 
+            }
+
+            // ========== 1. 立即销毁游离窗口 (User Step 3) ==========
+            const oddsEl = document.getElementById('high-odds-display');
+            if (oddsEl) {
+                oddsEl.remove();
+                console.log('[高赔率] 悬浮窗口 DOM 已移除');
+            }
+            // if (window.highOddsDisplay && window.highOddsDisplay.destroy) {
+            //    window.highOddsDisplay.destroy();
+            // }
+
+            // ========== 2. G-Gas 检查 (修复：防止阻断流程) ==========
+            try {
+                // 优先使用全局变量，若不可用则读取DOM
+                let checkGas = (typeof currentGas !== 'undefined') ? currentGas : 180;
+                
+                const gasEl = document.querySelector('.g-gas'); 
+                if (gasEl) {
+                    const domGas = parseInt(gasEl.textContent.replace(/[^0-9]/g, '')); 
+                    if (!isNaN(domGas)) checkGas = domGas;
+                }
+                
+                if (checkGas < 1) { 
+                    alert('G-Gas不足！请先充值'); 
+                    return; 
+                } 
+                
+                // 视觉预扣 (Optimistic Update) - 不影响真实扣费逻辑(deductGasForPrediction)
+                if (gasEl) {
+                    const visualGas = checkGas - 1;
+                    gasEl.textContent = `G-Gas: ${visualGas}`; 
+                    gasEl.style.color = visualGas < 50 ? '#ff3333' : 
+                                       visualGas < 100 ? '#ffcc00' : '#00cc66'; 
+                }
+            } catch (e) {
+                console.warn("Gas check visual update failed (non-blocking):", e);
+                // 即使出错也不阻断录入
+            } 
+
+            // (Input variables already defined at top)
+            // (Validation and calc done at top)
+            
+            // ========== 修复：熵准确率N-1验证 (DISABLED) ========== 
+            const lastPrediction = localStorage.getItem('lastPrediction'); 
+            if (false) { // Logic moved to top 
+               try { 
+                 const pred = JSON.parse(lastPrediction); 
+                 // Logic: Blue if Mol > Den, Red if Mol < Den. Tie handling? 
+                 // Assuming Tie is neither.
+                 let actualColor = 'tie';
+                 if (molSum > denSum) actualColor = 'blue';
+                 else if (molSum < denSum) actualColor = 'red';
+                 
+                 if (actualColor !== 'tie') {
+                     const isCorrect = (pred.color === actualColor); 
+                     
+                     console.log('[熵验证] 预测=' + pred.color + ', 实际=' + actualColor + ', 正确=' + isCorrect); 
+                     
+                     // 更新准确率统计 
+                     let stats = JSON.parse(localStorage.getItem('accuracyStats') || '{"correct":0,"total":0}'); 
+                     stats.total++; 
+                     if (isCorrect) stats.correct++; 
+                     localStorage.setItem('accuracyStats', JSON.stringify(stats)); 
+                     
+                     // 更新显示 
+                     const accuracyEl = document.querySelector('.accuracy-display'); 
+                     if (accuracyEl) { 
+                       const accuracy = (stats.correct / stats.total * 100).toFixed(1); 
+                       accuracyEl.textContent = '熵准确率: ' + accuracy + '%'; 
+                       accuracyEl.style.color = accuracy > 70 ? '#00cc66' : 
+                                              accuracy > 50 ? '#ffcc00' : '#ff3333'; 
+                       
+                       console.log('[熵准确率] 更新为:', accuracy + '%'); 
+                     } 
+                     
+                     // 如果预测正确，扣除1G-Gas (Double deduction? Or the ONLY deduction?)
+                     // If I assume the top deduction is valid, this is an EXTRA deduction.
+                     // But 1 Gas is very cheap. Maybe 1 for entry, 1 for win tax?
+                     // I'll implement exactly as requested.
+                     if (isCorrect) { 
+                       // Check if we need to fetch fresh value
+                       let freshGas = parseInt(gasEl.textContent.replace(/[^0-9]/g, ''));
+                       freshGas -= 1; 
+                       gasEl.textContent = `G-Gas: ${freshGas}`; 
+                       gasEl.style.color = freshGas < 50 ? '#ff3333' : 
+                                          freshGas < 100 ? '#ffcc00' : '#00cc66'; 
+                       
+                       console.log('[扣分] 预测正确，扣除1G-Gas，剩余:', freshGas); 
+                       
+                       // 同步更新 LocalStorage 中的 currentUser
+                       if (currentUser) {
+                           currentUser.gas_balance = freshGas;
+                           localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                       }
+                     } 
+                 }
+               } catch (error) { 
+                 console.error('[熵验证] 错误:', error); 
+               } 
+            }
+            
+            const color = molSum > denSum ? 'blue' : (molSum < denSum ? 'red' : 'blue'); // Default blue if tie
+
+            // 特殊条件检测 (保持原有逻辑)
+            const molSameFirstTwo = molStr.length >= 2 && molStr[0] === molStr[1];
+            const denSameFirstTwo = denStr.length >= 2 && denStr[0] === denStr[1];
+            const isEqual = molSum === denSum;
+            const isSevenSix = (molSum === 7 && denSum === 6);  
+            const molIsEight = molSum === 8 && molStr.length === 3; 
+            const denIsSix = denSum === 6;  
+            const molIsSeven = molSum === 7; 
+
+            // 异步扣费已移除：改为在 entropy 验证阶段根据预测结果条件扣费
+            // if (window.deductGasForPrediction) {
+            //    window.deductGasForPrediction(1).catch(e => console.warn("Gas check failed:", e));
+            // }
+            
+            // DB Save
+            try {
+                if (window.dbClient && window.dbClient.addPredictionRecord) {
+                    const recordData = {
+                        molecular: molStr,
+                        denominator: denStr,
+                        molSum: molSum,
+                        denSum: denSum,
+                        result: color,
+                        specialFlags: {
+                            isPlayerPair: molSameFirstTwo,
+                            isBankerPair: denSameFirstTwo,
+                            isTie: isEqual,
+                            isCrown: isSevenSix,
+                            isPanda: molIsEight,
+                            isBanker6: denIsSix,
+                            isPlayer7: molIsSeven
+                        },
+                        timestamp: new Date().toISOString()
+                    };
+                    await window.dbClient.addPredictionRecord(recordData);
+                }
+            } catch (e) {
+                console.error("DB Save Failed", e);
+            }
+            
+            // --- Record Object ---
+            const record = {
+                id: Date.now(),
+                mol: molStr,
+                den: denStr,
+                molSum,
+                denSum,
+                color,
+                molSameFirstTwo,
+                denSameFirstTwo,
+                isEqual,
+                isSevenSix,
+                molIsEight,
+                denIsSix,
+                molIsSeven,
+                displayColor: color
+            };
+            
+            allRecords.push(record);
+            // 保存数据
+            localStorage.setItem('mayiju_records', JSON.stringify(allRecords));
+            
+            // 立即清空输入框 (Auto Clear)
+            molInput.value = '';
+            denInput.value = '';
+            molInput.focus();
+            
+            try {
+                renderLinkedRecords();
+            } catch (e) {
+                console.error("List Render Failed:", e);
+            }
+            
+            // 更新八卦数字
+            try {
+                updateBaguaSequenceBlockMode();
+            } catch (e) {
+                console.error("Bagua Update Failed:", e);
+            }
+            
+            // 同步添加到Big Road网格
+            try {
+                addToBigRoad(record);
+            } catch (e) {
+                console.error("Grid Update Failed:", e);
+            }
+            
+            // ========== 核心修复：连接真实预测引擎 ========== 
+            // This part was in the original file. I'll keep it but ensure High Odds logic is added.
+            let predColor = 'red'; 
+            let sValue = 0; 
+            
+            if (window.multiModelVote) { 
+                const prediction = window.multiModelVote.predict(allRecords); 
+                predColor = prediction.prediction; 
+                sValue = prediction.sValue; 
+                
+                const circle = document.getElementById('prediction-circle'); 
+                if (circle) { 
+                    circle.className = 'main-prediction-circle';
+                    const confidence = prediction.confidence ?? 0.7;
+                    const antiEffect = prediction.antiEffect || 0;
+
+                    const halo = document.getElementById('halo');
+                    if (halo) halo.className = 'halo hidden';
+
+                    // 高置信：红/蓝实体圆圈
+                    if (confidence >= 0.75) {
+                        circle.classList.add(sValue > 0 ? 'pred-circle-blue' : 'pred-circle-red');
+                    }
+                    // 低置信：绿圆圈 + 红/蓝晕圈背景
+                    else {
+                        circle.classList.add('pred-circle-green');
+                        if (halo) {
+                            halo.classList.remove('hidden');
+                            halo.classList.add(sValue > 0 ? 'halo-blue' : 'halo-red');
+                        }
+                    } 
+                    
+                    const antiEffectEl = document.getElementById('anti-effect-indicator'); 
+                    if (antiEffectEl) { 
+                        if (Math.abs(antiEffect) > 0.3) { 
+                            antiEffectEl.style.display = 'block'; 
+                            antiEffectEl.textContent = '⚠️ 反噬'; 
+                        } else { 
+                            antiEffectEl.style.display = 'none'; 
+                        } 
+                    } 
+                } 
+            
+                const textEl = document.getElementById('prediction-text'); 
+                if (textEl) textEl.textContent = `S:${sValue.toFixed(1)}%`; 
+                
+                console.log(`🔮 预测: ${prediction.prediction} (S=${sValue.toFixed(1)}%, Conf=${(prediction.confidence*100).toFixed(0)}%)`); 
+            } else {
+                // Fallback if prediction engine is missing
+                const circle = document.getElementById('prediction-circle'); 
+                if (circle) {
+                    circle.className = 'main-prediction-circle pred-circle-red'; // Default to Red
+                    const textEl = document.getElementById('prediction-text'); 
+                    if (textEl) textEl.textContent = 'S:Wait';
+                }
+                console.warn('Prediction Engine (multiModelVote) missing, using fallback.');
+            }
+
+            // ========== 修复：高赔率汇聚到"高倍"模块 (One-Shot Logic) ========== 
+            
+            const multBox = document.getElementById('multiplierValue'); 
+            if (multBox && window.highMultiplePredictor && allRecords.length >= 6) { 
+                // 更新历史记录 
+                window.highMultiplePredictor.updateHistory(record, allRecords.length); 
+                
+                // 获取预测结果 
+                const hmPred = window.highMultiplePredictor.predictNext(allRecords); 
+                let hmEvent = hmPred.topEvent; 
+                
+                // --- One-Shot Logic: 避免同类指标连续显示 (显示一次后消失) ---
+                if (typeof window.lastHighOddsEvent === 'undefined') {
+                    window.lastHighOddsEvent = null;
+                    window.lastHighOddsIndex = -1;
+                }
+
+                // 如果当前预测事件与上次显示的事件相同，且是连续局数，则强制隐藏（显示"-"）
+                // 目的：让用户感觉到"等待下一次指标"，而不是一直显示
+                // 逻辑：如果 hmEvent.event == lastEvent 且当前局数 == lastIndex + 1，说明是连续的第二局
+                if (hmEvent && 
+                    window.lastHighOddsEvent === hmEvent.event && 
+                    allRecords.length >= window.lastHighOddsIndex + 1) {
+                    // 只要是连续或之后的局数重复出现同一特征，都隐藏
+                    // 更新索引以保持持续抑制状态
+                    window.lastHighOddsIndex = allRecords.length;
+                    hmEvent = null; // 强制抑制
+                }
+                
+                // 事件类型 → 显示文本映射表 
+                const eventDisplayMap = { 
+                    'banker_6': '红6', 
+                    'tie': '平衡',     // 回避平牌
+                    'pair': '对子', 
+                    'panda_8': '🐼', 
+                    'player_7': '蓝7', 
+                    'crown': '👑'
+                }; 
+                
+                // 显示逻辑
+                if (hmEvent && hmEvent.confidence >= 0.6) { 
+                    const displayText = eventDisplayMap[hmEvent.event] || hmEvent.name || hmEvent.icon || '-'; 
+                    multBox.textContent = displayText; 
+                    multBox.title = `${hmEvent.name || hmEvent.event} (${(hmEvent.confidence * 100).toFixed(0)}%)`; 
+                    multBox.style.fontSize = '16px'; 
+                    multBox.style.fontWeight = 'bold'; 
+                    multBox.style.background = 'linear-gradient(135deg, #ffcc00, #ff9900)'; 
+                    multBox.style.boxShadow = '0 0 10px rgba(255, 204, 0, 0.6)'; 
+                    
+                    // 记录本次显示的事件和局数
+                    window.lastHighOddsEvent = hmEvent.event;
+                    window.lastHighOddsIndex = allRecords.length;
+                } else { 
+                    multBox.textContent = '-'; 
+                    multBox.title = '等待下一指标'; 
+                    multBox.style.background = 'linear-gradient(135deg, #ffd700, #ffaa00)'; 
+                    multBox.style.boxShadow = 'none'; 
+                    
+                    // 如果被抑制（hmEvent为null但预测器有结果），我们需要更新 lastHighOddsIndex 吗？
+                    // 上面的抑制逻辑已经更新了 lastHighOddsIndex。
+                    // 如果是全新的非高倍情况，无需重置 lastHighOddsEvent，因为我们只关心连续的相同事件。
+                    // 但如果出现中断（例如变成 '-'），是否应该允许下次再出现？
+                    // 现在的逻辑：如果 hmEvent 为 null（无论是没预测到还是被抑制），都显示 '-'。
+                } 
+            } else if (multBox) { 
+                multBox.textContent = allRecords.length < 6 ? '等待数据...' : '-'; 
+            } 
+            
+            // ========== 修复结束 ==========
+            
+            // ========== 存储本次预测（供下次验证） (Fix 4) ========== 
+            // 无论是否有高级模型，都保存当前的预测结论（默认为red或由模型生成）
+            try { 
+                // 使用前面逻辑计算出的 predColor 和 sValue
+                localStorage.setItem('lastPrediction', JSON.stringify({ 
+                    color: predColor, 
+                    sValue: sValue, 
+                    confidence: 0.85, // 默认置信度
+                    timestamp: Date.now() 
+                })); 
+                console.log('[熵] 已存储预测(Next):', predColor); 
+            } catch(e) { 
+                console.error('[熵] 存储预测失败:', e); 
+            }
+
+            // 清空输入
+            molInput.value = '';
+            denInput.value = '';
+            molInput.focus();
+        }
+
+        // ==========================================
+        // 渲染联动记录模块
+        // ==========================================
+        function renderLinkedRecords() {
+            const wrapper = document.getElementById('recordsWrapper');
+            wrapper.innerHTML = '';
+            
+            // Ensure global records
+            if (typeof window.allRecords === 'undefined') window.allRecords = [];
+            const records = window.allRecords;
+
+            let lastVisibleCircle = null;
+
+            records.forEach((rec, index) => {
+                const isLast = index === records.length - 1;
+                
+                const unit = document.createElement('div');
+                unit.className = 'record-unit' + (isLast ? ' current' : '');
+                
+                const idx = document.createElement('div');
+                idx.className = 'record-index';
+                idx.textContent = index + 1;
+                unit.appendChild(idx);
+                
+                const rawRow = document.createElement('div');
+                rawRow.className = 'raw-input-row';
+                
+                const molBox = document.createElement('div');
+                molBox.className = 'raw-box mol';
+                molBox.textContent = rec.mol;
+                
+                const denBox = document.createElement('div');
+                denBox.className = 'raw-box den';
+                denBox.textContent = rec.den;
+                
+                rawRow.appendChild(molBox);
+                rawRow.appendChild(denBox);
+                unit.appendChild(rawRow);
+                
+                const structRow = document.createElement('div');
+                structRow.className = 'structure-row';
+                
+                rec.mol.split('').forEach(d => {
+                    const digit = parseInt(d);
+                    const span = document.createElement('div');
+                    span.className = 'struct-digit ' + (digit <= 4 ? 'red' : 'blue');
+                    span.textContent = d;
+                    structRow.appendChild(span);
+                });
+                
+                rec.den.split('').forEach(d => {
+                    const digit = parseInt(d);
+                    const span = document.createElement('div');
+                    span.className = 'struct-digit ' + (digit <= 4 ? 'red' : 'blue');
+                    span.textContent = d;
+                    structRow.appendChild(span);
+                });
+                
+                unit.appendChild(structRow);
+                
+                const circle = document.createElement('div');
+                circle.className = 'mini-circle ' + rec.color;
+                
+                // Tie Logic: Hide circle, add slash to previous
+                if (rec.isEqual) {
+                    circle.style.visibility = 'hidden';
+                    if (lastVisibleCircle) {
+                        const slash = document.createElement('div');
+                        slash.className = 'mini-slash';
+                        lastVisibleCircle.appendChild(slash);
+                    }
+                } else {
+                    lastVisibleCircle = circle;
+                }
+                
+                if (rec.molSameFirstTwo) {
+                    const dot = document.createElement('div');
+                    dot.className = 'mini-dot-tl';
+                    circle.appendChild(dot);
+                }
+                
+                if (rec.denSameFirstTwo) {
+                    const dot = document.createElement('div');
+                    dot.className = 'mini-dot-br';
+                    circle.appendChild(dot);
+                }
+                
+                // 特殊内容显示
+                let content = '';
+                if (rec.isSevenSix) content = '👑';
+                else if (rec.molIsEight) content = '🐻';
+                else if (rec.denIsSix && rec.color === 'red') content = '6';
+                else if (rec.molIsSeven) content = '7';
+                else content = rec.color === 'blue' ? 'P' : 'B';
+                
+                if (content) {
+                    const span = document.createElement('span');
+                    span.className = 'mini-content';
+                    span.textContent = content;
+                    circle.appendChild(span);
+                }
+                
+                unit.appendChild(circle);
+                wrapper.appendChild(unit);
+            });
+            
+            document.getElementById('recordCount').textContent = allRecords.length + '组';
+            
+            const container = document.getElementById('linkedScroll');
+            container.scrollLeft = container.scrollWidth;
+        }
+
+        // ==========================================
+        // 更新八卦数字序列 - 修正：每3组不重复计算（分块模式）
+        // ==========================================
+        function updateBaguaSequenceBlockMode() {
+            const baguaModule = document.getElementById('baguaModule');
+            const numbersContainer = document.getElementById('baguaNumbers');
+            
+            // 过滤掉和局 (Tie)，确保与网格/列表显示一致
+            const validRecords = allRecords.filter(r => !r.isEqual);
+            
+            // 计算完整的3组块数
+            const completeBlocks = Math.floor(validRecords.length / 3);
+            
+            if (completeBlocks === 0) {
+                baguaModule.style.display = 'none';
+                return;
+            }
+            
+            baguaModule.style.display = 'block';
+            numbersContainer.innerHTML = '';
+            baguaNumbers = [];
+            
+            // 每3个记录生成1个八卦数字，不重叠
+            for (let i = 0; i < completeBlocks; i++) {
+                // 取第 i*3, i*3+1, i*3+2 条记录（0起始索引）
+                const idx1 = i * 3;
+                const idx2 = i * 3 + 1;
+                const idx3 = i * 3 + 2;
+                
+                const c1 = validRecords[idx1].color;
+                const c2 = validRecords[idx2].color;
+                const c3 = validRecords[idx3].color;
+                
+                const num = calculateBaguaNumber(c1, c2, c3);
+                baguaNumbers.push(num);
+            }
+            
+            // ========== 核心修复：抵消逻辑 (Stack-based Cancellation) ==========
+            // 规则：
+            // 1. 合9抵消 (如 8+1=9, 2+7=9...)
+            // 2. 相同抵消 (如 8,8)
+            // 逻辑：向左寻找最近一个"未被抵消"的数字，如果满足条件则两者都抵消
+            const cancelled = new Array(baguaNumbers.length).fill(false);
+            
+            for (let i = 0; i < baguaNumbers.length; i++) {
+                const current = baguaNumbers[i];
+                // 向回查找最近的未抵消数字
+                for (let j = i - 1; j >= 0; j--) {
+                    if (!cancelled[j]) {
+                        const prev = baguaNumbers[j];
+                        // 检查抵消条件
+                        if ((current + prev === 9) || (current === prev)) {
+                            cancelled[i] = true;
+                            cancelled[j] = true;
+                            break; // Match found, stop looking
+                        }
+                        // 允许隔空抵消（用户需求：重复数字间隔出现也要抵消）
+                        // break; // Removed to allow gap cancellation 
+                    }
+                }
+            }
+
+            // 渲染
+            baguaNumbers.forEach((num, idx) => {
+                const box = document.createElement('div');
+                box.className = 'bagua-number-box';
+                box.textContent = num;
+                
+                if (cancelled[idx]) {
+                    // 抵消样式：半透明 + 红斜杠
+                    box.style.opacity = '0.6';
+                    
+                    const slash = document.createElement('div');
+                    slash.style.position = 'absolute';
+                    slash.style.top = '50%';
+                    slash.style.left = '50%';
+                    slash.style.width = '80%';
+                    slash.style.height = '2px';
+                    slash.style.backgroundColor = '#ff4444'; // 红斜杠
+                    slash.style.transform = 'translate(-50%, -50%) rotate(45deg)'; // \ 方向
+                    slash.style.boxShadow = '0 0 4px rgba(255, 0, 0, 0.8)';
+                    slash.style.zIndex = '10';
+                    box.appendChild(slash);
+                }
+                
+                numbersContainer.appendChild(box);
+            });
+            
+            // 自动滚动到最新（最右）
+            const scrollContainer = document.getElementById('baguaScroll');
+            scrollContainer.scrollLeft = scrollContainer.scrollWidth;
+        }
+
+        // 八卦编码计算
+        function calculateBaguaNumber(c1, c2, c3) {
+            const map = {
+                'blue,blue,blue': 1,
+                'red,blue,blue': 2,
+                'blue,red,blue': 3,
+                'red,red,blue': 4,
+                'blue,blue,red': 5,
+                'red,blue,red': 6,
+                'blue,red,red': 7,
+                'red,red,red': 8
+            };
+            
+            const key = `${c1},${c2},${c3}`;
+            return map[key] || 1;
+        }
+
+        // ==========================================
+        // Big Road网格逻辑 - 修正版 (用户指定逻辑)
+        // ==========================================
+        function addToBigRoad(record) { 
+            if (gridRecords.length >= 108) { 
+                console.warn('Big Road网格已满（108/108）'); 
+                return; 
+            } 
+            
+            // ========== Tie Handling (Fix: Don't advance, modify last) ==========
+            if (record.isEqual) {
+                if (gridRecords.length > 0) {
+                    const lastRec = gridRecords[gridRecords.length - 1];
+                    lastRec.tieCount = (lastRec.tieCount || 0) + 1;
+                    // Force re-render of the last cell with slash
+                    renderGridCellWithSpecialIcons(lastRec);
+                    return;
+                }
+                // If first record is Tie, fall through to render as Blue (default) with slash
+            }
+            
+            const color = record.displayColor || record.color; 
+            
+            // Big Road定位规则（修正版） 
+            if (isFirst) { 
+                // 首个记录：第1行第1列 
+                currentCol = 0; 
+                currentRow = 0; 
+                isFirst = false; 
+            } else { 
+                // 关键修复：第1行只能红蓝交替 
+                if (currentRow === 0) { 
+                    // 第1行：异色向右，同色向下（第2行） 
+                    if (color === lastColor) { 
+                        // 同色：向下到第2行 
+                        currentRow = 1; 
+                    } else { 
+                        // 异色：向右 
+                        currentCol++; 
+                        currentRow = 0; 
+                    } 
+                } else { 
+                    // 第2-6行：同色向下，触底向右 
+                    if (color === lastColor) { 
+                        if (currentRow < 5) { 
+                            // 向下延伸 
+                            currentRow++; 
+                        } else { 
+                            // 触底：向右，回到第1行 
+                            currentCol++; 
+                            currentRow = 0; 
+                        } 
+                    } else { 
+                        // 异色：向右，回到第1行 
+                        currentCol++; 
+                        currentRow = 0; 
+                    } 
+                } 
+            } 
+            
+            if (currentCol >= 18) { 
+                console.warn('网格列数已满（18列）'); 
+                return; 
+            } 
+            
+            lastColor = color; 
+            
+            const gridRecord = { 
+                ...record, 
+                col: currentCol, 
+                row: currentRow,
+                tieCount: 0
+            }; 
+            
+            gridRecords.push(gridRecord); 
+            renderGridCellWithSpecialIcons(gridRecord); 
+            
+            document.getElementById('gridCounter').textContent = gridRecords.length + '/108'; 
+        }
+
+        function isCellOccupied(col, row) {
+            if (col >= 18 || row >= 6) return true;
+            const cell = document.getElementById(`cell-${col}-${row}`);
+            return cell && !cell.classList.contains('bead-empty');
+        }
+
+        // ==========================================
+        // 渲染网格单元格 - 包含所有特殊图标
+        // ==========================================
+        function renderGridCellWithSpecialIcons(rec) { 
+            const cell = document.getElementById(`cell-${rec.col}-${rec.row}`); 
+            if (!cell) return; 
+            
+            // 关键修复：确保红蓝圆圈正确显示（必须设置完整的类名） 
+            // 增加容错：如果 color 无效，默认为 red，防止样式断裂
+            const safeColor = (rec.color === 'blue' || rec.color === 'red') ? rec.color : 'red';
+            cell.className = `road-bead bead-hollow-${safeColor}`; 
+            cell.innerHTML = ''; 
+            
+            // 1. 左上角蓝点（分子前两位相同 - 蓝对子） 
+            if (rec.molSameFirstTwo) { 
+                const dot = document.createElement('div'); 
+                dot.className = 'dot-tl'; 
+                cell.appendChild(dot); 
+            } 
+            
+            // 2. 右下角红点（分母前两位相同 - 红对子） 
+            if (rec.denSameFirstTwo) { 
+                const dot = document.createElement('div'); 
+                dot.className = 'dot-br'; 
+                cell.appendChild(dot); 
+            } 
+            
+            // 3. 绿色斜杠（分子=分母 - 平局） 
+            if (rec.isEqual || (rec.tieCount && rec.tieCount > 0)) { 
+                const slash = document.createElement('div'); 
+                slash.className = 'slash'; 
+                cell.appendChild(slash); 
+            } 
+            
+            // 4. 特殊图标内容（按优先级） 
+            let content = ''; 
+            let contentClass = 'bead-content'; 
+            
+            // 优先级1: 7/6 皇冠 👑 
+            if (rec.isSevenSix) { 
+                content = '👑'; 
+                contentClass += ' text-gold'; 
+            } 
+            // 优先级2: 分子和=8（且3位数字）熊猫 🐻 
+            else if (rec.molIsEight) { 
+                content = '🐼'; 
+            } 
+            // 优先级3: 分母和=6且红圈 显示"6" 
+            else if (rec.denIsSix && rec.color === 'red') { 
+                content = '6'; 
+            } 
+            // 优先级4: 分子和=7 显示"7" 
+            else if (rec.molIsSeven) { 
+                content = '7'; 
+            } 
+            
+            if (content) { 
+                const span = document.createElement('span'); 
+                span.className = contentClass; 
+                span.textContent = content; 
+                cell.appendChild(span); 
+            } 
+        }
+
+        // ==========================================
+        // 撤销最后一条记录 (Undo Last)
+        // ==========================================
+        function undoLastRecord() {
+            // Ensure we use the global records
+            if (typeof window.allRecords === 'undefined') window.allRecords = [];
+            const records = window.allRecords;
+
+            // 1. 检查是否有记录
+            if (records.length === 0) {
+                // 如果没有记录，但输入框有内容，则仅清空输入框
+                document.getElementById('molecularInput').value = '';
+                document.getElementById('denominatorInput').value = '';
+                return;
+            }
+
+            // 2. 移除最后一条数据
+            records.pop();
+            // baguaNumbers is managed dynamically by renderBagua
+            
+            // 3. 更新 LocalStorage
+            localStorage.setItem('mayiju_records', JSON.stringify(records));
+            
+            // 4. 清空输入框
+            document.getElementById('molecularInput').value = '';
+            document.getElementById('denominatorInput').value = '';
+            
+            // 5. 重置并重新渲染网格 (Prefer internal initGrid)
+            if (typeof initGrid === 'function') {
+                initGrid();
+            } else if (typeof initAndRenderGrid === 'function') {
+                initAndRenderGrid();
+            } else {
+                console.warn("initGrid/initAndRenderGrid not found, grid might not update");
+            }
+            
+            // 6. 重新渲染列表 (Using emergency_fix.js function)
+            if (typeof renderHistory === 'function') {
+                renderHistory();
+            } else if (typeof renderLinkedRecords === 'function') {
+                renderLinkedRecords();
+            }
+
+            // 7. 重新渲染八卦
+            if (typeof updateBaguaSequenceBlockMode === 'function') {
+                updateBaguaSequenceBlockMode();
+            } else if (typeof renderBagua === 'function') {
+                renderBagua();
+            }
+            
+            // 8. 更新计数器
+            const countEl = document.getElementById('recordCount');
+            if (countEl) countEl.textContent = records.length + '组';
+            
+            const gridCounter = document.getElementById('gridCounter');
+            if (gridCounter) gridCounter.textContent = records.length + '/108';
+            
+            // 9. 更新高赔率模块 (集成到高倍模块)
+            if (window.highOddsDisplay && typeof window.highOddsDisplay.update === 'function') {
+                window.highOddsDisplay.update(records);
+            } else {
+                 const multBox = document.getElementById('multiplierValue');
+                 if (multBox) multBox.textContent = '-';
+            }
+            
+            console.log('[系统] 已撤销最后一条记录，剩余:', records.length);
+        }
+
+        // ==========================================
+        // 清除所有
+        // ==========================================
+        function clearAll() {
+            // 清除所有记录
+            if (typeof window.allRecords !== 'undefined') window.allRecords = [];
+            
+            // LocalStorage 清除
+            localStorage.setItem('mayiju_records', '[]');
+            localStorage.removeItem('lastPrediction');
+            localStorage.removeItem('accuracyStats');
+
+            // 1. 清空列表 DOM
+            if (typeof renderHistory === 'function') {
+                renderHistory(); 
+            } else {
+                 const wrapper = document.getElementById('recordsWrapper') || document.querySelector('.records-wrapper');
+                 if(wrapper) wrapper.innerHTML = '';
+            }
+
+            const recordCount = document.getElementById('recordCount');
+            if(recordCount) recordCount.textContent = '0组';
+            
+            // 2. 清空八卦 DOM
+            if (typeof updateBaguaSequenceBlockMode === 'function') {
+                 updateBaguaSequenceBlockMode(); 
+            } else if (typeof renderBagua === 'function') {
+                 renderBagua(); 
+            } else {
+                const baguaModule = document.getElementById('baguaModule');
+                if(baguaModule) baguaModule.style.display = 'none';
+                const baguaNumbersContainer = document.getElementById('baguaNumbers');
+                if(baguaNumbersContainer) baguaNumbersContainer.innerHTML = '';
+            }
+            
+            // 3. 清空网格 DOM
+            if (typeof initAndRenderGrid === 'function') {
+                initAndRenderGrid(); 
+            } else {
+                 const grid = document.getElementById('bigRoadGrid');
+                 if (grid) grid.innerHTML = '';
+            }
+            
+            const gridCounter = document.getElementById('gridCounter');
+            if(gridCounter) gridCounter.textContent = '0/108';
+
+            // 4. 清空输入框
+            const molInput = document.getElementById('molecularInput');
+            if(molInput) molInput.value = '';
+            const denInput = document.getElementById('denominatorInput');
+            if(denInput) denInput.value = '';
+            
+            // 5. 清除高赔率显示
+             const multBox = document.getElementById('multiplierValue');
+             if (multBox) {
+                multBox.textContent = '-';
+                multBox.style.background = 'linear-gradient(135deg, #ffd700, #ffaa00)';
+                multBox.style.boxShadow = 'none';
+                multBox.style.color = '#000';
+             }
+             
+             // 6. 重置圆圈
+             const circle = document.getElementById('prediction-circle');
+             if (circle) circle.className = 'circle';
+             
+             // 7. 重置 S-value
+             const textEl = document.getElementById('prediction-text');
+             if (textEl) textEl.textContent = 'S:-';
+
+             // 8. 清除熵准确率
+            const accuracyEl = document.getElementById('entropyAccuracy') || document.querySelector('.accuracy-display'); 
+            if (accuracyEl) { 
+                accuracyEl.textContent = '0.0%'; 
+                if (accuracyEl.style) accuracyEl.style.color = '#ffcc00';
+            } 
+
+             console.log('[系统] 所有数据已清除');
+        }
+        
+        // 预览与输入纠错
+        function previewCurrent() {
+            const molInput = document.getElementById('molecularInput');
+            const denInput = document.getElementById('denominatorInput');
+            if (molInput) {
+                molInput.value = molInput.value.replace(/\D/g, '').slice(0, 3);
+            }
+            if (denInput) {
+                denInput.value = denInput.value.replace(/\D/g, '').slice(0, 3);
+            }
+        }
+// Code removed
+        // ==========================================
+        // 消息监听 (Self-Check Integration)
+        // ==========================================
+        window.addEventListener('message', (e) => { 
+           if (e.data && e.data.source === 'selfcheck') { 
+             // 根据 e.data.type 返回对应检测结果 
+             console.log('[System] Received selfcheck request:', e.data);
+             
+             const payload = {
+                status: 'online',
+                timestamp: Date.now(),
+                records_count: (window.allRecords || []).length,
+                last_prediction: localStorage.getItem('lastPrediction'),
+                high_odds_module: typeof window.HighOddsDisplay !== 'undefined' ? 'active' : 'missing',
+                user_agent: navigator.userAgent
+             };
+
+             if (e.source) {
+                 e.source.postMessage({ 
+                   id: e.data.id, 
+                   source: 'main-system', 
+                   payload: payload 
+                 }, '*'); 
+             }
+           } 
+         });
+
+        window.clearAll = clearAll; // 显式绑定到 window
+        window.clearForm = clearAll; // 兼容 window.clearForm
+        window.undoLastRecord = undoLastRecord; // 显式绑定撤销函数
 
     </script>
 </body>
