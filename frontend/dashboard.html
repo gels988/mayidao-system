@@ -173,9 +173,14 @@
 <body>
     <div class="header">
         <h1>蚂蚁岛全景数据看板</h1>
-        <button id="refresh-btn" class="refresh-btn" onclick="loadDataFromDatabase()">
-            <span>🔄</span> 刷新数据
-        </button>
+        <div style="display:flex; gap:10px;">
+            <button id="change-pwd-btn" class="refresh-btn" style="background-color: var(--warning-color);" onclick="showChangePasswordModal()">
+                <span>🔑</span> 修改密码
+            </button>
+            <button id="refresh-btn" class="refresh-btn" onclick="loadDataFromDatabase()">
+                <span>🔄</span> 刷新数据
+            </button>
+        </div>
     </div>
 
     <!-- 概览卡片 -->
@@ -261,6 +266,24 @@
                 <input type="password" id="password" placeholder="密码">
             </div>
             <button class="login-btn" onclick="handleLogin()">登录</button>
+        </div>
+    </div>
+
+    <!-- 修改密码弹窗 -->
+    <div id="change-password-modal" class="modal">
+        <div class="modal-content">
+            <h2>修改密码</h2>
+            <div class="input-group">
+                <input type="password" id="old-password" placeholder="当前密码">
+            </div>
+            <div class="input-group">
+                <input type="password" id="new-password" placeholder="新密码">
+            </div>
+            <div class="input-group">
+                <input type="password" id="confirm-password" placeholder="确认新密码">
+            </div>
+            <button class="login-btn" onclick="handleChangePassword()">确认修改</button>
+            <button class="login-btn" style="background:#8c8c8c; margin-top:10px;" onclick="closeChangePasswordModal()">取消</button>
         </div>
     </div>
 
@@ -384,12 +407,65 @@
             document.getElementById('login-modal').style.display = 'flex';
         }
 
+        function showChangePasswordModal() {
+            document.getElementById('change-password-modal').style.display = 'flex';
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('change-password-modal').style.display = 'none';
+        }
+
         async function handleLogin() {
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
             if(await login(u, p)) {
                 document.getElementById('login-modal').style.display = 'none';
                 loadDataFromDatabase();
+            }
+        }
+
+        async function handleChangePassword() {
+            const oldP = document.getElementById('old-password').value;
+            const newP = document.getElementById('new-password').value;
+            const confirmP = document.getElementById('confirm-password').value;
+
+            if (!oldP || !newP || !confirmP) {
+                alert('请填写所有字段');
+                return;
+            }
+
+            if (newP !== confirmP) {
+                alert('两次输入的新密码不一致');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        token: authToken, 
+                        oldPassword: oldP, 
+                        newPassword: newP 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('密码修改成功，请重新登录');
+                    closeChangePasswordModal();
+                    // Logout
+                    authToken = null;
+                    localStorage.removeItem('authToken');
+                    showLoginModal();
+                } else {
+                    throw new Error(data.error || '修改失败');
+                }
+            } catch (error) {
+                alert('错误: ' + error.message);
             }
         }
 
