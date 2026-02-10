@@ -59,6 +59,8 @@
                 width: 100%;
                 height: 100vh;
                 display: block;
+                z-index: 100;
+                position: relative;
             }
             
             .phone-frame {
@@ -72,6 +74,22 @@
             
             .phone-screen {
                 border-radius: 0 !important;
+            }
+
+            /* 强制隐藏所有遮挡层 (核心修复) */
+            #login-overlay, #register-mode, .modal-overlay {
+                display: none !important;
+                z-index: -999 !important;
+                pointer-events: none !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+            }
+            
+            /* 确保输入框可点击 */
+            .input-section, .btn-input, .btn-clear, input {
+                pointer-events: auto !important;
+                z-index: 200 !important;
+                position: relative !important;
             }
             
             /* 调整顶部栏以适应手机 */
