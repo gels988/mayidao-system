@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>智能预测系统 v2.0.4 (最新版)</title>
     <!-- 拦截脚本已移除：高赔率模块已改为原生集成 -->
     <link rel="stylesheet" href="css/self_learn.css">
@@ -823,14 +823,17 @@
             }
         }
         
-        /* 触摸设备优化 */ 
-        @media (hover: none) and (pointer: coarse) { 
-            /* 增大触摸目标 */ 
-            button, .btn, a { 
-                min-height: 44px !important; 
-                min-width: 44px !important; 
-            } 
-        }
+        /* 确保图片和视频不会撑破手机屏幕 */ 
+ img, video, canvas { 
+     max-width: 100%; 
+     height: auto; 
+ } 
+ 
+ /* 强制清除可能的横向溢出 */ 
+ body { 
+     overflow-x: hidden; 
+     width: 100%; 
+ }
 
     </style>
     <!-- [已移除] base target="_blank" -->

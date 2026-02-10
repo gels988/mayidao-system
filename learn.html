@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>自学模块 - 22矩阵四数基因预测系统</title>
     <link rel="stylesheet" href="mi11_optimization.css">
     <script src="js/mobile_debug.js"></script>
@@ -80,14 +80,16 @@
      } 
  } 
  
- /* 触摸设备优化 */ 
- @media (hover: none) and (pointer: coarse) { 
-     /* 增大触摸目标 */ 
-     button, .btn, a { 
-         min-height: 44px !important; 
-         min-width: 44px !important; 
-         padding: 12px 20px !important; 
-     } 
+/* 确保图片和视频不会撑破手机屏幕 */ 
+ img, video, canvas { 
+     max-width: 100%; 
+     height: auto; 
+ } 
+ 
+ /* 强制清除可能的横向溢出 */ 
+ body { 
+     overflow-x: hidden; 
+     width: 100%; 
  }
         :root {
             --primary: #2c3e50;
