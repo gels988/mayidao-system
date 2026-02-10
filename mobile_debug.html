@@ -1,0 +1,2837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEBUG MODE - 智能预测系统</title>
+    <!-- 移动端调试控制台 -->
+    <style>
+        #debug-console {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 30vh;
+            background: rgba(0,0,0,0.9);
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 10px;
+            overflow-y: auto;
+            z-index: 999999;
+            border-bottom: 2px solid #fff;
+            padding: 5px;
+            pointer-events: auto; /* 允许滚动 */
+        }
+        #debug-console div { border-bottom: 1px solid #333; padding: 2px 0; }
+        /* 避免被调试控制台挡住内容，增加顶部padding */
+        body { padding-top: 32vh !important; }
+    </style>
+    <script>
+        // 立即执行错误捕获
+        (function(){
+            // 创建控制台DOM
+            document.write('<div id="debug-console">=== 移动端调试启动 ===<br></div>');
+            var consoleDiv = document.getElementById('debug-console');
+            
+            function logToScreen(msg, color) {
+                if(!consoleDiv) consoleDiv = document.getElementById('debug-console');
+                if(!consoleDiv) return;
+                var div = document.createElement('div');
+                div.textContent = msg;
+                if(color) div.style.color = color;
+                consoleDiv.appendChild(div);
+                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            }
+
+            // 捕获全局错误
+            window.onerror = function(msg, url, line, col, error) {
+                var txt = '[FATAL ERROR] ' + msg + '\nFile: ' + url + '\nLine: ' + line + ':' + col;
+                if(error && error.stack) txt += '\nStack: ' + error.stack;
+                logToScreen(txt, '#ff3333');
+                return false;
+            };
+
+            // 捕获 Promise 错误
+            window.addEventListener('unhandledrejection', function(e) {
+                logToScreen('[UNHANDLED PROMISE] ' + e.reason, '#ff9900');
+            });
+
+            // 劫持 console.log
+            var oldLog = console.log;
+            console.log = function() {
+                var args = Array.from(arguments).map(arg => {
+                    try { return typeof arg === 'object' ? JSON.stringify(arg) : String(arg); }
+                    catch(e) { return '[Object]'; }
+                });
+                logToScreen('[LOG] ' + args.join(' '));
+                oldLog.apply(console, arguments);
+            };
+
+            // 劫持 console.error
+            var oldErr = console.error;
+            console.error = function() {
+                var args = Array.from(arguments).map(arg => String(arg));
+                logToScreen('[ERR] ' + args.join(' '), '#ff6666');
+                oldErr.apply(console, arguments);
+            };
+            
+            logToScreen('Environment: ' + navigator.userAgent);
+        })();
+    </script>
+    <!-- 拦截脚本已移除：高赔率模块已改为原生集成 -->
+    <link rel="stylesheet" href="css/self_learn.css">
+    <script>
+        // 🚀 强制清除所有 Service Worker (Fix caching issues)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister().then(function(boolean) {
+                        console.log('Service Worker unregistered:', boolean);
+                    });
+                }
+            });
+        }
+        
+        // 版本控制与缓存清理
+        const CURRENT_VERSION = '2.0.3';
+        const lastVersion = localStorage.getItem('app_version');
+        
+        if (lastVersion !== CURRENT_VERSION) {
+            console.log('检测到新版本，正在清理旧缓存...');
+            // 清理旧的登录状态，确保用户能看到新版登录界面
+            // localStorage.removeItem('currentUser'); 
+            // 保留用户数据，但更新版本号
+            localStorage.setItem('app_version', CURRENT_VERSION);
+            
+            // 如果是完全不兼容的更新，可以取消注释下面这行
+            // localStorage.clear(); 
+        }
+    </script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            gap: 20px;
+        }
+
+        /* 移动端适配 (小于768px) */
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+                gap: 0;
+                background: #1a1a1a; /* 移动端背景黑色 */
+            }
+            
+            #left-panel {
+                display: none; /* 隐藏左侧说明 */
+            }
+            
+            #right-panel {
+                width: 100%;
+                height: 100vh;
+                display: block;
+            }
+            
+            .phone-frame {
+                width: 100% !important;
+                height: 100% !important;
+                border-radius: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                background: #1a1a1a !important;
+            }
+            
+            .phone-screen {
+                border-radius: 0 !important;
+            }
+            
+            /* 调整顶部栏以适应手机 */
+            .top-bar {
+                padding: 10px;
+            }
+            
+            .g-gas {
+                font-size: 14px !important; /* 放大余额显示 */
+            }
+        }
+
+        /* 左侧说明 */
+        #left-panel {
+            width: 300px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* 右侧模拟手机界面 */
+        #right-panel {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .phone-frame {
+            width: 375px;
+            height: 812px;
+            background: #1a1a1a;
+            border-radius: 40px;
+            padding: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            border-radius: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 状态栏 */
+        .status-bar {
+            height: 30px;
+            background: #2a2a2a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 12px;
+            color: #fff;
+        }
+
+        /* 主界面样式 */
+        .app-container {
+            height: calc(100% - 30px);
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* 顶部导航 */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #2a2a2a;
+            border-bottom: 1px solid #444;
+        }
+        .top-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .user-info {
+            font-size: 10px;
+            color: #888;
+        }
+        .g-gas {
+            color: #ffcc00;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .accuracy {
+            background: #3a3a3a;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            color: #aaa;
+        }
+        .top-right {
+            display: flex;
+            gap: 4px;
+        }
+        .settings-btn {
+            background: #444;
+            color: #fff;
+            border: 1px solid #666;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 9px;
+            cursor: pointer;
+        }
+        .settings-btn.primary {
+            background: #1e90ff;
+            border-color: #1e90ff;
+        }
+        .settings-btn.success {
+            background: #32cd32;
+            border-color: #32cd32;
+            color: #000;
+        }
+        .settings-btn.warning {
+            background: #ff6600;
+            border-color: #ff6600;
+            color: #fff;
+            font-weight: bold;
+        }
+        .exit-btn {
+            background: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 10px;
+        }
+
+        /* 系统状态 */
+        .system-status {
+            text-align: center;
+            padding: 6px;
+            font-size: 12px;
+            color: #aaa;
+        }
+        .accuracy-display {
+            text-align: center;
+            padding: 4px;
+            font-size: 11px;
+            color: #ffcc00;
+        }
+
+        /* 主容器 */
+        .main-container {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* 输入区域 */
+        .input-section {
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        /* 输入控制行 */
+        .input-control-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            align-items: flex-end;
+        }
+        
+        .input-group-small {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .input-group-small label {
+            font-size: 9px;
+            color: #888;
+            margin-bottom: 3px;
+        }
+        .input-group-small input {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 8px 4px;
+            border-radius: 4px;
+            font-size: 14px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            width: 100%;
+            letter-spacing: 3px;
+        }
+
+        /* 按钮 */
+        .btn-input {
+            background: #1e90ff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 1px;
+            white-space: nowrap;
+        }
+        .btn-clear {
+            background: #ff3333;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 1px;
+            white-space: nowrap;
+        }
+
+        /* 联动记录模块 */
+        .linked-records-module {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .module-title {
+            font-size: 10px;
+            color: #888;
+            font-weight: bold;
+        }
+        .record-count {
+            font-size: 9px;
+            color: #666;
+        }
+        
+        /* 横向滚动容器 */
+        .linked-scroll-container {
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: #444 #1a1a1a;
+        }
+        .linked-scroll-container::-webkit-scrollbar {
+            height: 6px;
+        }
+        .linked-scroll-container::-webkit-scrollbar-track {
+            background: #0d0d0d;
+            border-radius: 3px;
+        }
+        .linked-scroll-container::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 3px;
+        }
+        
+        /* 记录行容器 */
+        .records-wrapper {
+            display: inline-flex;
+            gap: 10px;
+            padding: 4px;
+            min-width: 100%;
+        }
+        
+        /* 单个记录组 */
+        .record-unit {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: #252525;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            flex-shrink: 0;
+            width: 90px;
+            position: relative;
+        }
+        .record-unit.current {
+            border-color: #ffcc00;
+            background: #2a2520;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.2);
+        }
+        .record-index {
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #444;
+            color: #fff;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .record-unit.current .record-index {
+            background: #ffcc00;
+            color: #000;
+        }
+        
+        /* 原始输入行 */
+        .raw-input-row {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+        .raw-box {
+            width: 36px;
+            height: 26px;
+            background: #0d0d0d;
+            border: 1px solid #333;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        .raw-box.mol { color: #4da6ff; border-color: #1a4d80; }
+        .raw-box.den { color: #ff6666; border-color: #802a2a; }
+        
+        /* 结构显示行 */
+        .structure-row {
+            display: flex;
+            gap: 3px;
+            justify-content: center;
+        }
+        .struct-digit {
+            width: 22px;
+            height: 22px;
+            background: #1a1a1a;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            border: 1px solid #333;
+        }
+        .struct-digit.red { color: #ff3333; border-color: #502020; }
+        .struct-digit.blue { color: #3366ff; border-color: #202050; }
+        
+        /* 圆圈显示 */
+        .mini-circle {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            position: relative;
+        }
+        .mini-circle.blue { 
+            background: #1e90ff; 
+            box-shadow: 0 0 8px rgba(30, 144, 255, 0.5);
+        }
+        .mini-circle.red { 
+            background: #ff3333; 
+            box-shadow: 0 0 8px rgba(255, 51, 51, 0.5);
+        }
+        .mini-circle.green { 
+            background: #32cd32; 
+            box-shadow: 0 0 8px rgba(50, 205, 50, 0.5);
+        }
+        
+        .mini-slash {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            width: 2px;
+            height: 70%;
+            background: #32cd32;
+            transform: translateX(-50%) rotate(45deg);
+            box-shadow: 0 0 2px #32cd32;
+            z-index: 10;
+        }
+        
+        /* 小标记点 */
+        .mini-dot-tl {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 5px;
+            height: 5px;
+            background: #1e90ff;
+            border-radius: 50%;
+            border: 1px solid #fff;
+        }
+        .mini-dot-br {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 5px;
+            height: 5px;
+            background: #ff3333;
+            border-radius: 50%;
+            border: 1px solid #fff;
+        }
+        .mini-content {
+            z-index: 2;
+            font-size: 12px;
+        }
+
+        /* 八卦数字序列显示区 */
+        .bagua-sequence-module {
+            background: #0d0d0d;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 8px;
+        }
+        
+        /* 八卦数字横向滚动容器 - 独立滑动条 */
+        .bagua-scroll-container {
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: #444 #0d0d0d;
+            white-space: nowrap;
+        }
+        .bagua-scroll-container::-webkit-scrollbar {
+            height: 6px;
+        }
+        .bagua-scroll-container::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 3px;
+        }
+        .bagua-scroll-container::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 3px;
+        }
+        
+        /* 数字序列包装器 */
+        .bagua-numbers-wrapper {
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px;
+        }
+        
+        /* 单个八卦数字 */
+        .bagua-number-box {
+            width: 40px;
+            height: 48px;
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+            border: 1px solid #444;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+            flex-shrink: 0;
+            position: relative; /* 支持内部绝对定位元素（如斜杠） */
+        }
+        .bagua-number-box:first-child {
+            border-color: #666;
+            background: linear-gradient(135deg, #333, #222);
+        }
+
+        /* 预测结果 */
+        .prediction-result {
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .prediction-left {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #1a1a1a;
+            border-radius: 6px;
+            border: 1px solid #333;
+            min-height: 80px;
+        }
+        
+        .main-prediction-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .pred-circle-blue { 
+            background: #1e90ff; 
+            box-shadow: 0 0 20px rgba(30, 144, 255, 0.8);
+        }
+        .pred-circle-red { 
+            background: #ff3333; 
+            box-shadow: 0 0 20px rgba(255, 51, 51, 0.8);
+        }
+        .pred-circle-green { 
+            background: #32cd32; 
+            box-shadow: 0 0 20px rgba(50, 205, 50, 0.8);
+        }
+
+        /* 低置信提示：红/蓝晕圈背景（配合绿圆圈） */
+        .halo {
+            position: absolute;
+            width: 66px;
+            height: 66px;
+            border-radius: 50%;
+            filter: blur(2px);
+            opacity: 0.95;
+            z-index: 0;
+        }
+        .hidden { display: none !important; }
+        .halo-blue {
+            background: radial-gradient(circle, rgba(30,144,255,0.75) 0%, rgba(30,144,255,0.25) 55%, rgba(30,144,255,0.0) 72%);
+            box-shadow: 0 0 22px rgba(30,144,255,0.75);
+        }
+        .halo-red {
+            background: radial-gradient(circle, rgba(255,51,51,0.75) 0%, rgba(255,51,51,0.25) 55%, rgba(255,51,51,0.0) 72%);
+            box-shadow: 0 0 22px rgba(255,51,51,0.75);
+        }
+
+        /* 确保主圆圈在晕圈上层 */
+        .main-prediction-circle { z-index: 1; }
+
+        .prediction-right {
+            width: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #1a1a1a;
+            border-radius: 6px;
+            border: 1px solid #444;
+            padding: 8px;
+        }
+        .multiplier-label {
+            font-size: 9px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+        .multiplier-box {
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        /* Big Road网格 */
+        .grid-section {
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .grid-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 10px;
+            color: #888;
+        }
+        
+        .big-road-container {
+            display: inline-block;
+            min-width: 100%;
+        }
+        
+        .big-road-grid {
+            display: grid;
+            grid-template-columns: repeat(18, 40px);
+            grid-template-rows: repeat(6, 40px);
+            gap: 3px;
+            background: #1a1a1a;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        
+        .road-bead {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid;
+            background: transparent;
+            box-sizing: border-box;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .bead-hollow-red { 
+            border-color: #ff3333; 
+            box-shadow: 0 0 8px rgba(255, 51, 51, 0.5);
+            color: #ff3333;
+        }
+        .bead-hollow-blue { 
+            border-color: #1e90ff; 
+            box-shadow: 0 0 8px rgba(30, 144, 255, 0.5);
+            color: #1e90ff;
+        }
+        
+        /* 特殊标记 */
+        .dot-tl {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 7px;
+            height: 7px;
+            background: #1e90ff;
+            border-radius: 50%;
+            box-shadow: 0 0 3px #1e90ff;
+            border: 1px solid #fff;
+            z-index: 10;
+        }
+        .dot-br {
+            position: absolute;
+            bottom: 3px;
+            right: 3px;
+            width: 7px;
+            height: 7px;
+            background: #ff3333;
+            border-radius: 50%;
+            box-shadow: 0 0 3px #ff3333;
+            border: 1px solid #fff;
+            z-index: 10;
+        }
+        .slash {
+            position: absolute;
+            width: 2px;
+            height: 70%;
+            background: #32cd32;
+            transform: rotate(45deg);
+            box-shadow: 0 0 4px #32cd32;
+        }
+        .bead-content {
+            z-index: 5;
+            font-size: 16px;
+            position: relative;
+        }
+        .text-gold { color: #ffcc00; }
+        
+        .bead-empty {
+            width: 40px;
+            height: 40px;
+        }
+        .road-bead {
+            border: 2px solid transparent; /* 默认透明 */
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bead-hollow-red { border-color: #ff3333 !important; }
+        .bead-hollow-blue { border-color: #1e90ff !important; }
+    </style>
+    <!-- [已移除] base target="_blank" -->
+    <!-- [已移除] 旧版高赔率拦截器：会导致高倍模块无法初始化 -->
+<body>
+<!-- 在主界面添加自学面板 --> 
+<div id="selfLearnPanel" style="display:none; position:fixed; top:50px; left:50%; transform:translateX(-50%); background:#1a1a1a; border:2px solid #00cc66; padding:20px; z-index:1000; width:300px;"> 
+  <h3>🧠 自学模块</h3> 
+  <div id="selfLearnStatus">学习中...</div> 
+  <div id="selfLearnInsights"></div> 
+  <button onclick="closeSelfLearn()" style="margin-top:15px; width:100%; padding:8px; background:#444; color:#fff; border:none; cursor:pointer;">关闭</button> 
+</div>
+<!-- ========== 在 <body> 开头添加登录入口 ========== --> 
+<div id="login-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;"> 
+  <div style="background:#16213e; padding:40px; border-radius:15px; border:2px solid #e94560; width:90%; max-width:400px;"> 
+    <h2 style="color:#fff; text-align:center; margin-bottom:30px;">🔐 系统登录</h2> 
+    
+    <div style="margin-bottom:20px;"> 
+      <label style="color:#a2a8d3; display:block; margin-bottom:8px;">邮箱/手机号</label> 
+      <input type="text" id="login-username" placeholder="输入邮箱或手机号" style="width:100%; padding:12px; background:#0f3460; border:1px solid #533483; color:#fff; border-radius:8px; box-sizing:border-box;"> 
+    </div> 
+    
+    <div style="margin-bottom:20px;"> 
+      <label style="color:#a2a8d3; display:block; margin-bottom:8px;">密码</label> 
+      <input type="password" id="login-password" placeholder="输入密码" style="width:100%; padding:12px; background:#0f3460; border:1px solid #533483; color:#fff; border-radius:8px; box-sizing:border-box;"> 
+    </div> 
+    
+    <button onclick="handleLogin()" style="width:100%; padding:15px; background:#e94560; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; margin-bottom:10px;"> 
+      🔑 立即登录 
+    </button> 
+    
+    <button onclick="toggleRegisterMode()" style="width:100%; padding:12px; background:#533483; color:#fff; border:none; border-radius:8px; cursor:pointer;"> 
+      📝 还没有账号？立即注册 
+    </button> 
+    
+    <div id="login-message" style="margin-top:15px; text-align:center; color:#ffd700; min-height:24px;"></div> 
+    <button onclick="closeLoginOverlay()" style="margin-top:10px; background:none; border:none; color:#888; cursor:pointer; width:100%;">暂不登录 (仅浏览)</button>
+  </div> 
+</div> 
+
+<!-- 注册模式 --> 
+<div id="register-mode" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;"> 
+  <div style="background:#16213e; padding:40px; border-radius:15px; border:2px solid #00cc66; width:90%; max-width:400px;"> 
+    <h2 style="color:#fff; text-align:center; margin-bottom:30px;">📝 账号注册</h2> 
+    
+    <div style="margin-bottom:15px;"> 
+      <label style="color:#a2a8d3; display:block; margin-bottom:8px;">邮箱（推荐）</label> 
+      <input type="email" id="register-email" placeholder="输入邮箱地址" style="width:100%; padding:12px; background:#0f3460; border:1px solid #533483; color:#fff; border-radius:8px; box-sizing:border-box;"> 
+    </div> 
+    
+    <div style="margin-bottom:15px;"> 
+      <label style="color:#a2a8d3; display:block; margin-bottom:8px;">手机号（可选）</label> 
+      <input type="tel" id="register-phone" placeholder="输入手机号（可选）" style="width:100%; padding:12px; background:#0f3460; border:1px solid #533483; color:#fff; border-radius:8px; box-sizing:border-box;"> 
+    </div> 
+    
+    <div style="margin-bottom:15px; display:none;"> 
+      <label style="color:#a2a8d3; display:block; margin-bottom:8px;">密码（至少6位）</label> 
+      <input type="password" id="register-password" placeholder="设置密码" style="width:100%; padding:12px; background:#0f3460; border:1px solid #533483; color:#fff; border-radius:8px; box-sizing:border-box;"> 
+    </div> 
+    
+    <div style="margin-bottom:15px; display:none;"> 
+      <label style="color:#a2a8d3; display:block; margin-bottom:8px;">确认密码</label> 
+      <input type="password" id="register-confirm" placeholder="再次输入密码" style="width:100%; padding:12px; background:#0f3460; border:1px solid #533483; color:#fff; border-radius:8px; box-sizing:border-box;"> 
+    </div> 
+    
+    <button onclick="handleRegister()" style="width:100%; padding:15px; background:#00cc66; color:#000; border:none; border-radius:8px; font-weight:bold; cursor:pointer; margin-bottom:10px;"> 
+      ✅ 立即注册 
+    </button> 
+    
+    <button onclick="toggleLoginMode()" style="width:100%; padding:12px; background:#533483; color:#fff; border:none; border-radius:8px; cursor:pointer;"> 
+      ← 已有账号？返回登录 
+    </button> 
+    
+    <div id="register-message" style="margin-top:15px; text-align:center; color:#ffd700; min-height:24px;"></div> 
+  </div> 
+</div>
+
+    <div id="left-panel">
+        <h2>修正说明</h2>
+        <h3>1. 特殊图标显示</h3>
+        <ul>
+            <li>7/6（分子和7，分母和6）→ 👑 皇冠</li>
+            <li>分子和=7 → 显示"7"</li>
+            <li>分子和=8（必须3位输入）→ 🐼 熊猫</li>
+            <li>分母和=6（红圈）→ 显示"6"</li>
+        </ul>
+
+        <h3>2. 八卦数字滑动条</h3>
+        <ul>
+            <li>模块下方有独立滚动条</li>
+            <li>可左右滑动查看所有数字</li>
+        </ul>
+
+        <h3>3. 八卦计算逻辑（不重复）</h3>
+        <ul>
+            <li>每3组记录计算1个数字</li>
+            <li>第1-3组=第1卦</li>
+            <li>第4-6组=第2卦</li>
+            <li>不重叠计算</li>
+        </ul>
+    </div>
+
+    <div id="right-panel">
+        <div class="phone-frame">
+            <div class="phone-screen">
+                <!-- 状态栏 -->
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <span>📶 5G 🔋</span>
+                </div>
+
+                <!-- 应用内容 -->
+                <div class="app-container">
+                    <!-- 顶部导航 -->
+                    <div class="top-bar">
+                        <div class="top-left">
+                            <div class="user-info" id="userInfoDisplay" onclick="logout()" style="cursor: pointer; title: '点击退出登录'">Guest</div>
+                            <div class="g-gas" style="color: #ffcc00; font-weight: bold; font-size: 16px;">G-Gas: 加载中...</div>
+                            <div class="accuracy">Acc: 33.3%</div>
+                        </div>
+                        <div class="top-right">
+                            <button class="settings-btn" id="btnLogin" onclick="showLoginOverlay()" style="background:#e94560; border-color:#e94560; display:none;">登录</button>
+                            <button class="settings-btn info" onclick="openSelfLearn()">自学</button>
+                            <button class="settings-btn warning" onclick="openSelfCheck()">自检</button>
+                            <button class="settings-btn primary" onclick="openSubSystem()">子系统</button>
+                            <button class="settings-btn success" onclick="openDonation()">捐赠</button>
+                            <button class="exit-btn" onclick="clearAll()">Exit</button>
+                        </div>
+                    </div>
+
+                    <div class="system-status">System Ready</div>
+                    <div class="accuracy-display">熵准确率: 0.0%</div>
+
+                    <!-- 主容器 -->
+                    <div class="main-container">
+                        <!-- 输入区域 -->
+                        <div class="input-section">
+                            <!-- 输入控制 -->
+                            <div class="input-control-row">
+                                <div class="input-group-small">
+                                    <label>分子 (2-3位)</label>
+                                    <input type="text" id="molecularInput" maxlength="3" placeholder="00" oninput="previewCurrent()">
+                                </div>
+                                <div class="input-group-small">
+                                    <label>分母 (2-3位)</label>
+                                    <input type="text" id="denominatorInput" maxlength="3" placeholder="00" oninput="previewCurrent()">
+                                </div>
+                                <button class="btn-input" onclick="addRecord()">输入</button>
+                                <button class="btn-clear" onclick="undoLastRecord()">清除</button>
+                            </div>
+
+                            <!-- 联动记录模块 -->
+                            <div class="linked-records-module">
+                                <div class="module-header">
+                                    <span class="module-title">历史记录查询</span>
+                                    <span class="record-count" id="recordCount">0组</span>
+                                </div>
+                                <div class="linked-scroll-container" id="linkedScroll">
+                                    <div class="records-wrapper" id="recordsWrapper">
+                                    </div>
+                                </div>
+                                
+                                <!-- 八卦数字序列 - 独立滑动条 -->
+                                <div class="bagua-sequence-module" id="baguaModule" style="display: none;">
+                                    <div class="bagua-scroll-container" id="baguaScroll">
+                                        <div class="bagua-numbers-wrapper" id="baguaNumbers">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 预测结果 -->
+                        <div class="prediction-result">
+                            <div class="prediction-left" style="position: relative; display: flex; justify-content: center; align-items: center;">
+                                <div id="halo" class="halo hidden"></div>
+                                <div id="prediction-circle" class="main-prediction-circle pred-circle-blue"></div>
+                                <div id="prediction-text" style="position:absolute; bottom:5px; right:5px; color:#fff; font-size:10px; background:rgba(0,0,0,0.5); padding:2px;"></div>
+                                <div id="anti-effect-indicator" style="position:absolute; top:5px; left:5px; color:#ffcc00; font-size:10px; display:none;"></div>
+                            </div>
+                            <div class="prediction-right">
+                                <div class="multiplier-label">高倍</div>
+                                <div class="multiplier-box" id="multiplierValue">-</div>
+                            </div>
+                        </div>
+
+                        <!-- Big Road网格 -->
+                        <div class="grid-section">
+                            <div class="grid-labels">
+                                <span>Big Road 路单图 (18×6)</span>
+                                <span id="gridCounter">0/108</span>
+                            </div>
+                            <div class="big-road-container">
+                                <div class="big-road-grid" id="bigRoadGrid"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Prediction Modules -->
+    <!-- Original Source (Commented for Security) -->
+    <!-- <script src="js/encrypted_logic.js"></script> -->
+    <!-- <script src="js/high_multiple_predictor.js"></script> -->
+    <!-- <script src="js/predict-banker6.js"></script> -->
+    <!-- <script src="js/predict-tie.js"></script> -->
+    <!-- <script src="js/predict-pair.js"></script> -->
+    <!-- <script src="js/predict-player.js"></script> -->
+    <!-- <script src="js/predict-special.js"></script> -->
+    
+    <!-- Security Layer -->
+    <script src="js/decrypt_key.js"></script>
+    <script src="js/decrypt_loader.js"></script>
+    <script src="js/integrity_check.js"></script>
+    <script>
+        window.addEventListener('load', async () => {
+            if (typeof checkIntegrity === 'function') {
+                const isValid = await checkIntegrity();
+                if (!isValid) {
+                    alert('⚠️ 系统文件被篡改，请重新下载！');
+                    // Optional: Disable functionality
+                    // document.body.innerHTML = '<h1>System Compromised</h1>';
+                }
+            }
+        });
+    </script>
+    <!-- <script src="js/anti_debug.js"></script> -->
+
+    <!-- Encrypted Modules -->
+    <!-- Switch to non-minified version for development/debugging -->
+    <script src="js/encrypted_logic.min.js" defer></script>
+    <script src="js/high_multiple_predictor.js" defer></script>
+    <!-- 
+    <script src="js/predict-banker6.min.js" defer></script>
+    <script src="js/predict-tie.min.js" defer></script>
+    <script src="js/predict-pair.min.js" defer></script>
+    <script src="js/predict-player.min.js" defer></script>
+    <script src="js/predict-special.min.js" defer></script>
+    -->
+
+    <!-- Prediction Logic -->
+    <!-- Disabled conflicting modules -->
+    <!-- <script src="js/high-odds-predictor.js"></script> -->
+    <!-- <script src="js/high-odds-display.js"></script> -->
+    <script src="js/main-integration.js"></script>
+    
+    <script src="js/db_client.js"></script>
+    <script src="js/gas_manager.js"></script>
+    <script src="js/ui_controller.js"></script>
+    
+    <!-- 🚑 急救方案：引入紧急修复脚本 -->
+    <script src="js/emergency_fix.js"></script>
+    
+    <!-- 🧬 持续进化系统 -->
+    <script src="js/evolution_engine.js"></script>
+    <script src="js/self_learn.js"></script>
+
+    <script>
+        // ==========================================
+        // 数据存储
+        // ==========================================
+        // 使用 window.allRecords (由 emergency_fix.js 管理)
+        // let allRecords = [];        
+        let baguaNumbers = [];      
+        let gridRecords = [];       
+        let lastColor = null;
+        let currentCol = 0;
+        let currentRow = 0;
+        let isFirst = true;
+        let lastPos = null;
+
+        // ==========================================
+        // 系统集成与窗口管理 (Pure Implementation)
+        // ==========================================
+        
+        // Window Tracker
+        // let windows = { ... } // Removed duplicate declaration
+
+        
+        // ==========================================
+        // 身份验证与窗口管理 (Auth & Windows)
+        // ==========================================
+        
+        // Window Tracker
+        let windows = {
+            selfCheck: null,
+            subSystem: null,
+            donation: null
+        };
+        
+        const supabase = window.supabaseInstance; // From db_client.js
+
+        // ========== 登录/注册逻辑 (User Provided) ========== 
+        // let currentUser = null; // Removed duplicate declaration
+        
+        // 检查是否已登录 
+        function checkLoginStatus() { 
+            const savedUser = localStorage.getItem('currentUser'); 
+            if (savedUser) { 
+                currentUser = JSON.parse(savedUser); 
+                // 隐藏登录按钮，显示用户信息 
+                updateUserInfoDisplay(); 
+                return true; 
+            } 
+            return false; 
+        } 
+        
+        // Alias for compatibility
+        const checkUserLogin = checkLoginStatus;
+
+        // 显示登录界面 (默认为注册模式)
+        function showLogin() { 
+            // 优先显示注册模式
+            toggleRegisterMode();
+        } 
+        
+        // Alias for compatibility
+        const showLoginOverlay = showLogin;
+        const showLoginModal = showLogin; // Alias for fixLoginEntry
+
+        // 仅修复登录入口（不生成任何文档）
+        function fixLoginEntry() {
+          // 1. 检查是否已登录
+          const user = localStorage.getItem('currentUser');
+          
+          // 2. 未登录则显示登录框（复用现有UI，不新增元素）
+          if (!user) {
+            const gasEl = document.querySelector('.g-gas');
+            if (gasEl) {
+                gasEl.textContent = '点击登录获取G-Gas';
+                gasEl.onclick = showLoginModal; // 复用您之前提供的登录逻辑
+                gasEl.style.cursor = 'pointer';
+                gasEl.style.textDecoration = 'underline';
+            }
+          }
+        }
+
+
+        function closeLoginOverlay() {
+             const overlay = document.getElementById('login-overlay');
+             if (overlay) overlay.style.display = 'none';
+             const regMode = document.getElementById('register-mode');
+             if (regMode) regMode.style.display = 'none';
+        }
+
+        // 切换到注册模式 
+        function toggleRegisterMode() { 
+            document.getElementById('login-overlay').style.display = 'none'; 
+            document.getElementById('register-mode').style.display = 'flex'; 
+            const msg = document.getElementById('register-message');
+            if(msg) msg.textContent = '';
+        } 
+        
+        // 切换回登录模式 
+        function toggleLoginMode() { 
+            document.getElementById('register-mode').style.display = 'none'; 
+            document.getElementById('login-overlay').style.display = 'flex'; 
+            const msg = document.getElementById('login-message');
+            if(msg) msg.textContent = '';
+        } 
+        
+        // 处理登录 
+        async function handleLogin() { 
+            const username = document.getElementById('login-username').value.trim(); 
+            const password = document.getElementById('login-password').value; 
+            const messageEl = document.getElementById('login-message'); 
+            
+            if (!username || !password) { 
+                messageEl.textContent = '❌ 请输入邮箱/手机号和密码'; 
+                messageEl.style.color = '#ff4444'; 
+                return; 
+            } 
+            
+            messageEl.textContent = '⏳ 验证中...'; 
+            messageEl.style.color = '#ffd700'; 
+            
+            try { 
+                // 简化：本地验证（实际应调用Supabase） 
+                let data, error;
+                if (supabase && supabase.auth) {
+                     const result = await supabase 
+                    .from('users') 
+                    .select('*') 
+                    .or(`email.eq.${username},phone.eq.${username}`) 
+                    .eq('password_hash', password) 
+                    .single(); 
+                    data = result.data;
+                    error = result.error;
+                } else {
+                     // Fallback to dbClient
+                     if (window.dbClient) {
+                         const res = await window.dbClient.login(username, password);
+                         data = { ...res.user, balance_g: res.user.gas_balance }; 
+                     } else {
+                         throw new Error("Supabase client not initialized");
+                     }
+                }
+                
+                if (error || !data) { 
+                    throw new Error('账号或密码错误'); 
+                } 
+                
+                // 保存用户信息 
+                currentUser = { 
+                    id: data.id, 
+                    email: data.email, 
+                    phone: data.phone, 
+                    gas_balance: data.balance_g !== undefined ? data.balance_g : (data.gas_balance || 180)
+                }; 
+                
+                localStorage.setItem('currentUser', JSON.stringify(currentUser)); 
+                
+                // 更新显示 
+                updateUserInfoDisplay(); 
+                
+                // 关闭登录窗口 
+                document.getElementById('login-overlay').style.display = 'none'; 
+                
+                messageEl.textContent = '✅ 登录成功！'; 
+                messageEl.style.color = '#00cc66'; 
+                
+                // 延迟关闭提示 
+                setTimeout(() => { 
+                    messageEl.textContent = ''; 
+                }, 2000); 
+                
+                if(window.refreshGasBalance) window.refreshGasBalance();
+
+            } catch (error) { 
+                messageEl.textContent = `❌ ${error.message}`; 
+                messageEl.style.color = '#ff4444'; 
+            } 
+        } 
+        
+        // 处理注册 
+        async function handleRegister() { 
+            const email = document.getElementById('register-email').value.trim(); 
+            const phone = document.getElementById('register-phone').value.trim(); 
+            // 自动填充默认密码
+            const password = document.getElementById('register-password').value || "123456"; 
+            const confirm = document.getElementById('register-confirm').value || "123456"; 
+            const messageEl = document.getElementById('register-message'); 
+            
+            // 验证输入 
+            if (!email && !phone) { 
+                messageEl.textContent = '❌ 邮箱或手机号至少填一项'; 
+                messageEl.style.color = '#ff4444'; 
+                return; 
+            } 
+            
+            // 移除密码验证逻辑，使用默认密码
+            /*
+            if (password.length < 6) { 
+                messageEl.textContent = '❌ 密码至少6位'; 
+                messageEl.style.color = '#ff4444'; 
+                return; 
+            } 
+            
+            if (password !== confirm) { 
+                messageEl.textContent = '❌ 两次密码不一致'; 
+                messageEl.style.color = '#ff4444'; 
+                return; 
+            } 
+            */
+            
+            messageEl.textContent = '⏳ 注册中...'; 
+            messageEl.style.color = '#ffd700'; 
+            
+            try { 
+                // 简化：本地注册（实际应调用Supabase） 
+                let data, error;
+                if (supabase && supabase.auth) {
+                    const res = await supabase 
+                    .from('users') 
+                    .insert({ 
+                        email: email, 
+                        phone: phone || null, 
+                        password_hash: password, 
+                        balance_g: 180, // 新用户赠送180G-Gas 
+                        created_at: new Date().toISOString() 
+                    }) 
+                    .select() 
+                    .single(); 
+                    data = res.data;
+                    error = res.error;
+                } else {
+                     const newUser = {
+                        id: 'USER_' + Math.floor(Math.random() * 100000),
+                        email,
+                        phone,
+                        password: password,
+                        balance_g: 180,
+                        created_at: new Date().toISOString()
+                    };
+                    const storedUsers = JSON.parse(localStorage.getItem('registered_users') || '[]');
+                    if (storedUsers.some(u => u.email === email)) throw new Error("Email already registered");
+                    storedUsers.push(newUser);
+                    localStorage.setItem('registered_users', JSON.stringify(storedUsers));
+                    data = newUser;
+                }
+                
+                if (error) throw error; 
+                
+                // 自动登录 
+                currentUser = { 
+                    id: data.id, 
+                    email: data.email, 
+                    phone: data.phone, 
+                    gas_balance: 180 
+                }; 
+                
+                localStorage.setItem('currentUser', JSON.stringify(currentUser)); 
+                
+                // 更新显示 
+                updateUserInfoDisplay(); 
+                
+                // 关闭注册窗口 
+                document.getElementById('register-mode').style.display = 'none'; 
+                
+                messageEl.textContent = '✅ 注册成功！已自动登录'; 
+                messageEl.style.color = '#00cc66'; 
+                
+                // 延迟关闭提示 
+                setTimeout(() => { 
+                    messageEl.textContent = ''; 
+                }, 2000); 
+
+                if(window.refreshGasBalance) window.refreshGasBalance();
+                
+            } catch (error) { 
+                messageEl.textContent = `❌ ${error.message}`; 
+                messageEl.style.color = '#ff4444'; 
+            } 
+        } 
+        
+        // 更新用户信息显示 
+        function updateUserInfoDisplay() { 
+            if (!currentUser) {
+                 const saved = localStorage.getItem('currentUser');
+                 if (saved) currentUser = JSON.parse(saved);
+            }
+
+            if (!currentUser) return; 
+            
+            // 更新G-Gas显示 
+            const gasEl = document.querySelector('.g-gas'); 
+            if (gasEl) { 
+                gasEl.textContent = `G-Gas: ${currentUser.gas_balance || 180}`; 
+                gasEl.style.color = currentUser.gas_balance < 50 ? '#ff3333' : 
+                                    currentUser.gas_balance < 100 ? '#ffcc00' : '#00cc66'; 
+            } 
+            
+            // 显示用户信息（可选） 
+            const userInfoEl = document.querySelector('.user-info'); 
+            if (userInfoEl) { 
+                userInfoEl.textContent = (currentUser.email || currentUser.phone) + ' [退出]'; 
+                userInfoEl.style.display = 'block'; 
+                userInfoEl.style.cursor = 'pointer';
+                userInfoEl.title = '点击退出登录';
+            } 
+            
+            // Also update old UI elements for compatibility
+            const loginBtn = document.getElementById('btnLogin');
+            const userDisplay = document.getElementById('userInfoDisplay');
+            if (userDisplay) {
+                 userDisplay.textContent = (currentUser.email || currentUser.phone) + ' [退出]';
+                 userDisplay.style.color = '#00cc66';
+                 userDisplay.style.cursor = 'pointer';
+            }
+            if (loginBtn) loginBtn.style.display = 'none';
+        } 
+        
+        // Alias for compatibility
+        const updateUserUI = updateUserInfoDisplay;
+
+        // 退出登录 
+        function logout() { 
+            if(!confirm("确定要退出登录吗？")) return;
+            currentUser = null; 
+            localStorage.removeItem('currentUser'); 
+            
+            // 重置显示 
+            const gasEl = document.querySelector('.g-gas'); 
+            if (gasEl) { 
+                gasEl.textContent = 'G-Gas: 180'; 
+                gasEl.style.color = '#00cc66'; 
+            } 
+            
+            const userInfoEl = document.querySelector('.user-info'); 
+            if (userInfoEl) { 
+                userInfoEl.style.display = 'none'; 
+            } 
+            
+            // Update old UI
+            const loginBtn = document.getElementById('btnLogin');
+            const userDisplay = document.getElementById('userInfoDisplay');
+            if (userDisplay) {
+                 userDisplay.textContent = '未登录';
+                 userDisplay.style.color = '#888';
+            }
+            if (loginBtn) loginBtn.style.display = 'inline-block';
+
+            // 显示登录入口 
+            showLogin(); 
+        } 
+        
+        // ========== 页面加载时检查登录状态 ========== 
+        function initAuth() { 
+            // 检查登录状态 
+            const isLoggedIn = checkLoginStatus(); 
+            
+            // 如果未登录，自动显示登录界面 
+            if (!isLoggedIn) { 
+                showLogin(); 
+            } 
+            
+            // Button Logic (Step 3)
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => {
+                if (btn.textContent.includes('自检')) {
+                    btn.onclick = () => openSelfCheck();
+                }
+                if (btn.textContent.includes('子系统')) {
+                    btn.onclick = () => openSubSystem();
+                }
+                if (btn.textContent.includes('捐赠')) {
+                    btn.onclick = () => openDonation();
+                }
+            });
+        }
+        
+        const oldOnload = window.onload;
+        window.onload = function() {
+            if (oldOnload) oldOnload();
+            initAuth();
+            if(window.initGasBalance) initGasBalance(); 
+            if(window.initGrid) initGrid(); 
+        };
+
+        // Re-implement window open functions to use new auth check
+        function openSelfCheck() {
+             window.open('zijian.html', '_blank', 'width=700,height=800'); 
+        }
+
+        function openSubSystem() {
+             if (!checkLoginStatus()) {
+                 showLogin();
+                 return;
+             }
+             window.open('zixitong.html', '_blank', 'width=600,height=800');
+        }
+
+        function openDonation() {
+             if (!checkLoginStatus()) {
+                 showLogin();
+                 return;
+             }
+             window.open('juanzeng.html', '_blank', 'width=600,height=850');
+        }
+
+        function exitSystem() {
+            if (confirm('确定要退出系统吗？')) {
+                logout();
+                window.close();
+            }
+        }
+        
+        // ==========================================
+        // G-Gas Management (Pure Implementation)
+        // ==========================================
+        let currentGas = 180;
+        let currentUserId = null;
+        let supabaseClient = null; // Local instance
+        
+        // Initialize G-Gas
+        async function initGasBalance() {
+            // Ensure Supabase Client
+            if (!supabaseClient && window.supabase && window.supabase.createClient) {
+                const SUPABASE_URL = 'https://xhfyfkqfykkbbnlwghem.supabase.co';
+                const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZnlma3FmeWtrYmJubHdnaGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0ODA4ODEsImV4cCI6MjA4NDA1Njg4MX0.SVUTAVSWi-skCq3N3KioTetV40IWt0vNkewA0WqEfcg';
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+            
+            // Get User ID
+            if (window.dbClient && window.dbClient.userId) {
+                currentUserId = window.dbClient.userId;
+            } else {
+                const userStr = localStorage.getItem('currentUser');
+                if (userStr) currentUserId = JSON.parse(userStr).id;
+            }
+            
+            if (!currentUserId) {
+                updateGasDisplay(180); // Default
+                return;
+            }
+
+            try {
+                // Try Supabase first
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient
+                        .from('users')
+                        .select('balance_g') // Using 'balance_g' as requested (check DB schema, db_client uses 'gas_balance', user code says 'balance_g'. I will trust user code but fallback if needed)
+                        .eq('id', currentUserId)
+                        .single();
+                    
+                    if (!error && data) {
+                        currentGas = data.balance_g !== undefined ? data.balance_g : (data.gas_balance !== undefined ? data.gas_balance : 180);
+                        updateGasDisplay(currentGas);
+                    } else {
+                        // Fallback to dbClient if available
+                        const bal = await window.dbClient.getGasBalance();
+                        currentGas = bal;
+                        updateGasDisplay(currentGas);
+                    }
+                } else {
+                     // Fallback to dbClient
+                     const bal = await window.dbClient.getGasBalance();
+                     currentGas = bal;
+                     updateGasDisplay(currentGas);
+                }
+            } catch (e) {
+                console.error('G-Gas初始化失败:', e);
+                updateGasDisplay(180);
+            }
+        }
+
+        // Update Display
+        function updateGasDisplay(balance) {
+            const gasEl = document.querySelector('.g-gas');
+            if (gasEl) {
+                gasEl.style.display = 'block'; // Ensure visibility
+                gasEl.style.color = '#ffcc00'; // Force color
+                gasEl.textContent = `G-Gas: ${balance}`;
+                
+                // Color coding
+                if(balance < 50) gasEl.style.color = '#ff3333';
+                else if(balance < 100) gasEl.style.color = '#ffcc00';
+                else gasEl.style.color = '#00cc66';
+            }
+        }
+
+        // Deduct Gas
+        async function deductGasForPrediction(amount = 1) {
+            // Re-sync currentGas just in case
+            if (currentGas < amount) {
+                alert(`G-Gas不足！当前: ${currentGas}，需 ${amount}`);
+                return false;
+            }
+            
+            if (!currentUserId) {
+                 // Mock mode or not logged in
+                 currentGas -= amount;
+                 updateGasDisplay(currentGas);
+                 return true;
+            }
+
+            try {
+                if (supabaseClient) {
+                    // Try update 'balance_g' first
+                    const { error } = await supabaseClient
+                        .from('users')
+                        .update({ balance_g: currentGas - amount })
+                        .eq('id', currentUserId);
+                    
+                    if (error) {
+                        // Retry with 'gas_balance' if column name differs
+                        const { error: err2 } = await supabaseClient
+                            .from('users')
+                            .update({ gas_balance: currentGas - amount })
+                            .eq('id', currentUserId);
+                        if (err2) throw err2;
+                    }
+                    
+                    currentGas -= amount;
+                    updateGasDisplay(currentGas);
+                    return true;
+                } else if (window.dbClient) {
+                     await window.dbClient.deductGas(amount);
+                     currentGas -= amount;
+                     updateGasDisplay(currentGas);
+                     return true;
+                }
+            } catch (e) {
+                console.error('扣分失败:', e);
+                // Allow continue in demo? No, user said "prevent prediction"
+                // alert('扣分失败');
+                // return false; 
+                // For robustness, if DB fails but local check passed, maybe allow? 
+                // User said: "余额不足时阻止预测". If DB error, maybe safer to block.
+                alert('扣分失败: ' + e.message);
+                return false;
+            }
+            return true;
+        }
+
+        // Refresh Gas
+        async function refreshGasBalance() {
+            if (!currentUserId || !supabaseClient) {
+                if (window.dbClient) {
+                     const bal = await window.dbClient.getGasBalance();
+                     currentGas = bal;
+                     updateGasDisplay(currentGas);
+                }
+                return;
+            }
+            
+            const { data } = await supabaseClient
+                .from('users')
+                .select('balance_g, gas_balance') // Select both to be safe
+                .eq('id', currentUserId)
+                .single();
+            
+            if (data) {
+                currentGas = data.balance_g !== undefined ? data.balance_g : data.gas_balance;
+                updateGasDisplay(currentGas);
+            }
+        }
+        
+        // Expose to window
+        window.initGasBalance = initGasBalance;
+        window.deductGasForPrediction = deductGasForPrediction;
+        window.refreshGasBalance = refreshGasBalance;
+
+
+        // ==========================================
+        // 核心预测模型 (Entropy Core) - Injected to fix missing logic
+        // ==========================================
+        /* 
+        class MultiModelVote {
+            constructor() {
+                this.name = "EntropyCore";
+            }
+
+            predict(history) {
+                // 如果历史记录不足，返回默认
+                if (!history || history.length < 1) {
+                    return { prediction: 'red', sValue: 0, confidence: 0 }; 
+                }
+
+                // 1. 计算近期熵值 (Entropy of last 12 rounds)
+                const len = Math.min(history.length, 12);
+                const recent = history.slice(-len);
+                const blueCount = recent.filter(r => r.color === 'blue').length;
+                const total = recent.length;
+                const pBlue = blueCount / total;
+                const pRed = 1 - pBlue;
+
+                let entropy = 0;
+                if (pBlue > 0) entropy -= pBlue * Math.log2(pBlue);
+                if (pRed > 0) entropy -= pRed * Math.log2(pRed);
+                // Max entropy is 1. 
+
+                // S-Value: Orderliness (0% = Chaos, 100% = Order)
+                // Normalize: 1 - entropy. 
+                let sValue = (1 - entropy) * 100;
+                if (isNaN(sValue)) sValue = 0;
+
+                // 2. 预测逻辑 (Trend Following + Bagua Reversal)
+                // 简单逻辑：如果 S值高，跟随趋势；如果 S值低，预测反转
+                
+                let prediction = 'red';
+                // Basic Trend
+                if (pBlue > pRed) prediction = 'blue';
+                else if (pRed > pBlue) prediction = 'red';
+                else prediction = history[history.length-1].color; // Follow last
+
+                // 3. 置信度
+                let confidence = 0.5 + (sValue / 200); // 0.5 ~ 1.0
+
+                return {
+                    prediction: prediction,
+                    sValue: parseFloat(sValue.toFixed(1)),
+                    confidence: confidence,
+                    antiEffect: 0
+                };
+            }
+        }
+        
+        // 立即实例化，确保全局可用
+        if (!window.MultiModelVote) {
+            window.MultiModelVote = MultiModelVote;
+            window.multiModelVote = new MultiModelVote();
+            console.log('[System] Entropy Core Loaded (Internal).');
+        }
+        */
+
+        // ==========================================
+        // 页面初始化 (Strict Order)
+        // ==========================================
+        window.onload = async () => {
+            console.log("[System] Initializing...");
+            
+            // 1. 初始化数据库连接与G-Gas
+            try {
+                if (window.initGasBalance) {
+                    await window.initGasBalance();
+                } else {
+                    console.warn("gas_manager.js not loaded, using fallback");
+                    document.querySelector('.g-gas').textContent = "G-Gas: ---";
+                }
+            } catch (error) {
+                console.error('初始化失败:', error);
+            }
+            
+            // 2. 初始化数据与网格
+            try {
+                // 恢复数据 (Fix: Load from localStorage)
+                const saved = localStorage.getItem('mayiju_records');
+                if (saved) {
+                    window.allRecords = JSON.parse(saved);
+                    console.log("[System] Loaded " + window.allRecords.length + " records.");
+                }
+            } catch (e) {
+                console.error('Load records failed', e);
+            }
+            
+            initGrid();
+            
+            // 初始化高赔率显示
+            // if (typeof HighOddsDisplay !== 'undefined') {
+            //     window.highOddsDisplay = new HighOddsDisplay();
+            //     window.highOddsDisplay.init();
+            // }
+            
+            // 3. 聚焦输入框
+            document.getElementById('molecularInput').focus();
+            
+            // 4. 启动自检 (如果存在)
+            if (window.startupSelfCheck) {
+                window.startupSelfCheck();
+            }
+            
+            // 5. 绑定Enter键事件
+            document.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addRecord();
+                }
+            });
+            
+            console.log("[System] Ready.");
+        };
+
+        // ========== 全局可用函数绑定 (确保HTML按钮能调用) ========== 
+        window.openSelfCheck = openSelfCheck; 
+        window.openSubSystem = openSubSystem; 
+        window.openDonation = openDonation; 
+        window.exitSystem = exitSystem;
+
+        function initGrid() {
+            // 1. 重置网格状态
+            gridRecords = [];
+            currentCol = 0;
+            currentRow = 0;
+            lastColor = null;
+            isFirst = true;
+            lastPos = null;
+
+            // 2. 重置 DOM
+            const grid = document.getElementById('bigRoadGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            for (let row = 0; row < 6; row++) {
+                for (let col = 0; col < 18; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'bead-empty';
+                    cell.id = `cell-${col}-${row}`;
+                    grid.appendChild(cell);
+                }
+            }
+            
+            // 3. 重建历史记录
+            if (window.allRecords && window.allRecords.length > 0) {
+                console.log("Rebuilding Grid from", window.allRecords.length, "records...");
+                window.allRecords.forEach(rec => addToBigRoad(rec));
+            }
+            
+            // 4. 更新其他视图 (Fix: Full Refresh)
+            renderLinkedRecords();
+            updateBaguaSequenceBlockMode();
+        }
+        
+        // Expose initGrid for external use (e.g. Undo)
+        window.initGrid = initGrid;
+
+        // ==========================================
+        // 实时预览当前输入
+        // ==========================================
+        function previewCurrent() {
+            const molStr = document.getElementById('molecularInput').value || '';
+            const denStr = document.getElementById('denominatorInput').value || '';
+            
+            if (molStr.length >= 2 && denStr.length >= 2) {
+                const molSum = sumDigits(molStr);
+                const denSum = sumDigits(denStr);
+                
+                // Use new ID
+                const predCircle = document.getElementById('prediction-circle');
+                if (!predCircle) return;
+                
+                // 输入中预览：只做颜色预览，不破坏 class 体系
+                predCircle.className = 'main-prediction-circle';
+                const halo = document.getElementById('halo');
+                if (halo) halo.className = 'halo hidden';
+
+                if (molSum > denSum) {
+                    predCircle.classList.add('pred-circle-blue');
+                } else if (molSum < denSum) {
+                    predCircle.classList.add('pred-circle-red');
+                } else {
+                    predCircle.classList.add('pred-circle-green');
+                }
+            }
+        }
+
+        function sumDigits(str) {
+            return str.split('').reduce((a, b) => a + (parseInt(b) || 0), 0) % 10;
+        }
+
+        // ==========================================
+        // 核心：添加记录
+        // ==========================================
+        async function addRecord() {
+            // 1. 获取输入并计算 (Moved to top for Logic)
+            const molInput = document.getElementById('molecularInput');
+            const denInput = document.getElementById('denominatorInput');
+            const molStr = molInput.value.trim();
+            const denStr = denInput.value.trim();
+
+            if (molStr.length < 2 || molStr.length > 3 || denStr.length < 2 || denStr.length > 3) {
+                alert('请输入2-3位数字');
+                return;
+            }
+            
+            const molSum = sumDigits(molStr);
+            const denSum = sumDigits(denStr);
+
+            // ========== 修复：熵准确率与扣分 (User Code) ========== 
+            try { 
+               const lastPrediction = localStorage.getItem('lastPrediction'); 
+               // 只有在有历史预测且有历史记录时才验证 (防止第一局就验证)
+               if (lastPrediction && window.allRecords && window.allRecords.length > 0) { 
+                 const pred = JSON.parse(lastPrediction); 
+                 
+                 // 判定实际胜负 (Blue/Red/Tie)
+                 let actualColor = 'tie';
+                 if (molSum > denSum) actualColor = 'blue';
+                 else if (molSum < denSum) actualColor = 'red';
+                 
+                 // 仅在非和局时进行胜负判定 (或者根据规则和局算输/走水? 用户说"颜色相同扣分", 意味着Tie不扣)
+                 if (actualColor !== 'tie') {
+                     const isCorrect = (pred.color === actualColor); 
+                     
+                     console.log('[熵验证] 预测=' + pred.color + ', 实际=' + actualColor + ', 正确=' + isCorrect); 
+                     
+                     // 核心逻辑：预测正确扣分，错误不扣分
+                     if (isCorrect) { 
+                        if (window.deductGasForPrediction) {
+                            // 调用官方扣费函数
+                            window.deductGasForPrediction(1).then(() => {
+                                console.log("[System] 预测正确 -> 扣除 1 G-Gas");
+                            }).catch(e => console.error("扣费失败:", e));
+                        } else {
+                            // 降级：仅视觉更新
+                            const gasEl = document.querySelector('.g-gas'); 
+                            if (gasEl) { 
+                                let gasText = gasEl.textContent || gasEl.innerText; 
+                                let cGas = parseInt(gasText.replace(/[^0-9]/g, '')); 
+                                if (!isNaN(cGas) && cGas > 0) { 
+                                   cGas -= 1; 
+                                   gasEl.textContent = 'G-Gas: ' + cGas; 
+                                   gasEl.style.color = cGas < 50 ? '#ff3333' : cGas < 100 ? '#ffcc00' : '#00cc66';
+                                }
+                            }
+                        }
+                     } else {
+                        console.log("[System] 预测错误 -> 不扣分 (Free)");
+                     }
+                     
+                     // 更新准确率显示 
+                     let stats = JSON.parse(localStorage.getItem('accuracyStats') || '{"correct":0,"total":0}'); 
+                     stats.total++; 
+                     if (isCorrect) stats.correct++; 
+                     localStorage.setItem('accuracyStats', JSON.stringify(stats)); 
+                     
+                     const accuracyEl = document.querySelector('.accuracy-display'); 
+                     if (accuracyEl) { 
+                       const accuracy = (stats.correct / stats.total * 100).toFixed(1); 
+                       accuracyEl.textContent = '熵准确率: ' + accuracy + '%'; 
+                       // 颜色指示
+                       accuracyEl.style.color = accuracy > 60 ? '#00cc66' : '#ff3333';
+                     }
+                 }
+               } 
+               
+               // 存储本次预测 (为下一局做准备)
+               if (window.multiModelVote && window.allRecords) { 
+                 const currentPrediction = window.multiModelVote.predict(window.allRecords); 
+                 localStorage.setItem('lastPrediction', JSON.stringify({ 
+                   color: currentPrediction.sValue > 0 ? 'blue' : 'red', 
+                   sValue: currentPrediction.sValue, 
+                   confidence: currentPrediction.confidence, 
+                   timestamp: Date.now() 
+                 })); 
+               } 
+            } catch (e) { 
+               console.error('[熵验证] 错误:', e); 
+            }
+
+            // ========== 1. 立即销毁游离窗口 (User Step 3) ==========
+            const oddsEl = document.getElementById('high-odds-display');
+            if (oddsEl) {
+                oddsEl.remove();
+                console.log('[高赔率] 悬浮窗口 DOM 已移除');
+            }
+            // if (window.highOddsDisplay && window.highOddsDisplay.destroy) {
+            //    window.highOddsDisplay.destroy();
+            // }
+
+            // ========== 2. G-Gas 检查 (修复：防止阻断流程) ==========
+            try {
+                // 优先使用全局变量，若不可用则读取DOM
+                let checkGas = (typeof currentGas !== 'undefined') ? currentGas : 180;
+                
+                const gasEl = document.querySelector('.g-gas'); 
+                if (gasEl) {
+                    const domGas = parseInt(gasEl.textContent.replace(/[^0-9]/g, '')); 
+                    if (!isNaN(domGas)) checkGas = domGas;
+                }
+                
+                if (checkGas < 1) { 
+                    alert('G-Gas不足！请先充值'); 
+                    return; 
+                } 
+                
+                // 视觉预扣 (Optimistic Update) - 不影响真实扣费逻辑(deductGasForPrediction)
+                if (gasEl) {
+                    const visualGas = checkGas - 1;
+                    gasEl.textContent = `G-Gas: ${visualGas}`; 
+                    gasEl.style.color = visualGas < 50 ? '#ff3333' : 
+                                       visualGas < 100 ? '#ffcc00' : '#00cc66'; 
+                }
+            } catch (e) {
+                console.warn("Gas check visual update failed (non-blocking):", e);
+                // 即使出错也不阻断录入
+            } 
+
+            // (Input variables already defined at top)
+            // (Validation and calc done at top)
+            
+            // ========== 修复：熵准确率N-1验证 (DISABLED) ========== 
+            const lastPrediction = localStorage.getItem('lastPrediction'); 
+            if (false) { // Logic moved to top 
+               try { 
+                 const pred = JSON.parse(lastPrediction); 
+                 // Logic: Blue if Mol > Den, Red if Mol < Den. Tie handling? 
+                 // Assuming Tie is neither.
+                 let actualColor = 'tie';
+                 if (molSum > denSum) actualColor = 'blue';
+                 else if (molSum < denSum) actualColor = 'red';
+                 
+                 if (actualColor !== 'tie') {
+                     const isCorrect = (pred.color === actualColor); 
+                     
+                     console.log('[熵验证] 预测=' + pred.color + ', 实际=' + actualColor + ', 正确=' + isCorrect); 
+                     
+                     // 更新准确率统计 
+                     let stats = JSON.parse(localStorage.getItem('accuracyStats') || '{"correct":0,"total":0}'); 
+                     stats.total++; 
+                     if (isCorrect) stats.correct++; 
+                     localStorage.setItem('accuracyStats', JSON.stringify(stats)); 
+                     
+                     // 更新显示 
+                     const accuracyEl = document.querySelector('.accuracy-display'); 
+                     if (accuracyEl) { 
+                       const accuracy = (stats.correct / stats.total * 100).toFixed(1); 
+                       accuracyEl.textContent = '熵准确率: ' + accuracy + '%'; 
+                       accuracyEl.style.color = accuracy > 70 ? '#00cc66' : 
+                                              accuracy > 50 ? '#ffcc00' : '#ff3333'; 
+                       
+                       console.log('[熵准确率] 更新为:', accuracy + '%'); 
+                     } 
+                     
+                     // 如果预测正确，扣除1G-Gas (Double deduction? Or the ONLY deduction?)
+                     // If I assume the top deduction is valid, this is an EXTRA deduction.
+                     // But 1 Gas is very cheap. Maybe 1 for entry, 1 for win tax?
+                     // I'll implement exactly as requested.
+                     if (isCorrect) { 
+                       // Check if we need to fetch fresh value
+                       let freshGas = parseInt(gasEl.textContent.replace(/[^0-9]/g, ''));
+                       freshGas -= 1; 
+                       gasEl.textContent = `G-Gas: ${freshGas}`; 
+                       gasEl.style.color = freshGas < 50 ? '#ff3333' : 
+                                          freshGas < 100 ? '#ffcc00' : '#00cc66'; 
+                       
+                       console.log('[扣分] 预测正确，扣除1G-Gas，剩余:', freshGas); 
+                       
+                       // 同步更新 LocalStorage 中的 currentUser
+                       if (currentUser) {
+                           currentUser.gas_balance = freshGas;
+                           localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                       }
+                     } 
+                 }
+               } catch (error) { 
+                 console.error('[熵验证] 错误:', error); 
+               } 
+            }
+            
+            const color = molSum > denSum ? 'blue' : (molSum < denSum ? 'red' : 'blue'); // Default blue if tie
+
+            // 特殊条件检测 (保持原有逻辑)
+            const molSameFirstTwo = molStr.length >= 2 && molStr[0] === molStr[1];
+            const denSameFirstTwo = denStr.length >= 2 && denStr[0] === denStr[1];
+            const isEqual = molSum === denSum;
+            const isSevenSix = (molSum === 7 && denSum === 6);  
+            const molIsEight = molSum === 8 && molStr.length === 3; 
+            const denIsSix = denSum === 6;  
+            const molIsSeven = molSum === 7; 
+
+            // 异步扣费已移除：改为在 entropy 验证阶段根据预测结果条件扣费
+            // if (window.deductGasForPrediction) {
+            //    window.deductGasForPrediction(1).catch(e => console.warn("Gas check failed:", e));
+            // }
+            
+            // DB Save
+            try {
+                if (window.dbClient && window.dbClient.addPredictionRecord) {
+                    const recordData = {
+                        molecular: molStr,
+                        denominator: denStr,
+                        molSum: molSum,
+                        denSum: denSum,
+                        result: color,
+                        specialFlags: {
+                            isPlayerPair: molSameFirstTwo,
+                            isBankerPair: denSameFirstTwo,
+                            isTie: isEqual,
+                            isCrown: isSevenSix,
+                            isPanda: molIsEight,
+                            isBanker6: denIsSix,
+                            isPlayer7: molIsSeven
+                        },
+                        timestamp: new Date().toISOString()
+                    };
+                    await window.dbClient.addPredictionRecord(recordData);
+                }
+            } catch (e) {
+                console.error("DB Save Failed", e);
+            }
+            
+            // --- Record Object ---
+            const record = {
+                id: Date.now(),
+                mol: molStr,
+                den: denStr,
+                molSum,
+                denSum,
+                color,
+                molSameFirstTwo,
+                denSameFirstTwo,
+                isEqual,
+                isSevenSix,
+                molIsEight,
+                denIsSix,
+                molIsSeven,
+                displayColor: color
+            };
+            
+            allRecords.push(record);
+            // 保存数据
+            localStorage.setItem('mayiju_records', JSON.stringify(allRecords));
+            
+            // 立即清空输入框 (Auto Clear)
+            molInput.value = '';
+            denInput.value = '';
+            molInput.focus();
+            
+            try {
+                renderLinkedRecords();
+            } catch (e) {
+                console.error("List Render Failed:", e);
+            }
+            
+            // 更新八卦数字
+            try {
+                updateBaguaSequenceBlockMode();
+            } catch (e) {
+                console.error("Bagua Update Failed:", e);
+            }
+            
+            // 同步添加到Big Road网格
+            try {
+                addToBigRoad(record);
+            } catch (e) {
+                console.error("Grid Update Failed:", e);
+            }
+            
+            // ========== 核心修复：连接真实预测引擎 ========== 
+            // This part was in the original file. I'll keep it but ensure High Odds logic is added.
+            let predColor = 'red'; 
+            let sValue = 0; 
+            
+            if (window.multiModelVote) { 
+                const prediction = window.multiModelVote.predict(allRecords); 
+                predColor = prediction.prediction; 
+                sValue = prediction.sValue; 
+                
+                const circle = document.getElementById('prediction-circle'); 
+                if (circle) { 
+                    circle.className = 'main-prediction-circle';
+                    const confidence = prediction.confidence ?? 0.7;
+                    const antiEffect = prediction.antiEffect || 0;
+
+                    const halo = document.getElementById('halo');
+                    if (halo) halo.className = 'halo hidden';
+
+                    // 高置信：红/蓝实体圆圈
+                    if (confidence >= 0.75) {
+                        circle.classList.add(sValue > 0 ? 'pred-circle-blue' : 'pred-circle-red');
+                    }
+                    // 低置信：绿圆圈 + 红/蓝晕圈背景
+                    else {
+                        circle.classList.add('pred-circle-green');
+                        if (halo) {
+                            halo.classList.remove('hidden');
+                            halo.classList.add(sValue > 0 ? 'halo-blue' : 'halo-red');
+                        }
+                    } 
+                    
+                    const antiEffectEl = document.getElementById('anti-effect-indicator'); 
+                    if (antiEffectEl) { 
+                        if (Math.abs(antiEffect) > 0.3) { 
+                            antiEffectEl.style.display = 'block'; 
+                            antiEffectEl.textContent = '⚠️ 反噬'; 
+                        } else { 
+                            antiEffectEl.style.display = 'none'; 
+                        } 
+                    } 
+                } 
+            
+                const textEl = document.getElementById('prediction-text'); 
+                if (textEl) textEl.textContent = `S:${sValue.toFixed(1)}%`; 
+                
+                console.log(`🔮 预测: ${prediction.prediction} (S=${sValue.toFixed(1)}%, Conf=${(prediction.confidence*100).toFixed(0)}%)`); 
+            } else {
+                // Fallback if prediction engine is missing
+                const circle = document.getElementById('prediction-circle'); 
+                if (circle) {
+                    circle.className = 'main-prediction-circle pred-circle-red'; // Default to Red
+                    const textEl = document.getElementById('prediction-text'); 
+                    if (textEl) textEl.textContent = 'S:Wait';
+                }
+                console.warn('Prediction Engine (multiModelVote) missing, using fallback.');
+            }
+
+            // ========== 修复：高赔率汇聚到"高倍"模块 (One-Shot Logic) ========== 
+            
+            const multBox = document.getElementById('multiplierValue'); 
+            if (multBox && window.highMultiplePredictor && allRecords.length >= 6) { 
+                // 更新历史记录 
+                window.highMultiplePredictor.updateHistory(record, allRecords.length); 
+                
+                // 获取预测结果 
+                const hmPred = window.highMultiplePredictor.predictNext(allRecords); 
+                let hmEvent = hmPred.topEvent; 
+                
+                // --- One-Shot Logic: 避免同类指标连续显示 (显示一次后消失) ---
+                if (typeof window.lastHighOddsEvent === 'undefined') {
+                    window.lastHighOddsEvent = null;
+                    window.lastHighOddsIndex = -1;
+                }
+
+                // 如果当前预测事件与上次显示的事件相同，且是连续局数，则强制隐藏（显示"-"）
+                // 目的：让用户感觉到"等待下一次指标"，而不是一直显示
+                // 逻辑：如果 hmEvent.event == lastEvent 且当前局数 == lastIndex + 1，说明是连续的第二局
+                if (hmEvent && 
+                    window.lastHighOddsEvent === hmEvent.event && 
+                    allRecords.length >= window.lastHighOddsIndex + 1) {
+                    // 只要是连续或之后的局数重复出现同一特征，都隐藏
+                    // 更新索引以保持持续抑制状态
+                    window.lastHighOddsIndex = allRecords.length;
+                    hmEvent = null; // 强制抑制
+                }
+                
+                // 事件类型 → 显示文本映射表 
+                const eventDisplayMap = { 
+                    'banker_6': '红6', 
+                    'tie': '平衡',     // 回避平牌
+                    'pair': '对子', 
+                    'panda_8': '🐼', 
+                    'player_7': '蓝7', 
+                    'crown': '👑'
+                }; 
+                
+                // 显示逻辑
+                if (hmEvent && hmEvent.confidence >= 0.6) { 
+                    const displayText = eventDisplayMap[hmEvent.event] || hmEvent.name || hmEvent.icon || '-'; 
+                    multBox.textContent = displayText; 
+                    multBox.title = `${hmEvent.name || hmEvent.event} (${(hmEvent.confidence * 100).toFixed(0)}%)`; 
+                    multBox.style.fontSize = '16px'; 
+                    multBox.style.fontWeight = 'bold'; 
+                    multBox.style.background = 'linear-gradient(135deg, #ffcc00, #ff9900)'; 
+                    multBox.style.boxShadow = '0 0 10px rgba(255, 204, 0, 0.6)'; 
+                    
+                    // 记录本次显示的事件和局数
+                    window.lastHighOddsEvent = hmEvent.event;
+                    window.lastHighOddsIndex = allRecords.length;
+                } else { 
+                    multBox.textContent = '-'; 
+                    multBox.title = '等待下一指标'; 
+                    multBox.style.background = 'linear-gradient(135deg, #ffd700, #ffaa00)'; 
+                    multBox.style.boxShadow = 'none'; 
+                    
+                    // 如果被抑制（hmEvent为null但预测器有结果），我们需要更新 lastHighOddsIndex 吗？
+                    // 上面的抑制逻辑已经更新了 lastHighOddsIndex。
+                    // 如果是全新的非高倍情况，无需重置 lastHighOddsEvent，因为我们只关心连续的相同事件。
+                    // 但如果出现中断（例如变成 '-'），是否应该允许下次再出现？
+                    // 现在的逻辑：如果 hmEvent 为 null（无论是没预测到还是被抑制），都显示 '-'。
+                } 
+            } else if (multBox) { 
+                multBox.textContent = allRecords.length < 6 ? '等待数据...' : '-'; 
+            } 
+            
+            // ========== 修复结束 ==========
+            
+            // ========== 存储本次预测（供下次验证） (Fix 4) ========== 
+            // 无论是否有高级模型，都保存当前的预测结论（默认为red或由模型生成）
+            try { 
+                // 使用前面逻辑计算出的 predColor 和 sValue
+                localStorage.setItem('lastPrediction', JSON.stringify({ 
+                    color: predColor, 
+                    sValue: sValue, 
+                    confidence: 0.85, // 默认置信度
+                    timestamp: Date.now() 
+                })); 
+                console.log('[熵] 已存储预测(Next):', predColor); 
+            } catch(e) { 
+                console.error('[熵] 存储预测失败:', e); 
+            }
+
+            // 清空输入
+            molInput.value = '';
+            denInput.value = '';
+            molInput.focus();
+        }
+
+        // ==========================================
+        // 渲染联动记录模块
+        // ==========================================
+        function renderLinkedRecords() {
+            const wrapper = document.getElementById('recordsWrapper');
+            wrapper.innerHTML = '';
+            
+            // Ensure global records
+            if (typeof window.allRecords === 'undefined') window.allRecords = [];
+            const records = window.allRecords;
+
+            let lastVisibleCircle = null;
+
+            records.forEach((rec, index) => {
+                const isLast = index === records.length - 1;
+                
+                const unit = document.createElement('div');
+                unit.className = 'record-unit' + (isLast ? ' current' : '');
+                
+                const idx = document.createElement('div');
+                idx.className = 'record-index';
+                idx.textContent = index + 1;
+                unit.appendChild(idx);
+                
+                const rawRow = document.createElement('div');
+                rawRow.className = 'raw-input-row';
+                
+                const molBox = document.createElement('div');
+                molBox.className = 'raw-box mol';
+                molBox.textContent = rec.mol;
+                
+                const denBox = document.createElement('div');
+                denBox.className = 'raw-box den';
+                denBox.textContent = rec.den;
+                
+                rawRow.appendChild(molBox);
+                rawRow.appendChild(denBox);
+                unit.appendChild(rawRow);
+                
+                const structRow = document.createElement('div');
+                structRow.className = 'structure-row';
+                
+                rec.mol.split('').forEach(d => {
+                    const digit = parseInt(d);
+                    const span = document.createElement('div');
+                    span.className = 'struct-digit ' + (digit <= 4 ? 'red' : 'blue');
+                    span.textContent = d;
+                    structRow.appendChild(span);
+                });
+                
+                rec.den.split('').forEach(d => {
+                    const digit = parseInt(d);
+                    const span = document.createElement('div');
+                    span.className = 'struct-digit ' + (digit <= 4 ? 'red' : 'blue');
+                    span.textContent = d;
+                    structRow.appendChild(span);
+                });
+                
+                unit.appendChild(structRow);
+                
+                const circle = document.createElement('div');
+                circle.className = 'mini-circle ' + rec.color;
+                
+                // Tie Logic: Hide circle, add slash to previous
+                if (rec.isEqual) {
+                    circle.style.visibility = 'hidden';
+                    if (lastVisibleCircle) {
+                        const slash = document.createElement('div');
+                        slash.className = 'mini-slash';
+                        lastVisibleCircle.appendChild(slash);
+                    }
+                } else {
+                    lastVisibleCircle = circle;
+                }
+                
+                if (rec.molSameFirstTwo) {
+                    const dot = document.createElement('div');
+                    dot.className = 'mini-dot-tl';
+                    circle.appendChild(dot);
+                }
+                
+                if (rec.denSameFirstTwo) {
+                    const dot = document.createElement('div');
+                    dot.className = 'mini-dot-br';
+                    circle.appendChild(dot);
+                }
+                
+                // 特殊内容显示
+                let content = '';
+                if (rec.isSevenSix) content = '👑';
+                else if (rec.molIsEight) content = '🐻';
+                else if (rec.denIsSix && rec.color === 'red') content = '6';
+                else if (rec.molIsSeven) content = '7';
+                else content = rec.color === 'blue' ? 'P' : 'B';
+                
+                if (content) {
+                    const span = document.createElement('span');
+                    span.className = 'mini-content';
+                    span.textContent = content;
+                    circle.appendChild(span);
+                }
+                
+                unit.appendChild(circle);
+                wrapper.appendChild(unit);
+            });
+            
+            document.getElementById('recordCount').textContent = allRecords.length + '组';
+            
+            const container = document.getElementById('linkedScroll');
+            container.scrollLeft = container.scrollWidth;
+        }
+
+        // ==========================================
+        // 更新八卦数字序列 - 修正：每3组不重复计算（分块模式）
+        // ==========================================
+        function updateBaguaSequenceBlockMode() {
+            const baguaModule = document.getElementById('baguaModule');
+            const numbersContainer = document.getElementById('baguaNumbers');
+            
+            // 过滤掉和局 (Tie)，确保与网格/列表显示一致
+            const validRecords = allRecords.filter(r => !r.isEqual);
+            
+            // 计算完整的3组块数
+            const completeBlocks = Math.floor(validRecords.length / 3);
+            
+            if (completeBlocks === 0) {
+                baguaModule.style.display = 'none';
+                return;
+            }
+            
+            baguaModule.style.display = 'block';
+            numbersContainer.innerHTML = '';
+            baguaNumbers = [];
+            
+            // 每3个记录生成1个八卦数字，不重叠
+            for (let i = 0; i < completeBlocks; i++) {
+                // 取第 i*3, i*3+1, i*3+2 条记录（0起始索引）
+                const idx1 = i * 3;
+                const idx2 = i * 3 + 1;
+                const idx3 = i * 3 + 2;
+                
+                const c1 = validRecords[idx1].color;
+                const c2 = validRecords[idx2].color;
+                const c3 = validRecords[idx3].color;
+                
+                const num = calculateBaguaNumber(c1, c2, c3);
+                baguaNumbers.push(num);
+            }
+            
+            // ========== 核心修复：抵消逻辑 (Stack-based Cancellation) ==========
+            // 规则：
+            // 1. 合9抵消 (如 8+1=9, 2+7=9...)
+            // 2. 相同抵消 (如 8,8)
+            // 逻辑：向左寻找最近一个"未被抵消"的数字，如果满足条件则两者都抵消
+            const cancelled = new Array(baguaNumbers.length).fill(false);
+            
+            for (let i = 0; i < baguaNumbers.length; i++) {
+                const current = baguaNumbers[i];
+                // 向回查找最近的未抵消数字
+                for (let j = i - 1; j >= 0; j--) {
+                    if (!cancelled[j]) {
+                        const prev = baguaNumbers[j];
+                        // 检查抵消条件
+                        if ((current + prev === 9) || (current === prev)) {
+                            cancelled[i] = true;
+                            cancelled[j] = true;
+                            break; // Match found, stop looking
+                        }
+                        // 允许隔空抵消（用户需求：重复数字间隔出现也要抵消）
+                        // break; // Removed to allow gap cancellation 
+                    }
+                }
+            }
+
+            // 渲染
+            baguaNumbers.forEach((num, idx) => {
+                const box = document.createElement('div');
+                box.className = 'bagua-number-box';
+                box.textContent = num;
+                
+                if (cancelled[idx]) {
+                    // 抵消样式：半透明 + 红斜杠
+                    box.style.opacity = '0.6';
+                    
+                    const slash = document.createElement('div');
+                    slash.style.position = 'absolute';
+                    slash.style.top = '50%';
+                    slash.style.left = '50%';
+                    slash.style.width = '80%';
+                    slash.style.height = '2px';
+                    slash.style.backgroundColor = '#ff4444'; // 红斜杠
+                    slash.style.transform = 'translate(-50%, -50%) rotate(45deg)'; // \ 方向
+                    slash.style.boxShadow = '0 0 4px rgba(255, 0, 0, 0.8)';
+                    slash.style.zIndex = '10';
+                    box.appendChild(slash);
+                }
+                
+                numbersContainer.appendChild(box);
+            });
+            
+            // 自动滚动到最新（最右）
+            const scrollContainer = document.getElementById('baguaScroll');
+            scrollContainer.scrollLeft = scrollContainer.scrollWidth;
+        }
+
+        // 八卦编码计算
+        function calculateBaguaNumber(c1, c2, c3) {
+            const map = {
+                'blue,blue,blue': 1,
+                'red,blue,blue': 2,
+                'blue,red,blue': 3,
+                'red,red,blue': 4,
+                'blue,blue,red': 5,
+                'red,blue,red': 6,
+                'blue,red,red': 7,
+                'red,red,red': 8
+            };
+            
+            const key = `${c1},${c2},${c3}`;
+            return map[key] || 1;
+        }
+
+        // ==========================================
+        // Big Road网格逻辑 - 修正版 (用户指定逻辑)
+        // ==========================================
+        function addToBigRoad(record) { 
+            if (gridRecords.length >= 108) { 
+                console.warn('Big Road网格已满（108/108）'); 
+                return; 
+            } 
+            
+            // ========== Tie Handling (Fix: Don't advance, modify last) ==========
+            if (record.isEqual) {
+                if (gridRecords.length > 0) {
+                    const lastRec = gridRecords[gridRecords.length - 1];
+                    lastRec.tieCount = (lastRec.tieCount || 0) + 1;
+                    // Force re-render of the last cell with slash
+                    renderGridCellWithSpecialIcons(lastRec);
+                    return;
+                }
+                // If first record is Tie, fall through to render as Blue (default) with slash
+            }
+            
+            const color = record.displayColor || record.color; 
+            
+            // Big Road定位规则（修正版） 
+            if (isFirst) { 
+                // 首个记录：第1行第1列 
+                currentCol = 0; 
+                currentRow = 0; 
+                isFirst = false; 
+            } else { 
+                // 关键修复：第1行只能红蓝交替 
+                if (currentRow === 0) { 
+                    // 第1行：异色向右，同色向下（第2行） 
+                    if (color === lastColor) { 
+                        // 同色：向下到第2行 
+                        currentRow = 1; 
+                    } else { 
+                        // 异色：向右 
+                        currentCol++; 
+                        currentRow = 0; 
+                    } 
+                } else { 
+                    // 第2-6行：同色向下，触底向右 
+                    if (color === lastColor) { 
+                        if (currentRow < 5) { 
+                            // 向下延伸 
+                            currentRow++; 
+                        } else { 
+                            // 触底：向右，回到第1行 
+                            currentCol++; 
+                            currentRow = 0; 
+                        } 
+                    } else { 
+                        // 异色：向右，回到第1行 
+                        currentCol++; 
+                        currentRow = 0; 
+                    } 
+                } 
+            } 
+            
+            if (currentCol >= 18) { 
+                console.warn('网格列数已满（18列）'); 
+                return; 
+            } 
+            
+            lastColor = color; 
+            
+            const gridRecord = { 
+                ...record, 
+                col: currentCol, 
+                row: currentRow,
+                tieCount: 0
+            }; 
+            
+            gridRecords.push(gridRecord); 
+            renderGridCellWithSpecialIcons(gridRecord); 
+            
+            document.getElementById('gridCounter').textContent = gridRecords.length + '/108'; 
+        }
+
+        function isCellOccupied(col, row) {
+            if (col >= 18 || row >= 6) return true;
+            const cell = document.getElementById(`cell-${col}-${row}`);
+            return cell && !cell.classList.contains('bead-empty');
+        }
+
+        // ==========================================
+        // 渲染网格单元格 - 包含所有特殊图标
+        // ==========================================
+        function renderGridCellWithSpecialIcons(rec) { 
+            const cell = document.getElementById(`cell-${rec.col}-${rec.row}`); 
+            if (!cell) return; 
+            
+            // 关键修复：确保红蓝圆圈正确显示（必须设置完整的类名） 
+            // 增加容错：如果 color 无效，默认为 red，防止样式断裂
+            const safeColor = (rec.color === 'blue' || rec.color === 'red') ? rec.color : 'red';
+            cell.className = `road-bead bead-hollow-${safeColor}`; 
+            cell.innerHTML = ''; 
+            
+            // 1. 左上角蓝点（分子前两位相同 - 蓝对子） 
+            if (rec.molSameFirstTwo) { 
+                const dot = document.createElement('div'); 
+                dot.className = 'dot-tl'; 
+                cell.appendChild(dot); 
+            } 
+            
+            // 2. 右下角红点（分母前两位相同 - 红对子） 
+            if (rec.denSameFirstTwo) { 
+                const dot = document.createElement('div'); 
+                dot.className = 'dot-br'; 
+                cell.appendChild(dot); 
+            } 
+            
+            // 3. 绿色斜杠（分子=分母 - 平局） 
+            if (rec.isEqual || (rec.tieCount && rec.tieCount > 0)) { 
+                const slash = document.createElement('div'); 
+                slash.className = 'slash'; 
+                cell.appendChild(slash); 
+            } 
+            
+            // 4. 特殊图标内容（按优先级） 
+            let content = ''; 
+            let contentClass = 'bead-content'; 
+            
+            // 优先级1: 7/6 皇冠 👑 
+            if (rec.isSevenSix) { 
+                content = '👑'; 
+                contentClass += ' text-gold'; 
+            } 
+            // 优先级2: 分子和=8（且3位数字）熊猫 🐻 
+            else if (rec.molIsEight) { 
+                content = '🐼'; 
+            } 
+            // 优先级3: 分母和=6且红圈 显示"6" 
+            else if (rec.denIsSix && rec.color === 'red') { 
+                content = '6'; 
+            } 
+            // 优先级4: 分子和=7 显示"7" 
+            else if (rec.molIsSeven) { 
+                content = '7'; 
+            } 
+            
+            if (content) { 
+                const span = document.createElement('span'); 
+                span.className = contentClass; 
+                span.textContent = content; 
+                cell.appendChild(span); 
+            } 
+        }
+
+        // ==========================================
+        // 撤销最后一条记录 (Undo Last)
+        // ==========================================
+        function undoLastRecord() {
+            // Ensure we use the global records
+            if (typeof window.allRecords === 'undefined') window.allRecords = [];
+            const records = window.allRecords;
+
+            // 1. 检查是否有记录
+            if (records.length === 0) {
+                // 如果没有记录，但输入框有内容，则仅清空输入框
+                document.getElementById('molecularInput').value = '';
+                document.getElementById('denominatorInput').value = '';
+                return;
+            }
+
+            // 2. 移除最后一条数据
+            records.pop();
+            // baguaNumbers is managed dynamically by renderBagua
+            
+            // 3. 更新 LocalStorage
+            localStorage.setItem('mayiju_records', JSON.stringify(records));
+            
+            // 4. 清空输入框
+            document.getElementById('molecularInput').value = '';
+            document.getElementById('denominatorInput').value = '';
+            
+            // 5. 重置并重新渲染网格 (Prefer internal initGrid)
+            if (typeof initGrid === 'function') {
+                initGrid();
+            } else if (typeof initAndRenderGrid === 'function') {
+                initAndRenderGrid();
+            } else {
+                console.warn("initGrid/initAndRenderGrid not found, grid might not update");
+            }
+            
+            // 6. 重新渲染列表 (Using emergency_fix.js function)
+            if (typeof renderHistory === 'function') {
+                renderHistory();
+            } else if (typeof renderLinkedRecords === 'function') {
+                renderLinkedRecords();
+            }
+
+            // 7. 重新渲染八卦
+            if (typeof updateBaguaSequenceBlockMode === 'function') {
+                updateBaguaSequenceBlockMode();
+            } else if (typeof renderBagua === 'function') {
+                renderBagua();
+            }
+            
+            // 8. 更新计数器
+            const countEl = document.getElementById('recordCount');
+            if (countEl) countEl.textContent = records.length + '组';
+            
+            const gridCounter = document.getElementById('gridCounter');
+            if (gridCounter) gridCounter.textContent = records.length + '/108';
+            
+            // 9. 更新高赔率模块 (集成到高倍模块)
+            if (window.highOddsDisplay && typeof window.highOddsDisplay.update === 'function') {
+                window.highOddsDisplay.update(records);
+            } else {
+                 const multBox = document.getElementById('multiplierValue');
+                 if (multBox) multBox.textContent = '-';
+            }
+            
+            console.log('[系统] 已撤销最后一条记录，剩余:', records.length);
+        }
+
+        // ==========================================
+        // 清除所有
+        // ==========================================
+        function clearAll() {
+            // 清除所有记录
+            if (typeof window.allRecords !== 'undefined') window.allRecords = [];
+            
+            // LocalStorage 清除
+            localStorage.setItem('mayiju_records', '[]');
+            localStorage.removeItem('lastPrediction');
+            localStorage.removeItem('accuracyStats');
+
+            // 1. 清空列表 DOM
+            if (typeof renderHistory === 'function') {
+                renderHistory(); 
+            } else {
+                 const wrapper = document.getElementById('recordsWrapper') || document.querySelector('.records-wrapper');
+                 if(wrapper) wrapper.innerHTML = '';
+            }
+
+            const recordCount = document.getElementById('recordCount');
+            if(recordCount) recordCount.textContent = '0组';
+            
+            // 2. 清空八卦 DOM
+            if (typeof updateBaguaSequenceBlockMode === 'function') {
+                 updateBaguaSequenceBlockMode(); 
+            } else if (typeof renderBagua === 'function') {
+                 renderBagua(); 
+            } else {
+                const baguaModule = document.getElementById('baguaModule');
+                if(baguaModule) baguaModule.style.display = 'none';
+                const baguaNumbersContainer = document.getElementById('baguaNumbers');
+                if(baguaNumbersContainer) baguaNumbersContainer.innerHTML = '';
+            }
+            
+            // 3. 清空网格 DOM
+            if (typeof initAndRenderGrid === 'function') {
+                initAndRenderGrid(); 
+            } else {
+                 const grid = document.getElementById('bigRoadGrid');
+                 if (grid) grid.innerHTML = '';
+            }
+            
+            const gridCounter = document.getElementById('gridCounter');
+            if(gridCounter) gridCounter.textContent = '0/108';
+
+            // 4. 清空输入框
+            const molInput = document.getElementById('molecularInput');
+            if(molInput) molInput.value = '';
+            const denInput = document.getElementById('denominatorInput');
+            if(denInput) denInput.value = '';
+            
+            // 5. 清除高赔率显示
+             const multBox = document.getElementById('multiplierValue');
+             if (multBox) {
+                multBox.textContent = '-';
+                multBox.style.background = 'linear-gradient(135deg, #ffd700, #ffaa00)';
+                multBox.style.boxShadow = 'none';
+                multBox.style.color = '#000';
+             }
+             
+             // 6. 重置圆圈
+             const circle = document.getElementById('prediction-circle');
+             if (circle) circle.className = 'circle';
+             
+             // 7. 重置 S-value
+             const textEl = document.getElementById('prediction-text');
+             if (textEl) textEl.textContent = 'S:-';
+
+             // 8. 清除熵准确率
+            const accuracyEl = document.getElementById('entropyAccuracy') || document.querySelector('.accuracy-display'); 
+            if (accuracyEl) { 
+                accuracyEl.textContent = '0.0%'; 
+                if (accuracyEl.style) accuracyEl.style.color = '#ffcc00';
+            } 
+
+             console.log('[系统] 所有数据已清除');
+        }
+        
+        // 预览与输入纠错
+        function previewCurrent() {
+            const molInput = document.getElementById('molecularInput');
+            const denInput = document.getElementById('denominatorInput');
+            if (molInput) {
+                molInput.value = molInput.value.replace(/\D/g, '').slice(0, 3);
+            }
+            if (denInput) {
+                denInput.value = denInput.value.replace(/\D/g, '').slice(0, 3);
+            }
+        }
+// Code removed
+        // ==========================================
+        // 消息监听 (Self-Check Integration)
+        // ==========================================
+        window.addEventListener('message', (e) => { 
+           if (e.data && e.data.source === 'selfcheck') { 
+             // 根据 e.data.type 返回对应检测结果 
+             console.log('[System] Received selfcheck request:', e.data);
+             
+             const payload = {
+                status: 'online',
+                timestamp: Date.now(),
+                records_count: (window.allRecords || []).length,
+                last_prediction: localStorage.getItem('lastPrediction'),
+                high_odds_module: typeof window.HighOddsDisplay !== 'undefined' ? 'active' : 'missing',
+                user_agent: navigator.userAgent
+             };
+
+             if (e.source) {
+                 e.source.postMessage({ 
+                   id: e.data.id, 
+                   source: 'main-system', 
+                   payload: payload 
+                 }, '*'); 
+             }
+           } 
+         });
+
+        window.clearAll = clearAll; // 显式绑定到 window
+        window.clearForm = clearAll; // 兼容 window.clearForm
+        window.undoLastRecord = undoLastRecord; // 显式绑定撤销函数
+
+    </script>
+    <!-- Version Indicator -->
+    <div style="position:fixed; bottom:5px; right:5px; color:rgba(255,255,255,0.3); font-size:10px; z-index:9999; pointer-events:none;">v2.0.4 Mobile</div>
+</body>
+</html>
