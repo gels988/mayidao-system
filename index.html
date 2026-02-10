@@ -76,13 +76,15 @@
                 border-radius: 0 !important;
             }
 
-            /* 强制隐藏所有遮挡层 (核心修复) */
-            #login-overlay, #register-mode, .modal-overlay {
+            /* 移动端遮挡层适配 (修复白屏问题) */
+            #login-overlay, #register-mode {
+                /* 不再强制隐藏，而是确保层级正确 */
+                z-index: 9999 !important;
+            }
+            
+            /* 仅在确实不需要时隐藏 */
+            .modal-overlay.force-hide {
                 display: none !important;
-                z-index: -999 !important;
-                pointer-events: none !important;
-                opacity: 0 !important;
-                visibility: hidden !important;
             }
             
             /* 确保输入框可点击 */
