@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统修复 v2</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: monospace; padding: 20px; }
+        .btn { background: #e94560; color: white; padding: 10px 20px; border: none; font-size: 16px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🛠️ 系统修复 v2</h1>
+    <div id="log">正在初始化...</div>
+    <button class="btn" onclick="window.location.href='/'">返回主页</button>
+    <script>
+        const log = (msg) => document.getElementById('log').innerText += '\n' + msg;
+        
+        async function run() {
+            log('开始清理...');
+            if ('serviceWorker' in navigator) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                for (let reg of regs) {
+                    await reg.unregister();
+                    log('ServiceWorker 已注销');
+                }
+            }
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                for (let key of keys) {
+                    await caches.delete(key);
+                    log('缓存已删除: ' + key);
+                }
+            }
+            log('清理完成。请点击返回主页。');
+        }
+        run();
+    </script>
+</body>
+</html>
