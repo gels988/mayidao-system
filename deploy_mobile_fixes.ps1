@@ -79,11 +79,14 @@ $mobileCSS = @"
     h3 { font-size: 1.1rem !important; } 
     
     /* Button Adjustment */ 
-    .btn, button, .link-btn { 
-        width: 100% !important; 
-        padding: 12px !important; 
-        font-size: 1rem !important; 
-        margin: 8px 0 !important; 
+    .btn, .link-btn { 
+        /* width: 100% !important; Removed to prevent toolbar layout issues */
+        padding: 10px !important; 
+    } 
+    
+    /* Only full width for specific containers if needed */
+    .full-width-btn {
+        width: 100% !important;
     } 
     
     /* Table Adjustment */ 

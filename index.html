@@ -97,6 +97,21 @@
             /* 调整顶部栏以适应手机 */
             .top-bar {
                 padding: 10px;
+                flex-wrap: wrap; /* 允许换行 */
+                gap: 5px;
+            }
+
+            .top-right {
+                width: 100%;
+                overflow-x: auto; /* 允许横向滑动 */
+                white-space: nowrap;
+                justify-content: flex-start; /* 左对齐以便滑动 */
+                padding-bottom: 5px;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .top-right button {
+                flex-shrink: 0; /* 防止按钮被压缩 */
             }
             
             .g-gas {
