@@ -108,7 +108,7 @@ $mobileCSS = @"
     } 
     
     /* Hide Unnecessary Elements */ 
-    .subtitle, .footer p, #login-overlay, .modal-overlay { 
+    .subtitle, .footer p { 
         display: none !important;
     } 
     
