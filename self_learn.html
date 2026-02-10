@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>加载中...</title>
     <style>
         body { background: #0f172a; color: #4cc9f0; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
@@ -62,11 +62,136 @@
             }
         })();
     </script>
+<style> 
+/* Mobile Responsive Styles */ 
+@media only screen and (max-width: 768px) { 
+    /* Global Settings */ 
+    body { 
+        font-size: 14px; 
+        padding: 0 !important; 
+        overflow-x: hidden; 
+        background: #1a1a1a;
+    } 
+    
+    /* Container Adaptation */ 
+    .container, .dashboard, .card, .stats-overview { 
+        width: 100% !important; 
+        max-width: 100% !important; 
+        padding: 10px !important; 
+        margin: 5px auto !important; 
+    } 
+    
+    /* Grid Layout Adjustment */ 
+    .stats-overview, .dashboard-grid, .learning-modes { 
+        grid-template-columns: 1fr !important; 
+        gap: 15px !important; 
+    } 
+    
+    /* Card Adjustment */ 
+    .stat-card, .chart-card, .map-container, .real-time-panel { 
+        padding: 15px !important; 
+    } 
+    
+    /* Text Size Adjustment */ 
+    h1 { font-size: 1.5rem !important; } 
+    h2 { font-size: 1.3rem !important; } 
+    h3 { font-size: 1.1rem !important; } 
+    
+    /* Button Adjustment */ 
+    .btn, button, .link-btn { 
+        width: 100% !important; 
+        padding: 12px !important; 
+        font-size: 1rem !important; 
+        margin: 8px 0 !important; 
+    } 
+    
+    /* Table Adjustment */ 
+    table { 
+        font-size: 12px !important; 
+        display: block !important; 
+        overflow-x: auto !important; 
+    } 
+    
+    /* Chart Container Adjustment */ 
+    .chart-container { 
+        height: 250px !important; 
+        width: 100% !important; 
+    } 
+    
+    /* Input Field Adjustment */ 
+    input, select, textarea { 
+        width: 100% !important; 
+        padding: 10px !important; 
+        font-size: 16px !important; /* Prevent iOS zoom */
+        margin: 8px 0 !important; 
+    } 
+    
+    /* Hide Unnecessary Elements */ 
+    .subtitle, .footer p, #login-overlay, .modal-overlay { 
+        display: none !important;
+    } 
+    
+    /* Scroll Optimization */ 
+    ::-webkit-scrollbar { 
+        width: 4px !important; 
+    }
+} 
+
+/* Touch Device Optimization */ 
+@media (hover: none) and (pointer: coarse) { 
+    /* Increase Touch Targets */ 
+    button, .btn, a { 
+        min-height: 44px !important; 
+        min-width: 44px !important; 
+    } 
+} 
+</style> 
 </head>
 <body>
     <div class="container">
         <div class="loader" style="margin:0 auto;"></div>
         <div class="msg">正在解密安全模块...</div>
     </div>
+<script> 
+// Mobile Device Touch Support 
+document.addEventListener('DOMContentLoaded', function() { 
+    // Detect Mobile Device 
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); 
+    
+    if (isMobile) { 
+        // Add mobile class 
+        document.documentElement.classList.add('is-mobile'); 
+        
+        // Fix iOS Click Delay 
+        if ('ontouchstart' in window || navigator.maxTouchPoints) { 
+            // Disable Double Tap Zoom 
+            let lastTouchEnd = 0; 
+            document.addEventListener('touchend', function(event) { 
+                const now = Date.now(); 
+                if (now - lastTouchEnd <= 300) { 
+                    event.preventDefault(); 
+                } 
+                lastTouchEnd = now; 
+            }, false); 
+        } 
+        
+        // Add Touch Feedback 
+        const touchElements = document.querySelectorAll('button, .btn, a[href], input[type="button"]'); 
+        touchElements.forEach(element => { 
+            element.addEventListener('touchstart', function() { 
+                this.style.opacity = '0.7'; 
+            }, { passive: true }); 
+            
+            element.addEventListener('touchend', function() { 
+                this.style.opacity = '1'; 
+            }, { passive: true }); 
+        }); 
+        
+        console.log('Mobile Mode Enabled'); 
+    } 
+}); 
+</script> 
 </body>
 </html>
+
+

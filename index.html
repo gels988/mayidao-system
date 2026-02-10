@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>智能预测系统 v2.0.3 (最新版)</title>
     <!-- 拦截脚本已移除：高赔率模块已改为原生集成 -->
     <link rel="stylesheet" href="css/self_learn.css">
@@ -765,6 +765,55 @@
         }
         .bead-hollow-red { border-color: #ff3333 !important; }
         .bead-hollow-blue { border-color: #1e90ff !important; }
+/* 移动端全屏显示修正 (User Provided Fix) */
+        @media only screen and (max-width: 768px) {
+            /* 全局设置 */ 
+            body { 
+                font-size: 14px; 
+                padding: 0 !important; /* Keep 0 for full screen app */
+                overflow-x: hidden; 
+            } 
+            
+            /* 容器自适应 */ 
+            .container, .dashboard, .card, .stats-overview { 
+                width: 100% !important; 
+                max-width: 100% !important; 
+                padding: 15px !important; 
+                margin: 10px auto !important; 
+            } 
+            
+            /* 按钮调整 */ 
+            .btn, button, .link-btn { 
+                /* width: 100% !important; Removed to avoid breaking small buttons */
+                padding: 12px !important; 
+                font-size: 1rem !important; 
+                margin: 8px 0 !important; 
+                touch-action: manipulation; /* Improve touch response */
+            } 
+            
+            /* 输入框调整 */ 
+            input, select, textarea { 
+                /* width: 100% !important; Removed to keep layout */
+                padding: 10px !important; 
+                font-size: 16px !important; /* Prevent iOS zoom */
+                margin: 8px 0 !important; 
+            } 
+            
+            /* 滚动优化 */ 
+            ::-webkit-scrollbar { 
+                width: 6px !important; 
+            }
+        }
+        
+        /* 触摸设备优化 */ 
+        @media (hover: none) and (pointer: coarse) { 
+            /* 增大触摸目标 */ 
+            button, .btn, a { 
+                min-height: 44px !important; 
+                min-width: 44px !important; 
+            } 
+        }
+
     </style>
     <!-- [已移除] base target="_blank" -->
     <!-- [已移除] 旧版高赔率拦截器：会导致高倍模块无法初始化 -->
@@ -2778,5 +2827,60 @@
     </script>
     <!-- Version Indicator -->
     <div style="position:fixed; bottom:5px; right:5px; color:rgba(255,255,255,0.3); font-size:10px; z-index:9999; pointer-events:none;">v2.0.4 Mobile</div>
+ <script> 
+ // 移动设备触摸事件支持 
+ document.addEventListener('DOMContentLoaded', function() { 
+     // 检测是否为移动设备 
+     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); 
+     
+     if (isMobile) { 
+         // 添加移动设备类 
+         document.documentElement.classList.add('is-mobile'); 
+         
+         // 修复iOS上的点击延迟 
+         if ('ontouchstart' in window || navigator.maxTouchPoints) { 
+             // 禁用双击缩放 
+             let lastTouchEnd = 0; 
+             document.addEventListener('touchend', function(event) { 
+                 const now = Date.now(); 
+                 if (now - lastTouchEnd <= 300) { 
+                     event.preventDefault(); 
+                 } 
+                 lastTouchEnd = now; 
+             }, false); 
+             
+             // 修复iOS上的滚动问题 
+             document.body.addEventListener('touchmove', function(event) { 
+                 if (document.body.scrollHeight === document.body.clientHeight) { 
+                     event.preventDefault(); 
+                 } 
+             }, { passive: false }); 
+         } 
+         
+         // 添加触摸反馈 
+         const touchElements = document.querySelectorAll('button, .btn, a[href], input[type="button"]'); 
+         touchElements.forEach(element => { 
+             element.addEventListener('touchstart', function() { 
+                 this.style.opacity = '0.7'; 
+             }, { passive: true }); 
+             
+             element.addEventListener('touchend', function() { 
+                 this.style.opacity = '1'; 
+             }, { passive: true }); 
+             
+             element.addEventListener('touchcancel', function() { 
+                 this.style.opacity = '1'; 
+             }, { passive: true }); 
+         }); 
+         
+         console.log('📱 移动设备模式已启用'); 
+     } 
+ }); 
+ 
+ // 防止页面缩放（可选） 
+ document.addEventListener('gesturestart', function(e) { 
+     e.preventDefault(); 
+ }, false); 
+ </script> 
 </body>
 </html>

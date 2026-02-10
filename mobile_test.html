@@ -1,0 +1,167 @@
+<!DOCTYPE html> 
+ <html lang="zh-CN"> 
+ <head> 
+     <meta charset="UTF-8"> 
+     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
+     <title>移动设备测试 - 蚂蚁岛</title> 
+     <style> 
+         * { margin: 0; padding: 0; box-sizing: border-box; } 
+         body { 
+             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+             background: linear-gradient(135deg, #0f172a, #1e293b); 
+             color: #e2e8f0; 
+             padding: 20px; 
+             min-height: 100vh; 
+         } 
+         .container { 
+             max-width: 100%; 
+             background: rgba(30, 41, 59, 0.7); 
+             border-radius: 15px; 
+             padding: 25px; 
+             margin: 0 auto; 
+         } 
+         h1 { 
+             font-size: 1.8rem; 
+             color: #3498db; 
+             text-align: center; 
+             margin-bottom: 20px; 
+         } 
+         .test-item { 
+             background: rgba(44, 62, 80, 0.5); 
+             padding: 15px; 
+             margin: 10px 0; 
+             border-radius: 10px; 
+             border-left: 4px solid #3498db; 
+         } 
+         .test-item.success { 
+             border-left-color: #27ae60; 
+         } 
+         .test-item.error { 
+             border-left-color: #e74c3c; 
+         } 
+         .test-label { 
+             font-weight: bold; 
+             margin-bottom: 5px; 
+             color: #94a3b8; 
+         } 
+         .test-value { 
+             font-size: 1.1rem; 
+             color: #e2e8f0; 
+         } 
+         .btn { 
+             display: block; 
+             width: 100%; 
+             padding: 15px; 
+             background: linear-gradient(to right, #3498db, #1abc9c); 
+             color: white; 
+             border: none; 
+             border-radius: 10px; 
+             font-size: 1.1rem; 
+             font-weight: bold; 
+             margin: 15px 0; 
+             cursor: pointer; 
+             transition: all 0.3s; 
+         } 
+         .btn:hover { 
+             transform: translateY(-2px); 
+             box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4); 
+         } 
+         .status { 
+             text-align: center; 
+             padding: 15px; 
+             margin: 20px 0; 
+             border-radius: 10px; 
+         } 
+         .status.success { 
+             background: rgba(39, 174, 96, 0.2); 
+             color: #27ae60; 
+         } 
+         .status.error { 
+             background: rgba(231, 76, 60, 0.2); 
+             color: #e74c3c; 
+         } 
+         @media (max-width: 480px) { 
+             body { padding: 10px; } 
+             .container { padding: 15px; } 
+             h1 { font-size: 1.5rem; } 
+             .btn { padding: 12px; font-size: 1rem; } 
+         } 
+     </style> 
+ </head> 
+ <body> 
+     <div class="container"> 
+         <h1>📱 移动设备测试</h1> 
+         
+         <div class="test-item"> 
+             <div class="test-label">设备类型</div> 
+             <div class="test-value" id="device-type">检测中...</div> 
+         </div> 
+         
+         <div class="test-item"> 
+             <div class="test-label">屏幕宽度</div> 
+             <div class="test-value" id="screen-width">0px</div> 
+         </div> 
+         
+         <div class="test-item"> 
+             <div class="test-label">屏幕高度</div> 
+             <div class="test-value" id="screen-height">0px</div> 
+         </div> 
+         
+         <div class="test-item"> 
+             <div class="test-label">触摸支持</div> 
+             <div class="test-value" id="touch-support">检测中...</div> 
+         </div> 
+         
+         <div class="test-item"> 
+             <div class="test-label">Viewport设置</div> 
+             <div class="test-value" id="viewport-status">✅ 已设置</div> 
+         </div> 
+         
+         <div class="test-item"> 
+             <div class="test-label">JavaScript</div> 
+             <div class="test-value" id="js-status">✅ 正常</div> 
+         </div> 
+         
+         <div id="status-message" class="status"></div> 
+         
+         <button class="btn" onclick="testSystem()">🔄 重新测试</button> 
+         <button class="btn" onclick="window.location.href='index.html'">🏠 返回主页</button> 
+         <button class="btn" onclick="window.location.href='数据库资料.html'">📊 管理系统</button> 
+     </div> 
+ 
+     <script> 
+         function detectDevice() { 
+             const ua = navigator.userAgent; 
+             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua); 
+             
+             if (isMobile) { 
+                 if (/iPhone|iPad|iPod/i.test(ua)) return 'iOS'; 
+                 if (/Android/i.test(ua)) return 'Android'; 
+                 return 'Mobile'; 
+             } 
+             return 'Desktop'; 
+         } 
+         
+         function checkTouchSupport() { 
+             return 'ontouchstart' in window || navigator.maxTouchPoints > 0; 
+         } 
+         
+         function updateTests() { 
+             document.getElementById('device-type').textContent = detectDevice(); 
+             document.getElementById('screen-width').textContent = window.innerWidth + 'px'; 
+             document.getElementById('screen-height').textContent = window.innerHeight + 'px'; 
+             document.getElementById('touch-support').textContent = checkTouchSupport() ? '✅ 支持' : '❌ 不支持';
+         }
+
+         function testSystem() {
+             updateTests();
+             const status = document.getElementById('status-message');
+             status.className = 'status success';
+             status.textContent = '✅ 测试已更新 - ' + new Date().toLocaleTimeString();
+         }
+
+         window.addEventListener('load', testSystem);
+         window.addEventListener('resize', updateTests);
+    </script>
+</body>
+</html>
