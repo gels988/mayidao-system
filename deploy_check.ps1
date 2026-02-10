@@ -24,6 +24,12 @@ if (Test-Path "vercel.json") {
     Write-Host "  [FAIL] vercel.json missing" -ForegroundColor Red
 }
 
+if (Test-Path "mobile_input_test.html") {
+    Write-Host "  [OK] mobile_input_test.html exists" -ForegroundColor Green
+} else {
+    Write-Host "  [FAIL] mobile_input_test.html missing" -ForegroundColor Red
+}
+
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Check Completed!" -ForegroundColor Green

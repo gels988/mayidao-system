@@ -1502,13 +1502,37 @@
                  showLogin();
                  return;
              }
-             // window.open('self_learn.html', '_blank', 'width=1200,height=900');
-             // 自学模块已改为后台运行
+             
+             // 创建提示框
              const msg = document.createElement('div');
-             msg.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 20px; border-radius:8px; z-index:10000; text-align:center; font-size:14px;';
-             msg.innerHTML = '✅ 自学模块正在后台运行<br><span style="font-size:12px;color:#aaa">无需打开窗口，系统正在自动学习</span>';
+             msg.id = 'self-learn-toast';
+             msg.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(20, 20, 20, 0.95); color:#fff; padding:20px; border-radius:12px; z-index:10000; text-align:center; border: 1px solid #00cc66; box-shadow: 0 0 20px rgba(0, 204, 102, 0.3); min-width: 280px;';
+             
+             msg.innerHTML = `
+                <div style="font-size:16px; margin-bottom:10px; font-weight:bold;">✅ 自学模块正在后台运行</div>
+                <div style="font-size:12px; color:#aaa; margin-bottom:20px;">系统正在自动学习历史数据并优化预测模型</div>
+                <div style="display:flex; gap:10px; justify-content:center;">
+                    <button id="btn-open-ui" style="padding:8px 15px; background:#00cc66; color:white; border:none; border-radius:6px; cursor:pointer;">打开界面(测试)</button>
+                    <button id="btn-close-toast" style="padding:8px 15px; background:#444; color:white; border:none; border-radius:6px; cursor:pointer;">关闭提示</button>
+                </div>
+             `;
+             
              document.body.appendChild(msg);
-             setTimeout(() => msg.remove(), 2000);
+             
+             // 绑定事件
+             document.getElementById('btn-open-ui').onclick = function() {
+                 window.open('self_learn.html', '_blank', 'width=1200,height=900');
+                 msg.remove();
+             };
+             
+             document.getElementById('btn-close-toast').onclick = function() {
+                 msg.remove();
+             };
+             
+             // 3秒后自动关闭
+             setTimeout(() => {
+                 if(document.body.contains(msg)) msg.remove();
+             }, 3000);
         }
 
         function exitSystem() {

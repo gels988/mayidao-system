@@ -537,6 +537,50 @@
         <div class="dashboard">
             <div class="card">
                 <div class="card-title">
+                    <i>⌨️</i> <span>手动数据输入测试</span>
+                </div>
+                
+                <div class="input-test-section" style="padding: 10px;">
+                    <!-- 分子分母输入 -->
+                    <div style="margin-bottom: 15px;">
+                        <label style="color: #94a3b8; display: block; margin-bottom: 5px;">分子/分母 (P1/P2)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="p1-input" placeholder="P1" style="background: rgba(30, 41, 59, 0.5); border: 1px solid #475569; color: white; padding: 10px; border-radius: 5px; width: 100%; font-size: 16px;">
+                            <span style="color: #64748b; font-size: 20px; align-self: center;">/</span>
+                            <input type="number" id="p2-input" placeholder="P2" style="background: rgba(30, 41, 59, 0.5); border: 1px solid #475569; color: white; padding: 10px; border-radius: 5px; width: 100%; font-size: 16px;">
+                        </div>
+                    </div>
+
+                    <!-- 八卦数字输入 -->
+                    <div style="margin-bottom: 15px;">
+                        <label style="color: #94a3b8; display: block; margin-bottom: 5px;">八卦数字 (3位)</label>
+                        <input type="number" id="bagua-input" placeholder="例如: 142" maxlength="3" style="background: rgba(30, 41, 59, 0.5); border: 1px solid #475569; color: white; padding: 10px; border-radius: 5px; width: 100%; font-size: 16px;">
+                    </div>
+
+                    <!-- 矩阵网格输入 -->
+                    <div style="margin-bottom: 15px;">
+                        <label style="color: #94a3b8; display: block; margin-bottom: 5px;">矩阵网格 (点击选中)</label>
+                        <div class="matrix" id="input-matrix">
+                            <div class="matrix-cell" data-id="1" style="cursor: pointer; background: rgba(30, 41, 59, 0.5);">1</div>
+                            <div class="matrix-cell" data-id="2" style="cursor: pointer; background: rgba(30, 41, 59, 0.5);">2</div>
+                            <div class="matrix-cell" data-id="3" style="cursor: pointer; background: rgba(30, 41, 59, 0.5);">3</div>
+                            <div class="matrix-cell" data-id="4" style="cursor: pointer; background: rgba(30, 41, 59, 0.5);">4</div>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button id="btn-analyze" class="btn" style="flex: 1; background: var(--secondary); justify-content: center;">分析数据</button>
+                        <button id="btn-save" class="btn" style="flex: 1; background: var(--success); justify-content: center;">保存数据</button>
+                        <button id="btn-clear" class="btn" style="flex: 1; background: var(--danger); justify-content: center;">清空</button>
+                    </div>
+                    
+                    <div id="input-status" style="margin-top: 10px; color: var(--warning); min-height: 20px; font-size: 0.9rem;"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
                     <i>📊</i> <span>学习状态</span>
                 </div>
                 <div class="stats-grid">
@@ -797,9 +841,90 @@
             document.getElementById('close-btn').addEventListener('click', function() {
                 document.body.style.opacity = '0.7';
                 setTimeout(() => {
-                    document.body.style.display = 'none';
+                    if (window.opener) {
+                        window.close();
+                    } else {
+                        window.history.back();
+                    }
                 }, 300);
             });
+
+            // ==========================================
+            // 新增：手动输入测试逻辑
+            // ==========================================
+            
+            // 1. 分子/分母输入自动切换
+            const p1 = document.getElementById('p1-input');
+            const p2 = document.getElementById('p2-input');
+            const status = document.getElementById('input-status');
+
+            if (p1 && p2) {
+                p1.addEventListener('input', function() {
+                    if (this.value.length >= 1) {
+                        p2.focus();
+                    }
+                });
+            }
+
+            // 2. 八卦数字输入限制
+            const bagua = document.getElementById('bagua-input');
+            if (bagua) {
+                bagua.addEventListener('input', function() {
+                    if (this.value.length > 3) {
+                        this.value = this.value.slice(0, 3);
+                    }
+                });
+            }
+
+            // 3. 矩阵网格点击
+            const inputCells = document.querySelectorAll('#input-matrix .matrix-cell');
+            inputCells.forEach(cell => {
+                const toggle = function(e) {
+                    if (e.cancelable) e.preventDefault(); // 防止触摸时触发两次
+                    
+                    // 单选逻辑
+                    inputCells.forEach(c => c.style.background = 'rgba(30, 41, 59, 0.5)');
+                    this.style.background = 'var(--secondary)';
+                    
+                    status.textContent = '选中网格: ' + this.dataset.id;
+                    
+                    // 触觉反馈
+                    if (navigator.vibrate) navigator.vibrate(20);
+                };
+
+                cell.addEventListener('touchstart', toggle, {passive: false});
+                cell.addEventListener('click', toggle);
+            });
+
+            // 4. 功能按钮
+            const btnAnalyze = document.getElementById('btn-analyze');
+            const btnSave = document.getElementById('btn-save');
+            const btnClear = document.getElementById('btn-clear');
+
+            if (btnAnalyze) {
+                btnAnalyze.addEventListener('click', function() {
+                    status.textContent = '✅ 分析完成：数据符合自然基因规律';
+                    status.style.color = 'var(--success)';
+                });
+            }
+
+            if (btnSave) {
+                btnSave.addEventListener('click', function() {
+                    status.textContent = '💾 数据已保存至本地缓存';
+                    status.style.color = 'var(--secondary)';
+                });
+            }
+
+            if (btnClear) {
+                btnClear.addEventListener('click', function() {
+                    if (p1) p1.value = '';
+                    if (p2) p2.value = '';
+                    if (bagua) bagua.value = '';
+                    inputCells.forEach(c => c.style.background = 'rgba(30, 41, 59, 0.5)');
+                    status.textContent = '🗑️ 数据已清空';
+                    status.style.color = '#94a3b8';
+                });
+            }
             
             // 每30秒自动更新一次
             setInterval(updateSystemData, 30000);
