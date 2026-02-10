@@ -1,72 +1,66 @@
-{ 
-  "version": 2, 
-  "name": "mayidao-gels988", 
-  "builds": [ 
-    { 
-      "src": "package.json", 
-      "use": "@vercel/static-build", 
-      "config": { 
-        "distDir": "." 
-      } 
-    } 
-  ], 
-  "routes": [ 
-    { 
-      "src": "/api/health", 
-      "dest": "/backend/server.js" 
-    }, 
-    { 
-      "src": "/api/stats/(.*)", 
-      "dest": "/backend/server.js" 
-    }, 
-    { 
-      "src": "/api/auth/(.*)", 
-      "dest": "/backend/server.js" 
-    }, 
-    { 
-      "src": "/api/(.*)", 
-      "dest": "/backend/server.js" 
-    }, 
-    { 
-      "src": "/self_learn.html", 
-      "headers": { 
-        "cache-control": "public, max-age=0, must-revalidate" 
-      } 
-    }, 
-    { 
-      "src": "/数据库资料.html", 
-      "headers": { 
-        "cache-control": "public, max-age=0, must-revalidate" 
-      } 
-    }, 
-    { 
-      "src": "/mobile_test.html", 
-      "headers": { 
-        "cache-control": "public, max-age=0, must-revalidate" 
-      } 
-    }, 
-    { 
-      "src": "/(.*)", 
-      "dest": "/$1" 
-    } 
-  ], 
-  "headers": [ 
-    { 
-      "source": "/(.*)", 
-      "headers": [ 
-        { 
-          "key": "Cache-Control", 
-          "value": "public, max-age=0, must-revalidate" 
-        }, 
-        { 
-          "key": "X-Content-Type-Options", 
-          "value": "nosniff" 
-        } 
-      ] 
-    } 
-  ], 
-  "env": { 
-    "NODE_ENV": "production" 
-  }, 
-  "regions": ["hkg1"] 
+{
+  "version": 2,
+  "name": "mayidao-gels988",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "."
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/health",
+      "dest": "/backend/server.js"
+    },
+    {
+      "src": "/api/stats/(.*)",
+      "dest": "/backend/server.js"
+    },
+    {
+      "src": "/api/auth/(.*)",
+      "dest": "/backend/server.js"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/backend/server.js"
+    },
+    {
+      "src": "/learn.html",
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate"
+      }
+    },
+    {
+      "src": "/数据库资料.html",
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "regions": ["hkg1"]
 }
