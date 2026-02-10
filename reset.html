@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统修复中...</title>
+    <style>
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .log {
+            width: 100%;
+            max-width: 600px;
+            background: #111;
+            border: 1px solid #333;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>🛠️ 正在强制清理旧缓存...</h1>
+    <div class="log" id="log">日志初始化...</div>
+    <button onclick="window.location.href='index.html?v=' + Date.now()">完成后点击此处跳转</button>
+
+    <script>
+        const logEl = document.getElementById('log');
+        function log(msg) {
+            logEl.textContent += '\n> ' + msg;
+            console.log(msg);
+        }
+
+        async function cleanUp() {
+            log("开始清理...");
+
+            // 1. 注销 Service Worker
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    if (registrations.length === 0) {
+                        log("未发现 Service Worker。");
+                    }
+                    for (let registration of registrations) {
+                        const boolean = await registration.unregister();
+                        log(`Service Worker 注销: ${boolean ? '成功' : '失败'}`);
+                    }
+                } catch (e) {
+                    log(`Service Worker 清理错误: ${e.message}`);
+                }
+            } else {
+                log("浏览器不支持 Service Worker (无需清理)");
+            }
+
+            // 2. 清理 Cache Storage
+            if ('caches' in window) {
+                try {
+                    const keys = await caches.keys();
+                    log(`发现 ${keys.length} 个缓存库`);
+                    for (const key of keys) {
+                        const success = await caches.delete(key);
+                        log(`删除缓存库 [${key}]: ${success ? '成功' : '失败'}`);
+                    }
+                } catch (e) {
+                    log(`缓存库清理错误: ${e.message}`);
+                }
+            }
+
+            // 3. 清理 LocalStorage (保留部分关键配置 if needed, 但为了修复先全清)
+            // log("清理 LocalStorage...");
+            // localStorage.clear();
+            
+            // 4. 清理 SessionStorage
+            // sessionStorage.clear();
+
+            log("✅ 清理完成！正在跳转...");
+            
+            setTimeout(() => {
+                // 强制添加时间戳参数以绕过浏览器缓存
+                window.location.href = 'index.html?v=' + Date.now();
+            }, 2000);
+        }
+
+        window.onload = cleanUp;
+    </script>
+</body>
+</html>
