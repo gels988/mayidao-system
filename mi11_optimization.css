@@ -1,0 +1,43 @@
+/* 小米 Mi 11 Ultra 特定优化 */ 
+.mi-11-ultra-optimization { 
+    /* 修复小米浏览器的渲染问题 */ 
+    -webkit-tap-highlight-color: transparent; 
+    -webkit-touch-callout: none; 
+    -webkit-user-select: none; 
+    -khtml-user-select: none; 
+    -moz-user-select: none; 
+    -ms-user-select: none; 
+    user-select: none; 
+} 
+
+/* 修复小米浏览器的滚动问题 */ 
+.mi-scroll-fix { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0; 
+    overflow: auto; 
+    -webkit-overflow-scrolling: touch; 
+} 
+
+/* 优化小米手机的字体渲染 */ 
+.mi-font-fix { 
+    -webkit-font-smoothing: antialiased; 
+    -moz-osx-font-smoothing: grayscale; 
+    text-rendering: optimizeLegibility; 
+} 
+
+/* 修复小米浏览器的点击延迟 */ 
+.mi-click-fix { 
+    touch-action: manipulation; 
+} 
+
+/* 小米手机特定的viewport设置 */ 
+.mi-viewport-fix { 
+    width: device-width; 
+    initial-scale: 1.0; 
+    maximum-scale: 1.0; 
+    user-scalable: no; 
+    viewport-fit: cover; 
+}
