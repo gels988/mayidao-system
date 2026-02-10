@@ -7,6 +7,17 @@
     <!-- 拦截脚本已移除：高赔率模块已改为原生集成 -->
     <link rel="stylesheet" href="css/self_learn.css">
     <script>
+        // 🚀 强制清除所有 Service Worker (Fix caching issues)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister().then(function(boolean) {
+                        console.log('Service Worker unregistered:', boolean);
+                    });
+                }
+            });
+        }
+        
         // 版本控制与缓存清理
         const CURRENT_VERSION = '2.0.3';
         const lastVersion = localStorage.getItem('app_version');

@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蚂蚁岛数据库可视化看板</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #1890ff;
+            --success-color: #52c41a;
+            --warning-color: #faad14;
+            --danger-color: #f5222d;
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #1f1f1f;
+        }
+
+        .refresh-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            opacity: 0.9;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .stat-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-title {
+            color: #8c8c8c;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1f1f1f;
+        }
+
+        .chart-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+
+        .list-container {
+            height: 300px;
+            overflow-y: auto;
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .country-flag {
+            font-size: 20px;
+            margin-right: 8px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 8px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .login-btn {
+            width: 100%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .timestamp {
+            text-align: right;
+            color: #8c8c8c;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>蚂蚁岛全景数据看板</h1>
+        <div style="display:flex; gap:10px;">
+            <button id="change-pwd-btn" class="refresh-btn" style="background-color: var(--warning-color);" onclick="showChangePasswordModal()">
+                <span>🔑</span> 修改密码
+            </button>
+            <button id="refresh-btn" class="refresh-btn" onclick="loadDataFromDatabase()">
+                <span>🔄</span> 刷新数据
+            </button>
+        </div>
+    </div>
+
+    <!-- 概览卡片 -->
+    <div class="grid-container" id="overview-stats">
+        <div class="card stat-card">
+            <span class="stat-title">总用户数</span>
+            <span class="stat-value" id="stat-users">-</span>
+        </div>
+        <div class="card stat-card">
+            <span class="stat-title">捐赠用户</span>
+            <span class="stat-value" id="stat-donors">-</span>
+        </div>
+        <div class="card stat-card">
+            <span class="stat-title">累计捐赠 (GAS)</span>
+            <span class="stat-value" id="stat-amount">-</span>
+        </div>
+        <div class="card stat-card">
+            <span class="stat-title">覆盖国家</span>
+            <span class="stat-value" id="stat-countries">-</span>
+        </div>
+    </div>
+
+    <!-- 图表区域 -->
+    <div class="chart-row">
+        <div class="card">
+            <h3>用户增长趋势 (今日)</h3>
+            <div class="chart-container">
+                <canvas id="growthChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <h3>实时状态</h3>
+            <div class="stat-card" style="height: 100%; justify-content: center; gap: 20px;">
+                <div>
+                    <span class="stat-title">当前在线</span>
+                    <span class="stat-value" id="realtime-online" style="color: var(--success-color)">-</span>
+                </div>
+                <div>
+                    <span class="stat-title">活跃会话</span>
+                    <span class="stat-value" id="realtime-sessions">-</span>
+                </div>
+                 <div>
+                    <span class="stat-title">今日峰值</span>
+                    <span class="stat-value" id="realtime-peak">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-row">
+        <div class="card">
+            <h3>捐赠分布</h3>
+            <div class="chart-container">
+                <canvas id="donateChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <h3>国家/地区分布 (Top 20)</h3>
+            <div class="list-container" id="country-list">
+                <!-- 列表项动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近活动 -->
+    <div class="card">
+        <h3>最近活动日志</h3>
+        <div class="list-container" id="activity-list">
+            <!-- 日志动态生成 -->
+        </div>
+    </div>
+
+    <div class="timestamp" id="last-updated"></div>
+
+    <!-- 登录弹窗 -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <h2>管理员登录</h2>
+            <div class="input-group">
+                <input type="text" id="username" placeholder="用户名">
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" placeholder="密码">
+            </div>
+            <button class="login-btn" onclick="handleLogin()">登录</button>
+        </div>
+    </div>
+
+    <!-- 修改密码弹窗 -->
+    <div id="change-password-modal" class="modal">
+        <div class="modal-content">
+            <h2>修改密码</h2>
+            <div class="input-group">
+                <input type="password" id="old-password" placeholder="当前密码">
+            </div>
+            <div class="input-group">
+                <input type="password" id="new-password" placeholder="新密码">
+            </div>
+            <div class="input-group">
+                <input type="password" id="confirm-password" placeholder="确认新密码">
+            </div>
+            <button class="login-btn" onclick="handleChangePassword()">确认修改</button>
+            <button class="login-btn" style="background:#8c8c8c; margin-top:10px;" onclick="closeChangePasswordModal()">取消</button>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 修改前端文件 - 数据库资料.html ==================== 
+        
+        // API基础URL (根据环境自动调整，默认生产环境)
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3001/api' 
+            : 'https://mayidao-gels988.vercel.app/api'; 
+        
+        // 认证令牌 
+        let authToken = localStorage.getItem('authToken') || null; 
+        
+        // 登录函数 
+        async function login(username, password) { 
+            try { 
+                const response = await fetch(`${API_BASE_URL}/auth/login`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ username, password }) 
+                }); 
+                
+                const data = await response.json(); 
+                
+                if (data.success) { 
+                    authToken = data.token; 
+                    localStorage.setItem('authToken', authToken); 
+                    return true; 
+                } else { 
+                    throw new Error(data.error || '登录失败'); 
+                } 
+            } catch (error) { 
+                console.error('登录错误:', error); 
+                alert('登录失败: ' + error.message); 
+                return false; 
+            } 
+        } 
+        
+        // API请求函数 
+        async function apiRequest(endpoint, options = {}) { 
+            try { 
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, { 
+                    ...options, 
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'Authorization': `Bearer ${authToken}`, 
+                        ...options.headers 
+                    } 
+                }); 
+                
+                const data = await response.json(); 
+                
+                if (data.error) { 
+                    if (data.error.includes('未授权') || data.error.includes('无效')) { 
+                        authToken = null; 
+                        localStorage.removeItem('authToken'); 
+                        showLoginModal(); 
+                    } 
+                    throw new Error(data.error); 
+                } 
+                
+                return data; 
+            } catch (error) { 
+                console.error('API请求错误:', error); 
+                throw error; 
+            } 
+        } 
+        
+        // 加载数据 
+        async function loadDataFromDatabase() { 
+            try { 
+                if (!authToken) {
+                    showLoginModal();
+                    return;
+                }
+
+                document.getElementById('refresh-btn').innerHTML = '<span>⏳</span> 加载中...'; 
+                
+                // 获取统计数据 
+                const overview = await apiRequest('/stats/overview'); 
+                updateStatsUI(overview.data); 
+                
+                // 获取用户增长 
+                const growthData = await apiRequest('/stats/user-growth?period=today'); 
+                updateUserGrowthChart(growthData.data); 
+                
+                // 获取捐赠分布 
+                const donateDist = await apiRequest('/stats/donate-distribution'); 
+                updateDonateChart(donateDist.data); 
+                
+                // 获取国家分布 
+                const countries = await apiRequest('/stats/country-distribution'); 
+                renderCountryList(countries.data); 
+                
+                // 获取最近活动 
+                const activities = await apiRequest('/stats/recent-activity'); 
+                renderActivityList(activities.data); 
+                
+                // 获取实时状态 
+                const realtime = await apiRequest('/stats/realtime'); 
+                updateRealtimeUI(realtime.data); 
+                
+                updateTimestamp(); 
+                
+                document.getElementById('refresh-btn').innerHTML = '<span>✅</span> 已加载'; 
+                setTimeout(() => { 
+                    document.getElementById('refresh-btn').innerHTML = '<span>🔄</span> 刷新数据'; 
+                }, 2000); 
+                
+            } catch (error) { 
+                console.error('加载数据错误:', error); 
+                // alert('加载数据失败: ' + error.message); 
+                document.getElementById('refresh-btn').innerHTML = '<span>🔄</span> 刷新数据'; 
+            } 
+        }
+
+        // ==================== UI 辅助函数 ====================
+
+        function showLoginModal() {
+            document.getElementById('login-modal').style.display = 'flex';
+        }
+
+        function showChangePasswordModal() {
+            document.getElementById('change-password-modal').style.display = 'flex';
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('change-password-modal').style.display = 'none';
+        }
+
+        async function handleLogin() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            if(await login(u, p)) {
+                document.getElementById('login-modal').style.display = 'none';
+                loadDataFromDatabase();
+            }
+        }
+
+        async function handleChangePassword() {
+            const oldP = document.getElementById('old-password').value;
+            const newP = document.getElementById('new-password').value;
+            const confirmP = document.getElementById('confirm-password').value;
+
+            if (!oldP || !newP || !confirmP) {
+                alert('请填写所有字段');
+                return;
+            }
+
+            if (newP !== confirmP) {
+                alert('两次输入的新密码不一致');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        token: authToken, 
+                        oldPassword: oldP, 
+                        newPassword: newP 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('密码修改成功，请重新登录');
+                    closeChangePasswordModal();
+                    // Logout
+                    authToken = null;
+                    localStorage.removeItem('authToken');
+                    showLoginModal();
+                } else {
+                    throw new Error(data.error || '修改失败');
+                }
+            } catch (error) {
+                alert('错误: ' + error.message);
+            }
+        }
+
+        function updateStatsUI(data) {
+            document.getElementById('stat-users').innerText = data.totalUsers.toLocaleString();
+            document.getElementById('stat-donors').innerText = data.donateUsers.toLocaleString();
+            document.getElementById('stat-amount').innerText = data.totalDonate.toLocaleString();
+            document.getElementById('stat-countries').innerText = data.countries;
+        }
+
+        function updateRealtimeUI(data) {
+            document.getElementById('realtime-online').innerText = data.onlineUsers;
+            document.getElementById('realtime-sessions').innerText = data.activeSessions;
+            document.getElementById('realtime-peak').innerText = data.peakToday || '-';
+        }
+
+        function renderCountryList(data) {
+            const list = document.getElementById('country-list');
+            list.innerHTML = data.map(item => `
+                <div class="list-item">
+                    <span><span class="country-flag">${item.flag}</span> ${item.name}</span>
+                    <strong>${item.count}</strong>
+                </div>
+            `).join('');
+        }
+
+        function renderActivityList(data) {
+            const list = document.getElementById('activity-list');
+            list.innerHTML = data.map(item => `
+                <div class="list-item">
+                    <span style="color:#8c8c8c; font-size:12px; width:60px;">${item.time}</span>
+                    <span style="flex:1; margin-left:10px;">${item.content}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateTimestamp() {
+            document.getElementById('last-updated').innerText = '最后更新: ' + new Date().toLocaleString();
+        }
+
+        // Chart Instances
+        let growthChartInstance = null;
+        let donateChartInstance = null;
+
+        function updateUserGrowthChart(data) {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            if(growthChartInstance) growthChartInstance.destroy();
+            
+            growthChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.hour + '点'),
+                    datasets: [{
+                        label: '新增用户',
+                        data: data.map(d => d.count),
+                        borderColor: '#1890ff',
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(24,144,255,0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function updateDonateChart(data) {
+            const ctx = document.getElementById('donateChart').getContext('2d');
+            if(donateChartInstance) donateChartInstance.destroy();
+            
+            donateChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(d => d.range),
+                    datasets: [{
+                        data: data.map(d => d.count),
+                        backgroundColor: [
+                            '#e6f7ff', '#bae7ff', '#69c0ff', '#1890ff', '#0050b3'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // 初始化检查
+        window.onload = function() {
+            if(authToken) {
+                loadDataFromDatabase();
+            } else {
+                showLoginModal();
+            }
+        };
+    </script>
+</body>
+</html>
