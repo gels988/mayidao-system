@@ -1496,6 +1496,20 @@
              window.open('juanzeng.html', '_blank', 'width=600,height=850');
         }
 
+        function openSelfLearn() {
+             if (!checkLoginStatus()) {
+                 showLogin();
+                 return;
+             }
+             // window.open('self_learn.html', '_blank', 'width=1200,height=900');
+             // 自学模块已改为后台运行
+             const msg = document.createElement('div');
+             msg.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 20px; border-radius:8px; z-index:10000; text-align:center; font-size:14px;';
+             msg.innerHTML = '✅ 自学模块正在后台运行<br><span style="font-size:12px;color:#aaa">无需打开窗口，系统正在自动学习</span>';
+             document.body.appendChild(msg);
+             setTimeout(() => msg.remove(), 2000);
+        }
+
         function exitSystem() {
             if (confirm('确定要退出系统吗？')) {
                 logout();
@@ -2902,5 +2916,7 @@
      e.preventDefault(); 
  }, false); 
  </script> 
+    <!-- Background Self Learning Module -->
+    <iframe src="self_learn.html" id="background-learner" style="display:none; width:0; height:0; border:0;" title="Background Learning Module"></iframe>
 </body>
 </html>
