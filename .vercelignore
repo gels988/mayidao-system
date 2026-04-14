@@ -1,17 +1,24 @@
-# Local development files
-node_modules/
-.env
-.env.local
-.git/
-.gitignore
-
-# Logs
-logs/
-*.log
-
-# Temp files
-tmp/
-temp/
-
-# Deployment config
-DEPLOY_INFO.txt
+js/backup/**
+js/js/**
+tools/**
+test/**
+tests/**
+Frozen_Version/**
+Local_Tools/**
+ops/**
+scripts/**
+.trae/**
+.vercel_appdata/**
+.vercel_localappdata/**
+.env*
+Encryption_Deployment_Report_*.json
+Encryption_Deployment_Report_*.md
+Security_Audit_Report_*.md
+security_report.md
+IDENTITY.json
+roster.json
+roster.csv
+url_health.json
+backend/server.js.bak
+vercel.json.bak
+*.ps1

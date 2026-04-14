@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="version" content="5.2.0-frozen-predict" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <meta name="version" content="5.2.3-frozen-predict" />
     <title>MAYIJU - 预测战场</title>
+    <script>
+        // 手机端入口改由服务器侧重写投递，保留此页仅作兼容占位。
+    </script>
     <style>
         body {
             margin: 0;
@@ -157,6 +160,7 @@
         .modal-btn.danger { background: #500; }
         .modal-btn.danger:hover { background: #700; }
     </style>
+    <script src="../js/shared_identity.js"></script>
 </head>
 <body>
     <!-- 设置入口 -->
@@ -192,7 +196,7 @@
         <div class="modal-content">
             <h3>指挥官档案</h3>
             <div id="user-info">未登录</div>
-            <button id="login-btn" class="modal-btn">登录 / 注册</button>
+            <button id="login-btn" class="modal-btn">资料同步</button>
             <button id="donate-btn" class="modal-btn" style="display:none;">捐赠奖励</button>
             <button id="island-btn" class="modal-btn" style="display:none;">我的岛</button>
             <button id="logout-btn" class="modal-btn danger" style="display:none;">安全登出</button>

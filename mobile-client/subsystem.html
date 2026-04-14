@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>手机端子系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/db_client.js"></script>
+<style>
+        body {
+            margin: 0;
+            background: #060912;
+            color: #f5f7fb;
+            font-family: Arial, sans-serif;
+        }
+        .page {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 18px 16px 28px;
+        }
+        .card {
+            background: #0f1724;
+            border: 1px solid #223048;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+        h1, h2 {
+            margin: 0 0 12px;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 0;
+            border-top: 1px solid #1b2638;
+            font-size: 14px;
+        }
+        .row:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
+        .value {
+            color: #ffd166;
+            text-align: right;
+            word-break: break-all;
+        }
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .btn {
+            display: block;
+            text-decoration: none;
+            text-align: center;
+            padding: 13px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+        .btn.primary { background: #1f6feb; color: #fff; }
+        .btn.secondary { background: #1b2434; color: #dde7f5; border: 1px solid #32435c; }
+        .status-ok { color: #3ddc97; }
+        .status-warn { color: #ffd166; }
+    </style>
+    <script src="../js/shared_identity.js"></script>
+</head>
+<body>
+    <div class="page">
+        <div class="card">
+            <h1>手机端子系统</h1>
+            <div class="row"><span>说明</span><span class="value">移动端独立路由，同身份共库</span></div>
+            <div class="row"><span>注册策略</span><span class="value">仅允许电脑端注册</span></div>
+        </div>
+
+        <div class="card">
+            <h2>个人资料同步</h2>
+            <div class="row"><span>显示名称</span><span class="value" id="displayName">加载中...</span></div>
+            <div class="row"><span>邮箱/手机</span><span class="value" id="displayContact">加载中...</span></div>
+            <div class="row"><span>账户标识</span><span class="value" id="displayId">加载中...</span></div>
+            <div class="row"><span>当前 G-Gas</span><span class="value" id="displayGas">180</span></div>
+            <div class="row"><span>同步来源</span><span class="value" id="displaySource">等待检测</span></div>
+        </div>
+
+        <div class="card">
+            <h2>数据库状态</h2>
+            <div class="row"><span>健康接口</span><span class="value" id="dbHealth">检测中...</span></div>
+            <div class="row"><span>端侧隔离</span><span class="value status-ok">移动状态单独缓存</span></div>
+            <div class="row"><span>身份一致性</span><span class="value status-ok">使用共享档案 `currentUser` / `mayiju_profile`</span></div>
+            <div class="actions">
+                <button class="btn primary" type="button" onclick="refreshAll()">刷新同步</button>
+                <a class="btn secondary" href="./portal.html">返回手机端</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function renderProfile(profile) {
+            const safeProfile = profile || {};
+            document.getElementById('displayName').textContent = safeProfile.display_name || safeProfile.email || safeProfile.phone || '未登录';
+            document.getElementById('displayContact').textContent = safeProfile.email || safeProfile.phone || '请先在电脑端登录';
+            document.getElementById('displayId').textContent = safeProfile.id || '未分配';
+            document.getElementById('displayGas').textContent = String(safeProfile.gas_balance ?? 180);
+            document.getElementById('displaySource').textContent = safeProfile.source_table || 'localStorage';
+        }
+
+        async function checkDbHealth() {
+            const healthEl = document.getElementById('dbHealth');
+            try {
+                const response = await fetch('../api/health', { cache: 'no-store' });
+                const payload = await response.json();
+                healthEl.textContent = payload.status === 'ok' ? '正常' : '降级';
+                healthEl.className = 'value ' + (payload.status === 'ok' ? 'status-ok' : 'status-warn');
+            } catch (error) {
+                healthEl.textContent = '不可达';
+                healthEl.className = 'value status-warn';
+            }
+        }
+
+        async function refreshAll() {
+            const profile = window.MayijuIdentity
+                ? await window.MayijuIdentity.syncProfile({ device: 'mobile' })
+                : null;
+            renderProfile(profile);
+            await checkDbHealth();
+            if (window.MayijuIdentity) {
+                window.MayijuIdentity.saveDeviceState('mobile', { subsystemReady: true });
+            }
+        }
+
+        window.addEventListener('mayiju-profile-updated', (event) => {
+            renderProfile(event.detail);
+        });
+
+        window.addEventListener('DOMContentLoaded', refreshAll);
+    </script>
+</body>
+</html>

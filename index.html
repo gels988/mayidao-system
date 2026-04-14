@@ -2,38 +2,10 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>智能预测系统 v2.0.4 (最新版)</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>智能预测系统 - 修正版</title>
     <!-- 拦截脚本已移除：高赔率模块已改为原生集成 -->
     <link rel="stylesheet" href="css/self_learn.css">
-    <link rel="stylesheet" href="mi11_optimization.css">
-    <script>
-        // 🚀 强制清除所有 Service Worker (Fix caching issues)
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) {
-                    registration.unregister().then(function(boolean) {
-                        console.log('Service Worker unregistered:', boolean);
-                    });
-                }
-            });
-        }
-        
-        // 版本控制与缓存清理
-        const CURRENT_VERSION = '2.0.4';
-        const lastVersion = localStorage.getItem('app_version');
-        
-        if (lastVersion !== CURRENT_VERSION) {
-            console.log('检测到新版本，正在清理旧缓存...');
-            // 清理旧的登录状态，确保用户能看到新版登录界面
-            // localStorage.removeItem('currentUser'); 
-            // 保留用户数据，但更新版本号
-            localStorage.setItem('app_version', CURRENT_VERSION);
-            
-            // 如果是完全不兼容的更新，可以取消注释下面这行
-            // localStorage.clear(); 
-        }
-    </script>
     <style>
         body {
             margin: 0;
@@ -44,82 +16,6 @@
             gap: 20px;
         }
 
-        /* 移动端适配 (小于768px) */
-        @media (max-width: 768px) {
-            body {
-                padding: 0;
-                gap: 0;
-                background: #1a1a1a; /* 移动端背景黑色 */
-            }
-            
-            #left-panel {
-                display: none; /* 隐藏左侧说明 */
-            }
-            
-            #right-panel {
-                width: 100%;
-                height: 100vh;
-                display: block;
-                z-index: 100;
-                position: relative;
-            }
-            
-            .phone-frame {
-                width: 100% !important;
-                height: 100% !important;
-                border-radius: 0 !important;
-                padding: 0 !important;
-                box-shadow: none !important;
-                background: #1a1a1a !important;
-            }
-            
-            .phone-screen {
-                border-radius: 0 !important;
-            }
-
-            /* 移动端遮挡层适配 (修复白屏问题) */
-            #login-overlay, #register-mode {
-                /* 不再强制隐藏，而是确保层级正确 */
-                z-index: 9999 !important;
-            }
-            
-            /* 仅在确实不需要时隐藏 */
-            .modal-overlay.force-hide {
-                display: none !important;
-            }
-            
-            /* 确保输入框可点击 */
-            .input-section, .btn-input, .btn-clear, input {
-                pointer-events: auto !important;
-                z-index: 200 !important;
-                position: relative !important;
-            }
-            
-            /* 调整顶部栏以适应手机 */
-            .top-bar {
-                padding: 10px;
-                flex-wrap: wrap; /* 允许换行 */
-                gap: 5px;
-            }
-
-            .top-right {
-                width: 100%;
-                overflow-x: auto; /* 允许横向滑动 */
-                white-space: nowrap;
-                justify-content: flex-start; /* 左对齐以便滑动 */
-                padding-bottom: 5px;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            .top-right button {
-                flex-shrink: 0; /* 防止按钮被压缩 */
-            }
-            
-            .g-gas {
-                font-size: 14px !important; /* 放大余额显示 */
-            }
-        }
-
         /* 左侧说明 */
         #left-panel {
             width: 300px;
@@ -128,7 +24,6 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-
         /* 右侧模拟手机界面 */
         #right-panel {
             flex: 1;
@@ -259,7 +154,6 @@
             font-size: 11px;
             color: #ffcc00;
         }
-
         /* 主容器 */
         .main-container {
             padding: 10px;
@@ -783,65 +677,11 @@
         }
         .bead-hollow-red { border-color: #ff3333 !important; }
         .bead-hollow-blue { border-color: #1e90ff !important; }
-/* 移动端全屏显示修正 (User Provided Fix) */
-        @media only screen and (max-width: 768px) {
-            /* 全局设置 */ 
-            body { 
-                font-size: 14px; 
-                padding: 0 !important; /* Keep 0 for full screen app */
-                overflow-x: hidden; 
-            } 
-            
-            /* 容器自适应 */ 
-            .container, .dashboard, .card, .stats-overview { 
-                width: 100% !important; 
-                max-width: 100% !important; 
-                padding: 15px !important; 
-                margin: 10px auto !important; 
-            } 
-            
-            /* 按钮调整 */ 
-            .btn, button, .link-btn { 
-                /* width: 100% !important; Removed to avoid breaking small buttons */
-                padding: 12px !important; 
-                font-size: 1rem !important; 
-                margin: 8px 0 !important; 
-                touch-action: manipulation; /* Improve touch response */
-            } 
-            
-            /* 输入框调整 */ 
-            input, select, textarea { 
-                /* width: 100% !important; Removed to keep layout */
-                padding: 10px !important; 
-                font-size: 16px !important; /* Prevent iOS zoom */
-                margin: 8px 0 !important; 
-            } 
-            
-            /* 滚动优化 */ 
-            ::-webkit-scrollbar { 
-                width: 6px !important; 
-            }
-        }
-        
-        /* 确保图片和视频不会撑破手机屏幕 */ 
- img, video, canvas { 
-     max-width: 100%; 
-     height: auto; 
- } 
- 
- /* 强制清除可能的横向溢出 */ 
- body { 
-     overflow-x: hidden; 
-     width: 100%; 
- }
-
     </style>
-    <!-- [已移除] base target="_blank" -->
+    <script src="js/shared_identity.js"></script>
+<base target="_blank">
     <!-- [已移除] 旧版高赔率拦截器：会导致高倍模块无法初始化 -->
 <body>
-<!-- 🚑 紧急调试入口 -->
-<a href="debug.html" style="position:fixed; top:5px; left:5px; z-index:999999; color:#0f0; background:rgba(0,0,0,0.8); padding:4px 8px; font-size:12px; text-decoration:none; border:1px solid #0f0; border-radius:4px; font-family:monospace;">DEBUG</a>
-
 <!-- 在主界面添加自学面板 --> 
 <div id="selfLearnPanel" style="display:none; position:fixed; top:50px; left:50%; transform:translateX(-50%); background:#1a1a1a; border:2px solid #00cc66; padding:20px; z-index:1000; width:300px;"> 
   <h3>🧠 自学模块</h3> 
@@ -954,12 +794,11 @@
                     <div class="top-bar">
                         <div class="top-left">
                             <div class="user-info" id="userInfoDisplay" onclick="logout()" style="cursor: pointer; title: '点击退出登录'">Guest</div>
-                            <div class="g-gas" style="color: #ffcc00; font-weight: bold; font-size: 16px;">G-Gas: 加载中...</div>
+                            <div class="g-gas">G-Gas: 180</div>
                             <div class="accuracy">Acc: 33.3%</div>
                         </div>
                         <div class="top-right">
                             <button class="settings-btn" id="btnLogin" onclick="showLoginOverlay()" style="background:#e94560; border-color:#e94560; display:none;">登录</button>
-                            <button class="settings-btn" onclick="window.location.href='debug.html'" style="background:#666; border-color:#888;">修复</button>
                             <button class="settings-btn info" onclick="openSelfLearn()">自学</button>
                             <button class="settings-btn warning" onclick="openSelfCheck()">自检</button>
                             <button class="settings-btn primary" onclick="openSubSystem()">子系统</button>
@@ -986,7 +825,7 @@
                                     <input type="text" id="denominatorInput" maxlength="3" placeholder="00" oninput="previewCurrent()">
                                 </div>
                                 <button class="btn-input" onclick="addRecord()">输入</button>
-                                <button class="btn-clear" onclick="undoLastRecord()">清除</button>
+                                <button class="btn-clear" onclick="clearCurrentInputs()">清除</button>
                             </div>
 
                             <!-- 联动记录模块 -->
@@ -1024,6 +863,8 @@
                             </div>
                         </div>
 
+                        <div data-robot-dialog-slot data-robot-variant="desktop"></div>
+
                         <!-- Big Road网格 -->
                         <div class="grid-section">
                             <div class="grid-labels">
@@ -1051,6 +892,7 @@
     <!-- <script src="js/predict-special.js"></script> -->
     
     <!-- Security Layer -->
+    <script src="js/bagua_security.js"></script>
     <script src="js/decrypt_key.js"></script>
     <script src="js/decrypt_loader.js"></script>
     <script src="js/integrity_check.js"></script>
@@ -1081,13 +923,14 @@
     -->
 
     <!-- Prediction Logic -->
-    <!-- Disabled conflicting modules -->
-    <!-- <script src="js/high-odds-predictor.js"></script> -->
-    <!-- <script src="js/high-odds-display.js"></script> -->
+    <!-- Prediction dependencies required by main-integration.js -->
+    <script src="js/high-odds-base.js" defer></script>
+    <script src="js/high-odds-display.js" defer></script>
     <script src="js/main-integration.js"></script>
     
     <script src="js/db_client.js"></script>
     <script src="js/gas_manager.js"></script>
+    <script src="js/robot_dialog_component.js"></script>
     <script src="js/ui_controller.js"></script>
     
     <!-- 🚑 急救方案：引入紧急修复脚本 -->
@@ -1134,6 +977,13 @@
 
         // ========== 登录/注册逻辑 (User Provided) ========== 
         // let currentUser = null; // Removed duplicate declaration
+        function syncSharedIdentity(device = 'desktop') {
+            if (!window.MayijuIdentity) return;
+            const storedUser = currentUser || JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (storedUser) {
+                window.MayijuIdentity.saveProfile(storedUser, { device, silent: true });
+            }
+        }
         
         // 检查是否已登录 
         function checkLoginStatus() { 
@@ -1142,6 +992,7 @@
                 currentUser = JSON.parse(savedUser); 
                 // 隐藏登录按钮，显示用户信息 
                 updateUserInfoDisplay(); 
+                syncSharedIdentity();
                 return true; 
             } 
             return false; 
@@ -1254,6 +1105,7 @@
                 
                 // 更新显示 
                 updateUserInfoDisplay(); 
+                syncSharedIdentity();
                 
                 // 关闭登录窗口 
                 document.getElementById('login-overlay').style.display = 'none'; 
@@ -1383,6 +1235,7 @@
             }
 
             if (!currentUser) return; 
+            syncSharedIdentity();
             
             // 更新G-Gas显示 
             const gasEl = document.querySelector('.g-gas'); 
@@ -1419,7 +1272,11 @@
         function logout() { 
             if(!confirm("确定要退出登录吗？")) return;
             currentUser = null; 
-            localStorage.removeItem('currentUser'); 
+            if (window.MayijuIdentity) {
+                window.MayijuIdentity.clearProfileCache({ keepAuth: false });
+            } else {
+                localStorage.removeItem('currentUser'); 
+            }
             
             // 重置显示 
             const gasEl = document.querySelector('.g-gas'); 
@@ -1450,6 +1307,20 @@
         function initAuth() { 
             // 检查登录状态 
             const isLoggedIn = checkLoginStatus(); 
+            if (window.MayijuIdentity) {
+                window.MayijuIdentity.syncProfile({ device: 'desktop' }).then((profile) => {
+                    if (profile && profile.id) {
+                        currentUser = {
+                            ...(currentUser || {}),
+                            id: profile.id,
+                            email: profile.email,
+                            phone: profile.phone,
+                            gas_balance: profile.gas_balance
+                        };
+                        updateUserInfoDisplay();
+                    }
+                }).catch(() => {});
+            }
             
             // 如果未登录，自动显示登录界面 
             if (!isLoggedIn) { 
@@ -1500,44 +1371,6 @@
              window.open('juanzeng.html', '_blank', 'width=600,height=850');
         }
 
-        function openSelfLearn() {
-             if (!checkLoginStatus()) {
-                 showLogin();
-                 return;
-             }
-             
-             // 创建提示框
-             const msg = document.createElement('div');
-             msg.id = 'self-learn-toast';
-             msg.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(20, 20, 20, 0.95); color:#fff; padding:20px; border-radius:12px; z-index:10000; text-align:center; border: 1px solid #00cc66; box-shadow: 0 0 20px rgba(0, 204, 102, 0.3); min-width: 280px;';
-             
-             msg.innerHTML = `
-                <div style="font-size:16px; margin-bottom:10px; font-weight:bold;">✅ 自学模块正在后台运行</div>
-                <div style="font-size:12px; color:#aaa; margin-bottom:20px;">系统正在自动学习历史数据并优化预测模型</div>
-                <div style="display:flex; gap:10px; justify-content:center;">
-                    <button id="btn-open-ui" style="padding:8px 15px; background:#00cc66; color:white; border:none; border-radius:6px; cursor:pointer;">打开界面(测试)</button>
-                    <button id="btn-close-toast" style="padding:8px 15px; background:#444; color:white; border:none; border-radius:6px; cursor:pointer;">关闭提示</button>
-                </div>
-             `;
-             
-             document.body.appendChild(msg);
-             
-             // 绑定事件
-             document.getElementById('btn-open-ui').onclick = function() {
-                 window.open('learn.html', '_blank', 'width=1200,height=900');
-                 msg.remove();
-             };
-             
-             document.getElementById('btn-close-toast').onclick = function() {
-                 msg.remove();
-             };
-             
-             // 3秒后自动关闭
-             // setTimeout(() => {
-             //    if(document.body.contains(msg)) msg.remove();
-             // }, 3000);
-        }
-
         function exitSystem() {
             if (confirm('确定要退出系统吗？')) {
                 logout();
@@ -1555,10 +1388,8 @@
         // Initialize G-Gas
         async function initGasBalance() {
             // Ensure Supabase Client
-            if (!supabaseClient && window.supabase && window.supabase.createClient) {
-                const SUPABASE_URL = 'https://xhfyfkqfykkbbnlwghem.supabase.co';
-                const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZnlma3FmeWtrYmJubHdnaGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0ODA4ODEsImV4cCI6MjA4NDA1Njg4MX0.SVUTAVSWi-skCq3N3KioTetV40IWt0vNkewA0WqEfcg';
-                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            if (!supabaseClient && window.supabaseInstance) {
+                supabaseClient = window.supabaseInstance;
             }
             
             // Get User ID
@@ -1608,14 +1439,9 @@
         function updateGasDisplay(balance) {
             const gasEl = document.querySelector('.g-gas');
             if (gasEl) {
-                gasEl.style.display = 'block'; // Ensure visibility
-                gasEl.style.color = '#ffcc00'; // Force color
                 gasEl.textContent = `G-Gas: ${balance}`;
-                
-                // Color coding
-                if(balance < 50) gasEl.style.color = '#ff3333';
-                else if(balance < 100) gasEl.style.color = '#ffcc00';
-                else gasEl.style.color = '#00cc66';
+                gasEl.style.color = balance < 50 ? '#ff3333' : 
+                                   balance < 100 ? '#ffcc00' : '#00cc66';
             }
         }
 
@@ -2764,6 +2590,21 @@
             console.log('[系统] 已撤销最后一条记录，剩余:', records.length);
         }
 
+        function clearCurrentInputs() {
+            const molInput = document.getElementById('molecularInput');
+            const denInput = document.getElementById('denominatorInput');
+
+            if (molInput) molInput.value = '';
+            if (denInput) denInput.value = '';
+
+            // 清空当前录入后，恢复主界面由历史记录驱动的显示状态。
+            if (window.mainIntegration && typeof window.mainIntegration.updateAllDisplays === 'function') {
+                window.mainIntegration.updateAllDisplays();
+            }
+
+            if (molInput) molInput.focus();
+        }
+
         // ==========================================
         // 清除所有
         // ==========================================
@@ -2883,68 +2724,524 @@
          });
 
         window.clearAll = clearAll; // 显式绑定到 window
+        window.clearCurrentInputs = clearCurrentInputs;
         window.clearForm = clearAll; // 兼容 window.clearForm
         window.undoLastRecord = undoLastRecord; // 显式绑定撤销函数
+        window.addEventListener('mayiju-profile-updated', (event) => {
+            if (!event.detail) return;
+            currentUser = {
+                ...(currentUser || {}),
+                id: event.detail.id,
+                email: event.detail.email,
+                phone: event.detail.phone,
+                gas_balance: event.detail.gas_balance
+            };
+            updateUserInfoDisplay();
+        });
 
     </script>
-    <!-- Version Indicator -->
-    <div style="position:fixed; bottom:5px; right:5px; color:rgba(255,255,255,0.3); font-size:10px; z-index:9999; pointer-events:none;">v2.0.4 Mobile</div>
- <script> 
- // 移动设备触摸事件支持 
- document.addEventListener('DOMContentLoaded', function() { 
-     // 检测是否为移动设备 
-     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); 
-     
-     if (isMobile) { 
-         // 添加移动设备类 
-         document.documentElement.classList.add('is-mobile'); 
-         
-         // 修复iOS上的点击延迟 
-         if ('ontouchstart' in window || navigator.maxTouchPoints) { 
-             // 禁用双击缩放 
-             let lastTouchEnd = 0; 
-             document.addEventListener('touchend', function(event) { 
-                 const now = Date.now(); 
-                 if (now - lastTouchEnd <= 300) { 
-                     event.preventDefault(); 
-                 } 
-                 lastTouchEnd = now; 
-             }, false); 
-             
-             // 修复iOS上的滚动问题 
-             document.body.addEventListener('touchmove', function(event) { 
-                 if (document.body.scrollHeight === document.body.clientHeight) { 
-                     event.preventDefault(); 
-                 } 
-             }, { passive: false }); 
-         } 
-         
-         // 添加触摸反馈 
-         const touchElements = document.querySelectorAll('button, .btn, a[href], input[type="button"]'); 
-         touchElements.forEach(element => { 
-             element.addEventListener('touchstart', function() { 
-                 this.style.opacity = '0.7'; 
-             }, { passive: true }); 
-             
-             element.addEventListener('touchend', function() { 
-                 this.style.opacity = '1'; 
-             }, { passive: true }); 
-             
-             element.addEventListener('touchcancel', function() { 
-                 this.style.opacity = '1'; 
-             }, { passive: true }); 
-         }); 
-         
-         console.log('📱 移动设备模式已启用'); 
-     } 
- }); 
- 
- // 防止页面缩放（可选） 
- document.addEventListener('gesturestart', function(e) { 
-     e.preventDefault(); 
- }, false); 
- </script> 
-    <!-- Background Self Learning Module -->
-    <iframe src="learn.html" id="background-learner" style="display:none; width:0; height:0; border:0;" title="Background Learning Module"></iframe>
 </body>
 </html>
+<!-- 🐜 MAYIJU 手机端融合模块 V3.0 [导航+对话+自检+修复版] -->
+<div id="mp-wrapper">
+  <style>
+    /* === 作用域隔离：所有样式仅限 #mp-wrapper 内部 === */
+    #mp-wrapper{--mp-bg:#111;--mp-card:#1a1a1a;--mp-red:#e63946;--mp-blue:#457b9d;--mp-green:#2a9d8f;--mp-txt:#eee;--mp-dim:#666;width:min(100%,560px);min-height:calc(100vh - 24px);margin:12px auto;padding:clamp(12px,2.6vw,18px);display:grid;gap:clamp(10px,2vw,14px);align-content:start;font-family:'SF Mono','Courier New',monospace;color:var(--mp-txt);box-sizing:border-box;border-radius:16px;background:linear-gradient(180deg,#111 0%,#0a0a0a 100%);font-size:15px;line-height:1.5;box-shadow:0 18px 36px rgba(0,0,0,0.32)}
+    #mp-wrapper *{box-sizing:border-box;margin:0;padding:0}
+    .mp-panel{background:var(--mp-card);border-radius:12px;padding:clamp(10px,2vw,14px);border:1px solid rgba(255,255,255,0.04)}
+    
+    /* 顶部导航栏 */
+    .mp-nav-top{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;align-items:stretch;gap:8px}
+    .mp-nav-link{display:flex;align-items:center;justify-content:center;text-align:center;min-height:44px;padding:10px 8px;color:#74b9ff;text-decoration:none;font-size:13px;border:1px solid #2a2a2a;border-radius:10px;background:rgba(255,255,255,0.02)}
+    .mp-nav-link:last-child{border-right:none}
+    .mp-nav-link.active{color:#ffd32a;font-weight:bold}
+    .mp-reset{min-height:44px;background:#dc3545;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer}
+    
+    /* 第1行：输入控制 */
+    .mp-row-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) auto auto;gap:8px}
+    .mp-input{width:100%;min-width:0;min-height:48px;background:#000;border:1px solid #333;color:#fff;padding:12px 8px;border-radius:10px;text-align:center;font-size:17px}
+    .mp-btn{min-height:48px;padding:12px 14px;border:none;border-radius:10px;color:#fff;font-weight:bold;cursor:pointer;font-size:14px;white-space:nowrap}
+    .mp-exec{background:#007bff} .mp-clear{background:#6c757d}
+    
+    /* 第2行：历史记录（带颜色+滚动） */
+    .mp-scroll{white-space:nowrap;overflow-x:auto;padding:6px 0;min-height:28px;font-size:15px;letter-spacing:1px}
+    .mp-scroll::-webkit-scrollbar{height:3px} .mp-scroll::-webkit-scrollbar-thumb{background:#444;border-radius:2px}
+    
+    /* 第3行：八卦数字（带抵消划线） */
+    .mp-bagua{display:flex;gap:14px;overflow-x:auto;padding:8px 0;font-size:clamp(18px,3.8vw,22px);font-weight:900}
+    .mp-bagua span[data-cancel="1"]{text-decoration:line-through;color:var(--mp-dim)}
+    
+    /* 第4行：主预测 */
+    .mp-pred{display:flex;align-items:center;justify-content:center;gap:18px;min-height:116px}
+    .mp-circle{width:84px;height:84px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;transition:0.25s;border:2px solid #555}
+    .pred-circle{display:inline-flex;align-items:center;justify-content:center;width:84px;height:84px;border-radius:50%;color:#fff;font-size:24px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.2);position:relative;user-select:none;border:2px solid transparent}
+    .circle-red{background:linear-gradient(135deg,#ff4d4d,#cc0000);border-color:#ff8f8f}
+    .circle-blue{background:linear-gradient(135deg,#4d94ff,#0044cc);border-color:#8db7ff}
+    .circle-green{background:linear-gradient(135deg,#33cc33,#008800);border-color:#74f174}
+    .circle-text{text-shadow:1px 1px 2px rgba(0,0,0,0.6);letter-spacing:1px}
+    .circle-glow.circle-red{box-shadow:0 0 8px 2px rgba(255,77,77,0.55)}
+    .circle-glow.circle-blue{box-shadow:0 0 8px 2px rgba(77,148,255,0.55)}
+    .circle-glow.circle-green{box-shadow:0 0 8px 2px rgba(51,204,51,0.55)}
+    .mp-info{flex:1;text-align:left;font-size:14px}
+    .mp-info span{display:block;margin:4px 0}
+    .mp-entropy{color:#f1c40f}
+    
+    /* 第5行：机器人对话 + Web4.0握手 */
+    .mp-robot{padding:8px;background:linear-gradient(135deg,#0d0d0d,#1a1a1a);border-radius:6px;margin-bottom:8px;border:1px solid #222}
+    .mp-robot-title{font-size:11px;color:#666;margin-bottom:4px;letter-spacing:1px}
+    .mp-robot-text{font-size:11px;color:#888;line-height:1.5;white-space:pre-wrap}
+    .r-handshake{min-height:24px;background:#0d0d0d;display:flex;justify-content:center;align-items:center;font-family:'Courier New',monospace;font-size:9px;color:#2a2a2a;letter-spacing:2px;overflow:hidden;white-space:nowrap;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;margin-top:6px}
+    
+    /* 第6行：18×6 路单网格 */
+    .mp-grid{display:grid;grid-template-columns:repeat(18,1fr);grid-template-rows:repeat(6,1fr);gap:2px;width:100%;min-height:210px;aspect-ratio:18/6;background:#222;border-radius:10px;padding:4px}
+    .mp-cell{background:#0a0a0a;border-radius:4px;display:flex;align-items:center;justify-content:center;position:relative}
+    .mp-cell .dot{width:12px;height:12px;border-radius:50%}
+    .mp-cell .dot.red{background:var(--mp-red)} .mp-cell .dot.blue{background:var(--mp-blue)} .mp-cell .dot.green{background:var(--mp-green)}
+    .mp-cell .ties{position:absolute;bottom:1px;right:2px;font-size:7px;color:#fff;line-height:1}
+    
+    /* 链接状态指示 */
+    .mp-link-ok{color:#2ecc71!important} .mp-link-err{color:#e74c3c!important;text-decoration:line-through}
+
+    @media (max-width: 560px){
+      #mp-wrapper{width:100%;min-height:100vh;margin:0;border-radius:0}
+      .mp-nav-top{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .mp-row-input{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .mp-btn,.mp-reset{width:100%}
+      .mp-pred{flex-direction:row;align-items:center}
+      .mp-grid{min-height:180px}
+    }
+  </style>
+
+  <!-- 🔗 顶部导航：子系统 | 捐赠 | 自检 | 重置 -->
+  <div class="mp-nav-top mp-panel">
+    <a href="/?t=9" class="mp-nav-link mp-check-link" data-url="/?t=9">🔗子系统</a>
+    <a href="/?t=9" class="mp-nav-link mp-check-link" data-url="/?t=9">💎捐赠</a>
+    <a href="/?t=9" class="mp-nav-link mp-check-link" data-url="/?t=9">🔍自检</a>
+    <button class="mp-reset" onclick="mp_fullReset()">🗑️重置</button>
+  </div>
+
+  <!-- 第1行：输入 + 执行/清除 -->
+  <div class="mp-row-input mp-panel">
+    <input type="number" id="mp-num" class="mp-input" placeholder="分子" inputmode="numeric">
+    <input type="number" id="mp-den" class="mp-input" placeholder="分母" inputmode="numeric">
+    <button class="mp-btn mp-exec" onclick="mp_exec()">执行</button>
+    <button class="mp-btn mp-clear" onclick="mp_clearInput()">清除</button>
+  </div>
+
+  <!-- 第2行：历史记录（带颜色） -->
+  <div class="mp-panel">
+    <div id="mp-history" class="mp-scroll">历史记录: 等待输入...</div>
+  </div>
+
+  <!-- 第3行：八卦数字（带抵消） -->
+  <div class="mp-panel">
+    <div id="mp-bagua" class="mp-bagua">八卦: --</div>
+  </div>
+
+  <!-- 第4行：主预测 + 熵值 -->
+  <div class="mp-pred mp-panel">
+    <div id="mp-circle" class="mp-circle">?</div>
+    <div class="mp-info">
+      <span id="mp-action">等待趋势</span>
+      <span class="mp-entropy">熵值: <span id="mp-ent">0.0%</span></span>
+    </div>
+  </div>
+
+  <!-- 第5行：机器人对话 + Web4.0协议握手 -->
+<div data-robot-dialog-slot data-robot-variant="mobile"></div>
+  
+
+  <!-- 第6行：18×6 状态机网格 -->
+  <div class="mp-panel">
+    <div id="mp-grid" class="mp-grid"></div>
+  </div>
+
+  <script>
+  (function(){
+    const mpData = [];
+    const $ = id => document.getElementById(id);
+
+    // 手机端输入按完整数字归一为 0-9 点数后再参与计算。
+    // 例如 90 -> 9，避免第二局开始仍把原始 90 直接拿去比较而误判。
+    const normalizeMpValue = rawValue => {
+      const digits = String(rawValue ?? '').replace(/\D/g, '');
+      if(!digits) return NaN;
+      return digits.split('').reduce((sum, digit) => sum + Number(digit || 0), 0) % 10;
+    };
+    const toDigits = rawValue => String(rawValue ?? '').replace(/\D/g, '').split('').filter(Boolean).map(Number);
+    const padTwoDigits = digits => {
+      const source = digits.slice(0, 2);
+      while(source.length < 2) source.unshift(0);
+      return source;
+    };
+    const buildGeneDescriptor = item => {
+      const topRow = padTwoDigits(toDigits(item.rawN ?? item.n));
+      const bottomRow = padTwoDigits(toDigits(item.rawD ?? item.d));
+      const genes = [topRow[0], topRow[1], bottomRow[0], bottomRow[1]];
+      const allDigits = [...toDigits(item.rawN ?? item.n), ...toDigits(item.rawD ?? item.d)];
+      const baseColorKey = colorOf(item.n, item.d);
+      return {
+        num: item.n,
+        den: item.d,
+        genes,
+        allDigits,
+        baseColor: baseColorKey === 'P' ? 'blue' : (baseColorKey === 'R' ? 'red' : 'green')
+      };
+    };
+    function calculatePredictionCircle(curr, history) {
+      const { num, den, genes, allDigits, baseColor } = curr;
+      const [topL, topR, botL, botR] = genes;
+      const sum = arr => arr.reduce((a, b) => a + b, 0);
+      const hasNum = (arr, target) => arr.includes(target);
+      const isOdd = n => Math.abs(n % 2) === 1;
+      const isEven = n => Math.abs(n % 2) === 0;
+
+      let finalColor = baseColor === 'green' ? 'green' : baseColor;
+      let finalText = '';
+      let isGreen = false;
+      let greenText = '';
+
+      const totalSum = num + den;
+      const sValue = totalSum === 0 ? 0 : (Math.abs(num - den) / totalSum) * 100;
+      if (totalSum > 0 && sValue < 5) {
+        isGreen = true;
+        greenText = '平';
+      }
+
+      if (num === den) {
+        isGreen = true;
+        greenText = '平';
+      }
+
+      if ((num === 0 && den !== 0) || (num !== 0 && den === 0)) {
+        isGreen = true;
+        greenText = '';
+      }
+
+      if (topL + botR === 9 && topR + botL === 9) {
+        isGreen = true;
+        greenText = '平';
+      }
+
+      const oddCount = genes.filter(isOdd).length;
+      if (oddCount === 4 || oddCount === 0) {
+        isGreen = true;
+        greenText = '平';
+      }
+
+      const sortedDigits = [...new Set(allDigits)].sort((a, b) => a - b);
+      for (let i = 0; i <= sortedDigits.length - 3; i += 1) {
+        if (sortedDigits[i + 1] - sortedDigits[i] === 1 && sortedDigits[i + 2] - sortedDigits[i + 1] === 1) {
+          isGreen = true;
+          greenText = '平';
+        }
+      }
+
+      if (history.length > 0) {
+        const prevDiff = Math.abs(history[0].num - history[0].den);
+        const currDiff = Math.abs(num - den);
+        if (prevDiff > 1 && currDiff === 1) {
+          isGreen = true;
+          greenText = '平';
+        }
+      }
+
+      if (history.length >= 2) {
+        const prev1AbsSum = Math.abs(history[0].num) + Math.abs(history[0].den);
+        const prev2AbsSum = Math.abs(history[1].num) + Math.abs(history[1].den);
+        if (prev1AbsSum === prev2AbsSum) {
+          isGreen = true;
+          greenText = '平';
+        }
+      }
+
+      const pairCodes = ['05', '50', '16', '61', '27', '72', '38', '83', '49', '94'];
+      const candidatePairs = [
+        `${topL}${topR}`, `${botL}${botR}`, `${topL}${botL}`,
+        `${topR}${botR}`, `${topL}${botR}`, `${topR}${botL}`
+      ];
+      if (candidatePairs.some(pair => pairCodes.includes(pair))) {
+        isGreen = true;
+        greenText = greenText || '';
+      }
+
+      if (isGreen) {
+        return { color: 'green', text: greenText };
+      }
+
+      let isHold = false;
+      let isChange = false;
+
+      if (Math.abs(num - den) >= 5) isHold = true;
+      if (allDigits.some(value => value === 8 || value === 9)) isHold = true;
+
+      const avg = genes.length ? sum(genes) / genes.length : 0;
+      if (avg === 5) isHold = true;
+      if (avg < 3 || avg > 7) isChange = true;
+
+      if (topL + botL > topR + botR) isHold = true;
+
+      if (isOdd(num) && isOdd(den)) isHold = true;
+      if ((isOdd(num) && isEven(den)) || (isEven(num) && isOdd(den))) isChange = true;
+
+      const zeroCount = allDigits.filter(g => g === 0).length;
+      if (zeroCount > 0) isChange = true;
+      if (zeroCount > 0 && zeroCount % 2 === 0) isHold = true;
+
+      if ((topL === 4 || topL === 9) && num > den) isHold = true;
+      if (topL === 5 && num < den) isChange = true;
+
+      if (history.length >= 1) {
+        if (Math.abs(history[0].num - history[0].den) === 1 && Math.abs(num - den) === 1) isHold = true;
+        const p1C = history[0].baseColor;
+        if (p1C === finalColor) isHold = true;
+        if (history.length >= 2) {
+          const p2C = history[1].baseColor;
+          if (p2C !== p1C && finalColor === p2C) isChange = true;
+          if (history.length >= 3) {
+            const p3C = history[2].baseColor;
+            if (p3C === p2C && p2C === p1C && p1C === finalColor) isHold = true;
+          }
+        }
+      }
+
+      if (isChange) {
+        finalText = '变';
+      } else if (isHold) {
+        finalText = '持';
+      }
+
+      return { color: finalColor, text: finalText };
+    }
+    function renderPredictionCircle(result, context) {
+      const circle = $('mp-circle');
+      const act = $('mp-action');
+      if (!circle || !act) return;
+
+      if (!result) {
+        circle.className = 'mp-circle';
+        circle.textContent = '?';
+        act.textContent = '等待趋势';
+        return;
+      }
+
+      circle.className = `mp-circle pred-circle circle-${result.color}${result.text ? ' circle-glow' : ''}`;
+      circle.innerHTML = `<span class="circle-text">${result.text || ''}</span>`;
+
+      const colorLabel = result.color === 'red' ? '红' : (result.color === 'blue' ? '蓝' : '绿');
+      if (result.color === 'green') {
+        act.textContent = result.text === '平' ? '下局: 绿+平 | 平衡 / 平牌信号' : '下局: 绿 | 观望 / 混沌';
+      } else if (result.text) {
+        act.textContent = `下局: ${colorLabel}+${result.text} | ${result.text === '持' ? '持续特征' : '变盘信号'}`;
+      } else {
+        act.textContent = `下局: ${colorLabel} | 一般信号`;
+      }
+    }
+    
+    // ✅ 颜色逻辑修复：分子大=蓝('P')，分母大=红('R')，相等=绿('G')
+    const colorOf = (n,d) => {
+      if(n===d) return 'G';
+      return n>d ? 'P' : 'R';  // P=Blue, R=Red, G=Green
+    };
+    
+    // ✅ 八卦映射（您定义的规则）
+    const baguaMap = {
+      'PPP':1,'BPP':2,'PBP':3,'BBP':4,
+      'PPB':5,'BPB':6,'PBB':7,'BBB':8
+    };
+    // 八卦编码统一使用 P/B：蓝=P，红=B，平局G临时并入蓝P 参与编码。
+    const toBaguaChar = c => {
+      if (c === 'R') return 'B';
+      if (c === 'G') return 'P';
+      return 'P';
+    };
+
+    // ================= 执行按钮 =================
+    window.mp_exec = function(){
+      const rawN = $('mp-num').value.trim();
+      const rawD = $('mp-den').value.trim();
+      const n = normalizeMpValue(rawN);
+      const d = normalizeMpValue(rawD);
+      if(!/^\d+$/.test(rawN)||!/^\d+$/.test(rawD)||isNaN(n)||isNaN(d)) return alert('请输入有效非负整数');
+      
+      mpData.push({ rawN, rawD, n, d });
+      $('mp-num').value=''; $('mp-den').value='';
+      render();
+      mp_checkLinks(); // 输入后自动复检链接
+    };
+    
+    // ================= 清除（优先清输入，否则仅撤销最近1组） =================
+    window.mp_clearInput = function(){
+      const numEl = $('mp-num');
+      const denEl = $('mp-den');
+      const hasDraft = Boolean((numEl.value || '').trim() || (denEl.value || '').trim());
+
+      if (hasDraft) {
+        numEl.value=''; denEl.value='';
+        numEl.focus();
+        return;
+      }
+
+      if (mpData.length > 0) {
+        mpData.pop();
+        render();
+      }
+
+      numEl.focus();
+    };
+    
+    // ================= 全重置（清空所有） =================
+    window.mp_fullReset = function(){
+      if(confirm('确认重置？将清空所有历史数据与预测状态')){
+        mpData.length=0;
+        $('mp-num').value=''; $('mp-den').value='';
+        render();
+      }
+    };
+    
+    // ================= 链接自检 =================
+    window.mp_checkLinks = function(){
+      document.querySelectorAll('.mp-check-link').forEach(link=>{
+        const targetUrl = link.getAttribute('data-url');
+        const exists = Boolean(targetUrl);
+        link.classList.toggle('mp-link-ok', exists);
+        link.classList.toggle('mp-link-err', !exists);
+        if(!exists) console.warn('⚠️ 链接目标未配置');
+      });
+    };
+    
+    // ================= 主渲染函数 =================
+    function render(){
+      // 🔹 第2行：历史记录（带颜色）
+      const h = $('mp-history');
+      if(!mpData.length){
+        h.innerHTML = '<span style="color:#666">历史记录: 等待输入...</span>';
+      }else{
+        h.innerHTML = mpData.map(x=>{
+          const c = colorOf(x.n,x.d);
+          const color = c==='P'?'#457b9d':c==='R'?'#e63946':'#2a9d8f';
+          const rawN = String(x.rawN ?? x.n);
+          const displayRaw = `${x.rawN ?? x.n}/${x.rawD ?? x.d}`;
+          const label = (x.n===7&&x.d===6)
+            ? '👑'
+            : (rawN.length===3 && rawN.split('').reduce((sum, digit) => sum + Number(digit || 0), 0) === 8)
+              ? '🐼'
+              : displayRaw;
+          return `<span style="color:${color};margin:0 0.45em">${label}</span>`;
+        }).join('  ');
+      }
+      h.scrollLeft = h.scrollWidth;
+
+      // 🔹 第3行：八卦 + 抵消规则
+      const arr = mpData.map(x=>toBaguaChar(colorOf(x.n,x.d)));
+      let nums = [];
+      for(let i=0;i<=arr.length-3;i+=3){
+        const s = arr[i]+arr[i+1]+arr[i+2];
+        nums.push(baguaMap[s]||0);
+      }
+      
+      // 抵消规则：合9 / 重复 / 差1或3
+      let cancel = new Set();
+      for(let i=0;i<nums.length;i++){
+        for(let j=i+1;j<nums.length;j++){
+          if(nums[i]+nums[j]===9) {cancel.add(i);cancel.add(j);}
+          if(nums[i]===nums[j]) {cancel.add(i);cancel.add(j);}
+          if(Math.abs(nums[i]-nums[j])===1||Math.abs(nums[i]-nums[j])===3) {cancel.add(i);cancel.add(j);}
+        }
+      }
+      
+      $('mp-bagua').innerHTML = nums.length ? 
+        nums.map((n,i)=>`<span ${cancel.has(i)?'data-cancel="1"':''}>${n}</span>`).join(' ') 
+        : '<span style="color:#666">八卦: --</span>';
+
+      // 🔹 第4行：预测逻辑（形态基因分析引擎）
+      const circle = $('mp-circle'), act = $('mp-action'), ent = $('mp-ent');
+      if(!mpData.length){
+        renderPredictionCircle(null);
+        ent.textContent='0.0%';
+        renderGrid(); return;
+      }
+
+      const currentRoundData = buildGeneDescriptor(mpData.at(-1));
+      const historyData = mpData
+        .slice(0, -1)
+        .reverse()
+        .map(buildGeneDescriptor);
+      const result = calculatePredictionCircle(currentRoundData, historyData);
+      renderPredictionCircle(result, currentRoundData);
+      
+      // 动态熵值（近10局香农熵）
+      const recent = mpData.slice(-10).map(x=>colorOf(x.n,x.d));
+      const cnt={R:0,P:0,G:0}; recent.forEach(c=>cnt[c]++);
+      let H=0,total=recent.length;
+      for(let k in cnt) if(cnt[k]){ let p=cnt[k]/total; H -= p*Math.log2(p); }
+      ent.textContent = ((H/Math.log2(3))*100).toFixed(1)+'%';
+      
+      // 🔹 第6行：路单网格
+      renderGrid();
+    }
+    
+    // 🔹 18×6 网格渲染（同色下沉/异色右移/平局叠加/）
+    function renderGrid(){
+      const g = $('mp-grid'); g.innerHTML='';
+      const R=6,C=18;
+      let grid = Array.from({length:R},()=>Array(C).fill(null));
+      let r=0,c=0;
+      
+      mpData.forEach(item=>{
+        const col = colorOf(item.n,item.d);
+        if(col==='G'){ // 平局：叠加"/"
+          if(grid[r][c]) grid[r][c].ties++;
+          else grid[r][c]={col,ties:1};
+          return;
+        }
+        if(grid[r][c]){
+          if(grid[r][c].col!==col){
+            c++;
+            r=0;
+          } else {
+            const nextRow = r + 1;
+            if(nextRow < R && !grid[nextRow][c]){
+              r = nextRow;
+            } else {
+              c++;
+            }
+          }
+        }
+        if(c>=C){ c=C-1; r=Math.min(r, R-1); return; } // 满列锁定
+        if(r>=R) r=R-1;
+        grid[r][c] = grid[r][c] || {col,ties:0};
+      });
+      
+      // 渲染单元格
+      for(let i=0;i<R;i++){
+        for(let j=0;j<C;j++){
+          const cell = document.createElement('div'); cell.className='mp-cell';
+          const v = grid[i][j];
+          if(v){
+            const dot = document.createElement('div');
+            dot.className = `dot ${v.col==='P'?'blue':(v.col==='R'?'red':'green')}`;
+            if(v.ties>0){
+              const t = document.createElement('span');
+              t.className='ties'; t.textContent = '/'.repeat(v.ties);
+              cell.appendChild(t);
+            }
+            cell.appendChild(dot);
+          }
+          g.appendChild(cell);
+        }
+      }
+    }
+    
+    // ================= 初始化 =================
+    document.addEventListener('DOMContentLoaded', ()=>{
+      mp_checkLinks(); // 首次加载检查链接
+      render();
+    });
+    
+    // 兼容：直接粘贴时可能已加载完成
+    if(document.readyState!=='loading') { mp_checkLinks(); render(); }
+    
+  })();
+  </script>
+</div>

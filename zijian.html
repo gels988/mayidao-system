@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <title>系统自检中心 - 三层架构验证</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -190,6 +190,7 @@
       margin-left: 8px;
     }
   </style>
+    <script src="js/shared_identity.js"></script>
 </head>
 <body>
   <div class="container">
@@ -758,6 +759,41 @@
         return false;
       }
     }
+
+    async function checkDesktopInteractionContracts() {
+      log('检查电脑端按钮契约...', 'INFO');
+
+      try {
+        const response = await fetch('index.html', { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error('index.html 读取失败: ' + response.status);
+        }
+
+        const html = await response.text();
+        const desktopBindingOk = /<button class="btn-clear" onclick="clearCurrentInputs\(\)">清除<\/button>/.test(html);
+        const desktopHandlerOk = /function clearCurrentInputs\(\)/.test(html);
+        const inputBindingOk = /<button class="btn-input" onclick="addRecord\(\)">输入<\/button>/.test(html);
+        const inputHandlerOk = /async function addRecord\(\)/.test(html);
+        const resetBindingOk = /<button class="exit-btn" onclick="clearAll\(\)">Exit<\/button>/.test(html);
+        const resetHandlerOk = /function clearAll\(\)/.test(html);
+
+        const allPass = desktopBindingOk && desktopHandlerOk && inputBindingOk && inputHandlerOk && resetBindingOk && resetHandlerOk;
+        const details = [
+          `电脑端输入按钮: ${inputBindingOk ? '✅' : '❌'}`,
+          `电脑端输入函数: ${inputHandlerOk ? '✅' : '❌'}`,
+          `电脑端按钮绑定: ${desktopBindingOk ? '✅' : '❌'}`,
+          `电脑端清除函数: ${desktopHandlerOk ? '✅' : '❌'}`,
+          `电脑端重置按钮: ${resetBindingOk ? '✅' : '❌'}`,
+          `电脑端重置函数: ${resetHandlerOk ? '✅' : '❌'}`
+        ].join(' | ');
+
+        addCheckResult('🖥️ 电脑端按钮契约', allPass ? 'pass' : 'fail', details);
+        return allPass;
+      } catch (error) {
+        addCheckResult('🖥️ 电脑端按钮契约', 'fail', error.message);
+        return false;
+      }
+    }
     
     // ========== 自动修复系统 ==========
     
@@ -821,6 +857,7 @@
       log('\n[阶段 1/3] 基础环境检查', 'INFO');
       checkBrowserEnvironment();
       checkLocalStorage();
+      await checkDesktopInteractionContracts();
       
       // 阶段2: 通讯检测（如未连接则尝试）
       log('\n[阶段 2/3] 主系统通讯检查', 'INFO');

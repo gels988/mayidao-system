@@ -1,0 +1,850 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>MAYIJU 鎵嬫満绔富鐣岄潰</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/db_client.js"></script>
+    <script src="../js/shared_identity.js"></script>
+    <script src="../js/robot_dialog_component.js"></script>
+    <style>
+        :root {
+            --mp-bg: #05070d;
+            --mp-card: #101722;
+            --mp-panel: #121826;
+            --mp-red: #e63946;
+            --mp-blue: #457b9d;
+            --mp-green: #2a9d8f;
+            --mp-text: #f5f7fb;
+            --mp-dim: #8fa0b8;
+            --mp-border: rgba(255,255,255,0.06);
+        }
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            background: var(--mp-bg);
+            color: var(--mp-text);
+            font-family: Arial, sans-serif;
+        }
+        body {
+            min-height: 100vh;
+        }
+        #mp-wrapper {
+            width: min(100%, 560px);
+            min-height: 100vh;
+            margin: 0 auto;
+            padding: clamp(12px, 3.4vw, 18px);
+            display: grid;
+            gap: 12px;
+            align-content: start;
+            background: linear-gradient(180deg, #0b1019 0%, #05070d 100%);
+        }
+        .mp-panel {
+            background: var(--mp-card);
+            border-radius: 14px;
+            padding: clamp(12px, 2.8vw, 16px);
+            border: 1px solid var(--mp-border);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.24);
+        }
+        .mp-profile {
+            display: grid;
+            gap: 8px;
+        }
+        .mp-profile-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .mp-profile-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .mp-profile-muted {
+            color: var(--mp-dim);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .mp-profile-grid {
+            display: grid;
+            grid-template-columns: minmax(72px, 0.9fr) minmax(0, 1.1fr);
+            gap: 8px 12px;
+            font-size: 14px;
+        }
+        .mp-profile-grid .value {
+            text-align: right;
+            color: #ffd166;
+            word-break: break-word;
+        }
+        .mp-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: bold;
+            background: rgba(31,111,235,0.15);
+            color: #7cc4ff;
+            border: 1px solid rgba(31,111,235,0.45);
+        }
+        .mp-nav-top {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+            gap: 8px;
+        }
+        .mp-nav-link, .mp-reset, .mp-profile-btn {
+            min-height: 46px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 14px;
+            text-decoration: none;
+            border: 1px solid #253247;
+            background: var(--mp-panel);
+            color: #dce6f5;
+            cursor: pointer;
+        }
+        .mp-nav-link.active {
+            color: #ffd166;
+            font-weight: bold;
+        }
+        .mp-reset {
+            background: #dc3545;
+            color: #fff;
+            border: none;
+        }
+        .mp-row-input {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) auto auto;
+            gap: 8px;
+        }
+        .mp-input {
+            width: 100%;
+            min-width: 0;
+            min-height: 50px;
+            background: #000;
+            border: 1px solid #334155;
+            color: #fff;
+            padding: 12px 10px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .mp-btn {
+            min-height: 50px;
+            padding: 12px 14px;
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .mp-exec { background: #1f6feb; }
+        .mp-clear { background: #5c6778; }
+        .mp-scroll {
+            white-space: nowrap;
+            overflow-x: auto;
+            padding: 6px 0;
+            min-height: 30px;
+            font-size: 15px;
+            letter-spacing: 1px;
+        }
+        .mp-scroll::-webkit-scrollbar { height: 4px; }
+        .mp-scroll::-webkit-scrollbar-thumb { background: #425068; border-radius: 999px; }
+        .mp-bagua {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            padding: 8px 0;
+            font-size: clamp(18px, 4vw, 22px);
+            font-weight: 900;
+        }
+        .mp-bagua span[data-cancel="1"] {
+            text-decoration: line-through;
+            color: var(--mp-dim);
+        }
+        .mp-pred {
+            display: grid;
+            grid-template-columns: 92px minmax(0, 1fr);
+            gap: 16px;
+            align-items: center;
+            min-height: 126px;
+        }
+        .mp-circle {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            background: #273244;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid #425068;
+            margin: 0 auto;
+        }
+        .pred-circle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            position: relative;
+            user-select: none;
+            border: 2px solid transparent;
+        }
+        .circle-red { background: linear-gradient(135deg,#ff4d4d,#cc0000); border-color: #ff8f8f; }
+        .circle-blue { background: linear-gradient(135deg,#4d94ff,#0044cc); border-color: #8db7ff; }
+        .circle-green { background: linear-gradient(135deg,#33cc33,#008800); border-color: #74f174; }
+        .circle-text { text-shadow: 1px 1px 2px rgba(0,0,0,0.6); letter-spacing: 1px; }
+        .circle-glow.circle-red { box-shadow: 0 0 8px 2px rgba(255,77,77,0.55); }
+        .circle-glow.circle-blue { box-shadow: 0 0 8px 2px rgba(77,148,255,0.55); }
+        .circle-glow.circle-green { box-shadow: 0 0 8px 2px rgba(51,204,51,0.55); }
+        .mp-info {
+            min-width: 0;
+            font-size: 14px;
+        }
+        .mp-info span {
+            display: block;
+            margin: 4px 0;
+        }
+        .mp-entropy { color: #f1c40f; }
+        .mp-grid {
+            display: grid;
+            grid-template-columns: repeat(18, 1fr);
+            grid-template-rows: repeat(6, minmax(24px, 1fr));
+            gap: 2px;
+            width: 100%;
+            min-height: 210px;
+            background: #1b2331;
+            border-radius: 12px;
+            padding: 4px;
+            overflow: hidden;
+        }
+        .mp-cell {
+            background: #0a0f17;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .mp-cell .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .mp-cell .dot.red { background: var(--mp-red); }
+        .mp-cell .dot.blue { background: var(--mp-blue); }
+        .mp-cell .dot.green { background: var(--mp-green); }
+        .mp-cell .ties {
+            position: absolute;
+            bottom: 1px;
+            right: 2px;
+            font-size: 7px;
+            color: #fff;
+            line-height: 1;
+        }
+        .mp-link-ok { color: #3ddc97 !important; }
+        .mp-link-err { color: #ff7b7b !important; text-decoration: line-through; }
+        .mp-sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        @media (max-width: 560px) {
+            #mp-wrapper {
+                width: 100%;
+                padding: 12px;
+            }
+            .mp-nav-top {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .mp-row-input {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .mp-btn, .mp-reset, .mp-profile-btn {
+                width: 100%;
+            }
+            .mp-pred {
+                grid-template-columns: 1fr;
+                justify-items: center;
+                text-align: center;
+            }
+            .mp-info {
+                text-align: center;
+            }
+            .mp-profile-grid {
+                grid-template-columns: 1fr;
+            }
+            .mp-profile-grid .value {
+                text-align: left;
+            }
+            .mp-grid {
+                min-height: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="mp-wrapper">
+    <div class="mp-panel mp-profile">
+        <div class="mp-profile-head">
+            <div>
+                <div class="mp-profile-title">鎵嬫満绔富鐣岄潰</div>
+                <div class="mp-profile-muted">绉诲姩绔嫭绔嬮娴嬫鏋讹紝鐢佃剳绔敞鍐岋紝鎵嬫満绔悓姝ヨ韩浠戒笌璧勬枡銆?/div>
+            </div>
+            <span id="mp-profileSync" class="mp-badge">绛夊緟鍚屾</span>
+        </div>
+        <div class="mp-profile-grid">
+            <span>鏄剧ず鍚嶇О</span><span class="value" id="mp-profileName">鏈悓姝?/span>
+            <span>閭/鎵嬫満</span><span class="value" id="mp-profileContact">鏈悓姝?/span>
+            <span>G-Gas</span><span class="value" id="mp-profileGas">180</span>
+        </div>
+        <button class="mp-profile-btn" type="button" onclick="mp_refreshProfile()">鍒锋柊璧勬枡</button>
+    </div>
+
+    <div class="mp-nav-top mp-panel">
+        <a href="./subsystem.html" class="mp-nav-link mp-check-link" data-url="./subsystem.html">馃敆瀛愮郴缁?/a>
+        <a href="./donation.html" class="mp-nav-link mp-check-link" data-url="./donation.html">馃拵鎹愯禒</a>
+        <a href="./selfcheck.html" class="mp-nav-link mp-check-link" data-url="./selfcheck.html">馃攳鑷</a>
+        <button class="mp-reset" onclick="mp_fullReset()">馃棏锔忛噸缃?/button>
+    </div>
+
+    <div class="mp-row-input mp-panel">
+        <input type="number" id="mp-num" class="mp-input" placeholder="鍒嗗瓙" inputmode="numeric">
+        <input type="number" id="mp-den" class="mp-input" placeholder="鍒嗘瘝" inputmode="numeric">
+        <button class="mp-btn mp-exec" onclick="mp_exec()">鎵ц</button>
+        <button class="mp-btn mp-clear" onclick="mp_clearInput()">娓呴櫎</button>
+    </div>
+
+    <div class="mp-panel">
+        <div id="mp-history" class="mp-scroll">鍘嗗彶璁板綍: 绛夊緟杈撳叆...</div>
+    </div>
+
+    <div class="mp-panel">
+        <div id="mp-bagua" class="mp-bagua">鍏崷: --</div>
+    </div>
+
+    <div class="mp-pred mp-panel">
+        <div id="mp-circle" class="mp-circle">?</div>
+        <div class="mp-info">
+            <span class="mp-sr-only">棰勬祴鍦嗗湀</span>
+            <span id="mp-action">绛夊緟瓒嬪娍</span>
+            <span class="mp-entropy">鐔靛€? <span id="mp-ent">0.0%</span></span>
+        </div>
+    </div>
+
+    <div data-robot-dialog-slot data-robot-variant="mobile"></div>
+
+    <div class="mp-panel">
+        <div id="mp-grid" class="mp-grid"></div>
+    </div>
+</div>
+
+<script>
+(function(){
+  const mpData = [];
+  const $ = id => document.getElementById(id);
+  const CORE_SELECTORS = ['#mp-num', '#mp-den', '#mp-history', '#mp-bagua', '#mp-circle', '#mp-grid'];
+  const RUNTIME_SELF_CHECK_MS = 30000;
+  const HEARTBEAT_MS = 60000;
+  const HASH_DIFF_THRESHOLD = 5;
+
+  function saveSelfCheckState(payload) {
+    try {
+      localStorage.setItem('mayiju_mobile_portal_selfcheck', JSON.stringify({
+        ...payload,
+        at: new Date().toISOString()
+      }));
+    } catch (error) {
+      console.warn('[馃悳] 鑷鐘舵€佸啓鍏ュけ璐?, error);
+    }
+  }
+
+  function hashText(input) {
+    let hash = 2166136261;
+    for (let i = 0; i < input.length; i += 1) {
+      hash ^= input.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(16);
+  }
+
+  function getPortalSnapshot() {
+    const historyText = $('mp-history')?.textContent?.trim() || '';
+    const baguaText = $('mp-bagua')?.textContent?.trim() || '';
+    const actionText = $('mp-action')?.textContent?.trim() || '';
+    const entropyText = $('mp-ent')?.textContent?.trim() || '';
+    const gridDotCount = document.querySelectorAll('#mp-grid .dot').length;
+    return {
+      idsOk: CORE_SELECTORS.every(selector => document.querySelector(selector)),
+      historyText,
+      baguaText,
+      actionText,
+      entropyText,
+      gridDotCount,
+      hash: hashText([historyText, baguaText, actionText, entropyText, gridDotCount].join('|'))
+    };
+  }
+
+  function getRemoteMarkerSnapshot(html) {
+    const markers = [
+      'id="mp-num"',
+      'id="mp-den"',
+      'id="mp-history"',
+      'id="mp-bagua"',
+      'id="mp-circle"',
+      'id="mp-grid"',
+      'window.mp_exec',
+      'window.mp_clearInput',
+      'window.mp_fullReset',
+      '棰勬祴鍦嗗湀'
+    ];
+    const hitCount = markers.filter(marker => html.includes(marker)).length;
+    return {
+      hitCount,
+      total: markers.length,
+      hash: hashText(markers.map(marker => html.includes(marker) ? '1' : '0').join(''))
+    };
+  }
+
+  async function compareLocalAndRemoteHash() {
+    try {
+      const response = await fetch(window.location.href, { method: 'GET', cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error('杩滅椤甸潰璇诲彇澶辫触: ' + response.status);
+      }
+      const remoteHtml = await response.text();
+      const localSnapshot = getPortalSnapshot();
+      const remoteSnapshot = getRemoteMarkerSnapshot(remoteHtml);
+      const remoteCoverage = (remoteSnapshot.hitCount / remoteSnapshot.total) * 100;
+      const diffPercent = Math.max(0, 100 - remoteCoverage);
+      const ok = diffPercent <= HASH_DIFF_THRESHOLD;
+      return {
+        ok,
+        diffPercent,
+        localHash: localSnapshot.hash,
+        remoteHash: remoteSnapshot.hash
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        diffPercent: 100,
+        error: error.message
+      };
+    }
+  }
+
+  async function runPortalSelfCheck(stage) {
+    const snapshot = getPortalSnapshot();
+    const visibleOk = ($('mp-circle')?.offsetHeight || 0) > 0 && ($('mp-grid')?.offsetHeight || 0) > 0;
+    const remoteCompare = await compareLocalAndRemoteHash();
+    const ok = snapshot.idsOk && visibleOk && remoteCompare.ok;
+    const payload = {
+      stage,
+      ok,
+      idsOk: snapshot.idsOk,
+      visibleOk,
+      diffPercent: remoteCompare.diffPercent,
+      localHash: remoteCompare.localHash || snapshot.hash,
+      remoteHash: remoteCompare.remoteHash || '',
+      error: remoteCompare.error || ''
+    };
+    saveSelfCheckState(payload);
+
+    if (!ok) {
+      console.warn('[馃悳] 鎵嬫満绔嚜妫€寮傚父锛岀瓑寰呰嚜鎰?..', payload);
+    }
+
+    return payload;
+  }
+
+  window.mp_refreshProfile = async function () {
+    const profile = window.MayijuIdentity
+      ? await window.MayijuIdentity.syncProfile({ device: 'mobile' })
+      : null;
+    const safeProfile = profile || {};
+    $('mp-profileName').textContent = safeProfile.display_name || safeProfile.email || safeProfile.phone || '鏈櫥褰?;
+    $('mp-profileContact').textContent = safeProfile.email || safeProfile.phone || '璇峰厛鍦ㄧ數鑴戠娉ㄥ唽/鐧诲綍';
+    $('mp-profileGas').textContent = String(safeProfile.gas_balance ?? 180);
+    $('mp-profileSync').textContent = safeProfile.id ? '宸插悓姝? : '鏈櫥褰?;
+  };
+
+  const normalizeMpValue = rawValue => {
+    const digits = String(rawValue ?? '').replace(/\D/g, '');
+    if (!digits) return NaN;
+    return digits.split('').reduce((sum, digit) => sum + Number(digit || 0), 0) % 10;
+  };
+  const toDigits = rawValue => String(rawValue ?? '').replace(/\D/g, '').split('').filter(Boolean).map(Number);
+  const padTwoDigits = digits => {
+    const source = digits.slice(0, 2);
+    while (source.length < 2) source.unshift(0);
+    return source;
+  };
+  const colorOf = (n, d) => {
+    if (n === d) return 'G';
+    return n > d ? 'P' : 'R';
+  };
+  const baguaMap = {
+    'PPP': 1, 'BPP': 2, 'PBP': 3, 'BBP': 4,
+    'PPB': 5, 'BPB': 6, 'PBB': 7, 'BBB': 8
+  };
+  const toBaguaChar = c => {
+    if (c === 'R') return 'B';
+    if (c === 'G') return 'P';
+    return 'P';
+  };
+  const buildGeneDescriptor = item => {
+    const topRow = padTwoDigits(toDigits(item.rawN ?? item.n));
+    const bottomRow = padTwoDigits(toDigits(item.rawD ?? item.d));
+    const genes = [topRow[0], topRow[1], bottomRow[0], bottomRow[1]];
+    const allDigits = [...toDigits(item.rawN ?? item.n), ...toDigits(item.rawD ?? item.d)];
+    const baseColorKey = colorOf(item.n, item.d);
+    return {
+      num: item.n,
+      den: item.d,
+      genes,
+      allDigits,
+      baseColor: baseColorKey === 'P' ? 'blue' : (baseColorKey === 'R' ? 'red' : 'green')
+    };
+  };
+
+  function calculatePredictionCircle(curr, history) {
+    const { num, den, genes, allDigits, baseColor } = curr;
+    const [topL, topR, botL, botR] = genes;
+    const sum = arr => arr.reduce((a, b) => a + b, 0);
+    const isOdd = n => Math.abs(n % 2) === 1;
+    const isEven = n => Math.abs(n % 2) === 0;
+
+    let isGreen = false;
+    let greenText = '';
+
+    const totalSum = num + den;
+    const sValue = totalSum === 0 ? 0 : (Math.abs(num - den) / totalSum) * 100;
+    if (totalSum > 0 && sValue < 5) { isGreen = true; greenText = '骞?; }
+    if (num === den) { isGreen = true; greenText = '骞?; }
+    if ((num === 0 && den !== 0) || (num !== 0 && den === 0)) { isGreen = true; greenText = ''; }
+    if (topL + botR === 9 && topR + botL === 9) { isGreen = true; greenText = '骞?; }
+
+    const oddCount = genes.filter(isOdd).length;
+    if (oddCount === 4 || oddCount === 0) { isGreen = true; greenText = '骞?; }
+
+    const sortedDigits = [...new Set(allDigits)].sort((a, b) => a - b);
+    for (let i = 0; i <= sortedDigits.length - 3; i += 1) {
+      if (sortedDigits[i + 1] - sortedDigits[i] === 1 && sortedDigits[i + 2] - sortedDigits[i + 1] === 1) {
+        isGreen = true;
+        greenText = '骞?;
+      }
+    }
+
+    if (history.length > 0) {
+      const prevDiff = Math.abs(history[0].num - history[0].den);
+      const currDiff = Math.abs(num - den);
+      if (prevDiff > 1 && currDiff === 1) {
+        isGreen = true;
+        greenText = '骞?;
+      }
+    }
+
+    if (history.length >= 2) {
+      const prev1AbsSum = Math.abs(history[0].num) + Math.abs(history[0].den);
+      const prev2AbsSum = Math.abs(history[1].num) + Math.abs(history[1].den);
+      if (prev1AbsSum === prev2AbsSum) {
+        isGreen = true;
+        greenText = '骞?;
+      }
+    }
+
+    const pairCodes = ['05', '50', '16', '61', '27', '72', '38', '83', '49', '94'];
+    const candidatePairs = [
+      `${topL}${topR}`, `${botL}${botR}`, `${topL}${botL}`,
+      `${topR}${botR}`, `${topL}${botR}`, `${topR}${botL}`
+    ];
+    if (candidatePairs.some(pair => pairCodes.includes(pair))) {
+      isGreen = true;
+      greenText = greenText || '';
+    }
+
+    if (isGreen) {
+      return { color: 'green', text: greenText };
+    }
+
+    let isHold = false;
+    let isChange = false;
+
+    if (Math.abs(num - den) >= 5) isHold = true;
+    if (allDigits.some(value => value === 8 || value === 9)) isHold = true;
+
+    const avg = genes.length ? sum(genes) / genes.length : 0;
+    if (avg === 5) isHold = true;
+    if (avg < 3 || avg > 7) isChange = true;
+
+    if (topL + botL > topR + botR) isHold = true;
+    if (isOdd(num) && isOdd(den)) isHold = true;
+    if ((isOdd(num) && isEven(den)) || (isEven(num) && isOdd(den))) isChange = true;
+
+    const zeroCount = allDigits.filter(g => g === 0).length;
+    if (zeroCount > 0) isChange = true;
+    if (zeroCount > 0 && zeroCount % 2 === 0) isHold = true;
+
+    if ((topL === 4 || topL === 9) && num > den) isHold = true;
+    if (topL === 5 && num < den) isChange = true;
+
+    if (history.length >= 1) {
+      if (Math.abs(history[0].num - history[0].den) === 1 && Math.abs(num - den) === 1) isHold = true;
+      const p1C = history[0].baseColor;
+      if (p1C === baseColor) isHold = true;
+      if (history.length >= 2) {
+        const p2C = history[1].baseColor;
+        if (p2C !== p1C && baseColor === p2C) isChange = true;
+        if (history.length >= 3) {
+          const p3C = history[2].baseColor;
+          if (p3C === p2C && p2C === p1C && p1C === baseColor) isHold = true;
+        }
+      }
+    }
+
+    return { color: baseColor, text: isChange ? '鍙? : (isHold ? '鎸? : '') };
+  }
+
+  function renderPredictionCircle(result) {
+    const circle = $('mp-circle');
+    const act = $('mp-action');
+    if (!circle || !act) return;
+
+    if (!result) {
+      circle.className = 'mp-circle';
+      circle.textContent = '?';
+      act.textContent = '绛夊緟瓒嬪娍';
+      return;
+    }
+
+    circle.className = `mp-circle pred-circle circle-${result.color}${result.text ? ' circle-glow' : ''}`;
+    circle.innerHTML = `<span class="circle-text">${result.text || ''}</span>`;
+
+    const colorLabel = result.color === 'red' ? '绾? : (result.color === 'blue' ? '钃? : '缁?);
+    if (result.color === 'green') {
+      act.textContent = result.text === '骞? ? '涓嬪眬: 缁?骞?| 骞宠　 / 骞崇墝淇″彿' : '涓嬪眬: 缁?| 瑙傛湜 / 娣锋矊';
+    } else if (result.text) {
+      act.textContent = `涓嬪眬: ${colorLabel}+${result.text} | ${result.text === '鎸? ? '鎸佺画鐗瑰緛' : '鍙樼洏淇″彿'}`;
+    } else {
+      act.textContent = `涓嬪眬: ${colorLabel} | 涓€鑸俊鍙穈;
+    }
+  }
+
+  window.mp_exec = function () {
+    const rawN = $('mp-num').value.trim();
+    const rawD = $('mp-den').value.trim();
+    const n = normalizeMpValue(rawN);
+    const d = normalizeMpValue(rawD);
+    if (!/^\d+$/.test(rawN) || !/^\d+$/.test(rawD) || isNaN(n) || isNaN(d)) {
+      alert('璇疯緭鍏ユ湁鏁堥潪璐熸暣鏁?);
+      return;
+    }
+
+    mpData.push({ rawN, rawD, n, d });
+    $('mp-num').value = '';
+    $('mp-den').value = '';
+    render();
+    mp_checkLinks();
+  };
+
+  window.mp_clearInput = function () {
+    const numEl = $('mp-num');
+    const denEl = $('mp-den');
+    const hasDraft = Boolean((numEl.value || '').trim() || (denEl.value || '').trim());
+    if (hasDraft) {
+      numEl.value = '';
+      denEl.value = '';
+      numEl.focus();
+      return;
+    }
+    if (mpData.length > 0) {
+      mpData.pop();
+      render();
+    }
+    numEl.focus();
+  };
+
+  window.mp_fullReset = function () {
+    if (confirm('纭閲嶇疆锛熷皢娓呯┖鎵€鏈夊巻鍙叉暟鎹笌棰勬祴鐘舵€?)) {
+      mpData.length = 0;
+      $('mp-num').value = '';
+      $('mp-den').value = '';
+      render();
+    }
+  };
+
+  window.mp_checkLinks = function () {
+    document.querySelectorAll('.mp-check-link').forEach(link => {
+      const targetUrl = link.getAttribute('data-url');
+      const exists = Boolean(targetUrl);
+      link.classList.toggle('mp-link-ok', exists);
+      link.classList.toggle('mp-link-err', !exists);
+    });
+  };
+
+  function render() {
+    const h = $('mp-history');
+    if (!mpData.length) {
+      h.innerHTML = '<span style="color:#666">鍘嗗彶璁板綍: 绛夊緟杈撳叆...</span>';
+    } else {
+      h.innerHTML = mpData.map(x => {
+        const c = colorOf(x.n, x.d);
+        const color = c === 'P' ? '#457b9d' : c === 'R' ? '#e63946' : '#2a9d8f';
+        const rawN = String(x.rawN ?? x.n);
+        const displayRaw = `${x.rawN ?? x.n}/${x.rawD ?? x.d}`;
+        const label = (x.n === 7 && x.d === 6)
+          ? '馃憫'
+          : (rawN.length === 3 && rawN.split('').reduce((sum, digit) => sum + Number(digit || 0), 0) === 8)
+            ? '馃惣'
+            : displayRaw;
+        return `<span style="color:${color};margin:0 0.45em">${label}</span>`;
+      }).join('  ');
+    }
+    h.scrollLeft = h.scrollWidth;
+
+    const arr = mpData.map(x => toBaguaChar(colorOf(x.n, x.d)));
+    const nums = [];
+    for (let i = 0; i <= arr.length - 3; i += 3) {
+      const s = arr[i] + arr[i + 1] + arr[i + 2];
+      nums.push(baguaMap[s] || 0);
+    }
+
+    const cancel = new Set();
+    for (let i = 0; i < nums.length; i += 1) {
+      for (let j = i + 1; j < nums.length; j += 1) {
+        if (nums[i] + nums[j] === 9 || nums[i] === nums[j] || Math.abs(nums[i] - nums[j]) === 1 || Math.abs(nums[i] - nums[j]) === 3) {
+          cancel.add(i);
+          cancel.add(j);
+        }
+      }
+    }
+
+    $('mp-bagua').innerHTML = nums.length
+      ? nums.map((n, i) => `<span ${cancel.has(i) ? 'data-cancel="1"' : ''}>${n}</span>`).join(' ')
+      : '<span style="color:#666">鍏崷: --</span>';
+
+    if (!mpData.length) {
+      renderPredictionCircle(null);
+      $('mp-ent').textContent = '0.0%';
+      renderGrid();
+      return;
+    }
+
+    const currentRoundData = buildGeneDescriptor(mpData.at(-1));
+    const historyData = mpData.slice(0, -1).reverse().map(buildGeneDescriptor);
+    const result = calculatePredictionCircle(currentRoundData, historyData);
+    renderPredictionCircle(result);
+
+    const recent = mpData.slice(-10).map(x => colorOf(x.n, x.d));
+    const cnt = { R: 0, P: 0, G: 0 };
+    recent.forEach(c => cnt[c]++);
+    let H = 0;
+    const total = recent.length;
+    for (const key in cnt) {
+      if (cnt[key]) {
+        const p = cnt[key] / total;
+        H -= p * Math.log2(p);
+      }
+    }
+    $('mp-ent').textContent = ((H / Math.log2(3)) * 100).toFixed(1) + '%';
+    renderGrid();
+  }
+
+  function renderGrid() {
+    const g = $('mp-grid');
+    g.innerHTML = '';
+    const R = 6, C = 18;
+    const grid = Array.from({ length: R }, () => Array(C).fill(null));
+    let r = 0, c = 0;
+
+    mpData.forEach(item => {
+      const col = colorOf(item.n, item.d);
+      if (col === 'G') {
+        if (grid[r][c]) grid[r][c].ties++;
+        else grid[r][c] = { col, ties: 1 };
+        return;
+      }
+      if (grid[r][c]) {
+        if (grid[r][c].col !== col) {
+          c++;
+          r = 0;
+        } else {
+          const nextRow = r + 1;
+          if (nextRow < R && !grid[nextRow][c]) r = nextRow;
+          else c++;
+        }
+      }
+      if (c >= C) {
+        c = C - 1;
+        r = Math.min(r, R - 1);
+        return;
+      }
+      if (r >= R) r = R - 1;
+      grid[r][c] = grid[r][c] || { col, ties: 0 };
+    });
+
+    for (let i = 0; i < R; i += 1) {
+      for (let j = 0; j < C; j += 1) {
+        const cell = document.createElement('div');
+        cell.className = 'mp-cell';
+        const v = grid[i][j];
+        if (v) {
+          const dot = document.createElement('div');
+          dot.className = `dot ${v.col === 'P' ? 'blue' : (v.col === 'R' ? 'red' : 'green')}`;
+          if (v.ties > 0) {
+            const t = document.createElement('span');
+            t.className = 'ties';
+            t.textContent = '/'.repeat(v.ties);
+            cell.appendChild(t);
+          }
+          cell.appendChild(dot);
+        }
+        g.appendChild(cell);
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    mp_checkLinks();
+    render();
+    if (window.MayijuRobotDialog && typeof window.MayijuRobotDialog.init === 'function') {
+      window.MayijuRobotDialog.init(document);
+    }
+    await window.mp_refreshProfile();
+    if (window.MayijuIdentity) {
+      window.MayijuIdentity.saveDeviceState('mobile', { portalReady: true, predictionReady: true });
+    }
+    await runPortalSelfCheck('startup');
+    setInterval(() => {
+      runPortalSelfCheck('runtime');
+    }, RUNTIME_SELF_CHECK_MS);
+    setInterval(() => {
+      const core = ($('mp-circle')?.offsetHeight || 0) > 0 && ($('mp-grid')?.children.length || 0) > 0;
+      if (!core) console.warn('[馃悳] 鏍稿績缁勪欢娓叉煋寮傚父锛岀瓑寰呰嚜鎰?..');
+    }, HEARTBEAT_MS);
+  });
+})();
+</script>
+</body>
+</html>
+

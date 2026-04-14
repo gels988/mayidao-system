@@ -2,11 +2,11 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
     <title>子民管理系统 - Island Owner Console</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2 "></script>
     <script src="js/db_client.js"></script> <!-- 引入数据库客户端 (含Mock支持) -->
-    <style>
+<style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
@@ -244,6 +244,7 @@
             .action-buttons { justify-content: flex-start; }
         }
     </style>
+    <script src="js/shared_identity.js"></script>
 </head>
 <body>
     <div class="container">
@@ -256,6 +257,20 @@
             </div>
         </div>
         
+        <!-- 统计面板 -->
+        <div class="card">
+            <h2>🪪 当前身份同步</h2>
+            <div style="line-height: 1.9; color: #a2a8d3;">
+                <div>显示名称: <span id="profile-name" style="color:#fff;">加载中...</span></div>
+                <div>邮箱/手机: <span id="profile-contact" style="color:#ffd700;">加载中...</span></div>
+                <div>同步来源: <span id="profile-source" style="color:#00cc66;">等待同步</span></div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="refreshProfileSync()">🔄 同步资料</button>
+                <button class="btn btn-primary" onclick="window.open('register.html', '_blank')">📝 电脑端注册</button>
+            </div>
+        </div>
+
         <!-- 统计面板 -->
         <div class="card">
             <h2>📊 岛屿概览</h2>
@@ -290,7 +305,7 @@
             </div>
             <div class="btn-group">
                 <button class="btn btn-primary" onclick="copyInviteLink()">📋 复制链接</button>
-                <button class="btn btn-secondary" onclick="generateInviteLink()">🔄 重新生成</button>
+                <button class="btn btn-secondary" onclick="generatePromoLink()">🔄 重新生成</button>
             </div>
         </div>
         
@@ -371,6 +386,19 @@
         let citizensData = [];
         let selectedCitizenId = null;
 
+        function renderProfileCard(profile) {
+            const safeProfile = profile || {};
+            document.getElementById('profile-name').textContent = safeProfile.display_name || safeProfile.email || safeProfile.phone || '未登录';
+            document.getElementById('profile-contact').textContent = safeProfile.email || safeProfile.phone || '未同步';
+            document.getElementById('profile-source').textContent = safeProfile.source_table || 'localStorage';
+        }
+
+        async function refreshProfileSync() {
+            if (!window.MayijuIdentity) return;
+            const profile = await window.MayijuIdentity.syncProfile({ device: 'desktop' });
+            renderProfileCard(profile);
+        }
+
         // ==================== 初始化 ====================
         async function init() {
             try {
@@ -394,7 +422,21 @@
 
         // 检查登录状态（支持与主系统集成）
         async function checkAuth() {
-            // 方案1: 检查 Supabase 当前会话
+            // 方案1: 检查共享身份缓存（桌面端登录后直接可用）
+            if (window.MayijuIdentity) {
+                const profile = await window.MayijuIdentity.syncProfile({ device: 'desktop' });
+                if (profile && profile.id) {
+                    currentUser = {
+                        id: profile.id,
+                        email: profile.email,
+                        phone: profile.phone
+                    };
+                    renderProfileCard(profile);
+                    return;
+                }
+            }
+
+            // 方案2: 检查 Supabase 当前会话
             const { data: { session } } = await supabase.auth.getSession();
             
             if (session) {
@@ -402,7 +444,7 @@
                 return;
             }
             
-            // 方案2: 从 URL 参数获取 token（主系统传递）
+            // 方案3: 从 URL 参数获取 token（主系统传递）
             const urlParams = new URLSearchParams(window.location.search);
             const accessToken = urlParams.get('access_token');
             
@@ -418,7 +460,7 @@
                 }
             }
             
-            // 方案3: 从 localStorage 获取（与主系统共享存储）
+            // 方案4: 从 localStorage 获取（与主系统共享存储）
             if (!currentUser) {
                 const storedSession = localStorage.getItem('supabase.auth.token');
                 if (storedSession) {
@@ -436,6 +478,10 @@
                         console.error('解析存储的会话失败:', e);
                     }
                 }
+            }
+
+            if (currentUser) {
+                renderProfileCard(window.MayijuIdentity ? window.MayijuIdentity.normalizeProfile(currentUser, currentUser) : currentUser);
             }
         }
 
@@ -456,7 +502,7 @@
                 
                 updateStats();
                 renderCitizens();
-                generateInviteLink();
+                generatePromoLink();
                 
             } catch (error) {
                 console.error('加载数据失败:', error);
@@ -473,26 +519,49 @@
         }
 
         // ==================== 邀请链接 ====================
-        function generateInviteLink() {
-            if (!currentUser) return;
-            // 生成包含推荐人ID的注册链接（假设主系统有register页面）
-            const baseUrl = window.location.origin.replace('zixitong', 'index'); // 假设主系统为index
-            const link = `${baseUrl}/register.html?ref=${currentUser.id}`;
-            document.getElementById('invite-link').textContent = link;
+        function generatePromoLink() {
+            const displayElement = document.getElementById('invite-link');
+            if (!displayElement) return;
+
+            displayElement.textContent = '生成中...';
+
+            let ownerId = currentUser && currentUser.id;
+            if (!ownerId) {
+                const stored = localStorage.getItem('island_owner_id');
+                if (stored) {
+                    ownerId = stored;
+                } else {
+                    ownerId = 'USER_' + Math.floor(Math.random() * 10000);
+                    localStorage.setItem('island_owner_id', ownerId);
+                }
+            }
+
+            const baseUrl = window.location.origin + '/register.html';
+            const link = baseUrl + '?ref=' + encodeURIComponent(ownerId);
+
+            displayElement.textContent = link;
+            displayElement.dataset.link = link;
             return link;
         }
 
         function copyInviteLink() {
-            const link = document.getElementById('invite-link').textContent;
+            const displayElement = document.getElementById('invite-link');
+            if (!displayElement) return;
+
+            const link = displayElement.dataset.link || displayElement.textContent;
+            if (!link || link === '生成中...') {
+                showNotification('链接尚未生成', 'error');
+                return;
+            }
+
             navigator.clipboard.writeText(link).then(() => {
                 showNotification('✅ 邀请链接已复制', 'success');
             }).catch(() => {
-                // 降级方案
-                const textArea = document.createElement("textarea");
+                const textArea = document.createElement('textarea');
                 textArea.value = link;
                 document.body.appendChild(textArea);
                 textArea.select();
-                document.execCommand("copy");
+                document.execCommand('copy');
                 document.body.removeChild(textArea);
                 showNotification('✅ 邀请链接已复制', 'success');
             });
@@ -785,6 +854,9 @@
         }
 
         // 启动
+        window.addEventListener('DOMContentLoaded', function () {
+            generatePromoLink();
+        });
         window.onload = init;
     </script>
 </body>

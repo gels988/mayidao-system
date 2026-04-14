@@ -2,11 +2,11 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
     <title>⛽ 私人捐赠 - G-Gas充值系统</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/db_client.js"></script>
-    <style>
+<style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
@@ -403,6 +403,7 @@
             .qr-container img { width: 180px; height: 180px; }
         }
     </style>
+    <script src="js/shared_identity.js"></script>
 </head>
 <body>
     <button class="close-btn" onclick="closeWindow()">✕ 关闭</button>
@@ -451,7 +452,7 @@
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div style="width:220px;height:220px;background:#f0f0f0;display:none;align-items:center;justify-content:center;color:#666;font-size:12px;text-align:center;padding:20px;">
                         [请插入二维码图片]<br>
-                        地址：<br>0xf3ce...7bd0f80
+                        地址：<br><span id="wallet-address-fallback">待配置</span>
                     </div>
                 </div>
                 
@@ -459,9 +460,7 @@
                     <span class="network-tag">🔷 Ethereum USDT</span>
                 </div>
                 
-                <div class="wallet-address" id="wallet-address">
-                    0xf3ce1bb32dcfb11e81c69efa0cc6f5ae7bd0f80
-                </div>
+                <div class="wallet-address" id="wallet-address">待配置</div>
                 
                 <button class="copy-btn" onclick="copyAddress()">
                     📋 复制钱包地址
@@ -564,16 +563,11 @@
 
     <script>
         // ==================== 配置 ====================
-        // const SUPABASE_URL = '...'; // Removed hardcoded config
-        // const SUPABASE_KEY = '...';
-        // const { createClient } = supabase;
-        // const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-        
         // Use shared instance from db_client.js (Supports Real & Mock)
         const supabaseClient = window.supabaseInstance;
         
-        // 固定配置
-        const FIXED_WALLET = '0xf3ce1bb32dcfb11e81c69efa0cc6f5ae7bd0f80';
+        // 运行时配置
+        let FIXED_WALLET = '';
         
         // 奖励档次配置（与数据库统一）
         const REWARD_TIERS = [
@@ -589,6 +583,15 @@
         // ==================== 初始化与权限检查 ====================
         async function init() {
             try {
+                if (window.loadMayijuRuntimeConfig) {
+                    const config = await window.loadMayijuRuntimeConfig();
+                    FIXED_WALLET = config?.donationWallet || '';
+                }
+                const walletEl = document.getElementById('wallet-address');
+                const walletFallbackEl = document.getElementById('wallet-address-fallback');
+                if (walletEl) walletEl.textContent = FIXED_WALLET || '请由管理员配置 DONATION_WALLET';
+                if (walletFallbackEl) walletFallbackEl.textContent = FIXED_WALLET || '待配置';
+
                 // 检查登录状态（同域共享session或URL传token）
                 await checkAuth();
                 
@@ -618,6 +621,18 @@
         }
         
         async function checkAuth() {
+            // 方案0: 共享身份缓存（桌面端与移动端共用）
+            if (window.MayijuIdentity) {
+                const profile = await window.MayijuIdentity.syncProfile({ device: 'desktop' });
+                if (profile && profile.id) {
+                    currentUser = {
+                        id: profile.id,
+                        email: profile.email || profile.phone || '已登录用户'
+                    };
+                    return;
+                }
+            }
+
             // 方案1: 检查当前session
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
@@ -643,10 +658,6 @@
             // 方案3 (新增): 本地缓存用户 (离线/Mock模式)
             const localPhone = localStorage.getItem('mayiju_user_phone');
             if (localPhone) {
-                // Try to get from DB (Mock or Real)
-                // Note: db_client.js maps 'app_users' queries if needed, but let's try 'users' or 'app_users'
-                // Real DB uses 'app_users', Mock DB uses 'users' but might map.
-                // Best to use 'app_users' as that's the Real DB standard, and ensure Mock handles it.
                 const { data, error } = await supabaseClient
                     .from('app_users') 
                     .select('*')
@@ -767,16 +778,41 @@
         
         // 加载当前余额（实时同步至预测主界面）
         async function loadBalance() {
-            const { data, error } = await supabaseClient
-                .from('users')
-                .select('balance_g')
-                .eq('id', currentUser.id)
-                .single();
-            
+            let data = null;
+            let error = null;
+
+            try {
+                const userRes = await supabaseClient
+                    .from('users')
+                    .select('balance_g, gas_balance')
+                    .eq('id', currentUser.id)
+                    .single();
+                data = userRes.data;
+                error = userRes.error;
+            } catch (err) {}
+
+            if (!data) {
+                try {
+                    const appUserRes = await supabaseClient
+                        .from('app_users')
+                        .select('balance_g')
+                        .eq('id', currentUser.id)
+                        .single();
+                    data = appUserRes.data;
+                    error = appUserRes.error;
+                } catch (err) {}
+            }
+
             if (!error && data) {
-                currentBalance = data.balance_g || 0;
+                currentBalance = data.balance_g !== undefined ? data.balance_g : (data.gas_balance || 0);
                 document.getElementById('gas-balance').textContent = currentBalance.toLocaleString();
-                
+                if (window.MayijuIdentity) {
+                    window.MayijuIdentity.saveProfile({
+                        ...currentUser,
+                        gas_balance: currentBalance
+                    }, { device: 'desktop', silent: true });
+                }
+
                 // 如果有变化，通知 opener（主系统）
                 if (window.opener && !window.opener.closed) {
                     window.opener.postMessage({ type: 'gas-updated', balance: currentBalance }, '*');
@@ -850,6 +886,10 @@
         // ==================== 工具函数 ====================
         
         function copyAddress() {
+            if (!FIXED_WALLET) {
+                showNotification('未配置捐赠地址，请联系管理员设置 DONATION_WALLET', 'error');
+                return;
+            }
             navigator.clipboard.writeText(FIXED_WALLET).then(() => {
                 showNotification('✓ 钱包地址已复制', 'success');
             }).catch(() => {

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "nodemon backend/server.js",
-    "deploy": "vercel --prod"
+    "deploy": "vercel --prod",
+    "vercel-build": "echo No build step"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.0",

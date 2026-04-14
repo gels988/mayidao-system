@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>开始试玩 - MAYIJU</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>账号注册 - MAYIJU</title>
     <style>
         body {
             margin: 0;
@@ -42,19 +42,23 @@
                 0 0 12px rgba(255, 75, 75, 0.9),
                 0 0 24px rgba(255, 0, 60, 0.9);
         }
-        .subtitle {
-            font-size: 1.2rem;
-            color: #66ccff;
-            margin-bottom: 1.8rem;
-            letter-spacing: 0.08em;
+        .form-group {
+            margin-bottom: 1.2rem;
+            text-align: left;
         }
-        input[type="tel"] {
+        label {
+            color: #a2a8d3;
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        input {
             width: 100%;
             padding: 1.1rem 1rem;
             border-radius: 12px;
             border: 1px solid rgba(255, 80, 80, 0.75);
             font-size: 1.05rem;
-            margin-bottom: 1.2rem;
+            margin-bottom: 0.5rem;
             box-sizing: border-box;
             background: radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.06) 0, rgba(3, 3, 10, 0.95) 55%);
             color: #ffeaea;
@@ -62,10 +66,10 @@
                 0 0 0 1px rgba(255, 0, 60, 0.35),
                 0 0 24px rgba(255, 0, 60, 0.45);
         }
-        input[type="tel"]::placeholder {
-            color: rgba(255, 180, 180, 0.75);
+        input::placeholder {
+            color: rgba(255, 180, 180, 0.5);
         }
-        input[type="tel"]:focus {
+        input:focus {
             outline: none;
             box-shadow:
                 0 0 0 1px rgba(255, 50, 90, 0.9),
@@ -88,42 +92,201 @@
             text-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
             letter-spacing: 0.12em;
             text-transform: uppercase;
+            margin-top: 1rem;
         }
         button:active {
             transform: translateY(1px);
-            box-shadow:
-                0 0 10px rgba(255, 50, 90, 0.7),
-                0 6px 20px rgba(0, 0, 0, 0.85);
         }
-        button:disabled {
-            background: linear-gradient(135deg, #4a4a4a 0%, #777777 100%);
+        .secondary-btn {
+            background: transparent;
+            border: 1px solid #533483;
             box-shadow: none;
-            cursor: not-allowed;
+            color: #a2a8d3;
+            margin-top: 10px;
+            font-size: 0.9rem;
         }
-        .note {
-            font-size: 0.85rem;
-            color: rgba(240, 208, 208, 0.9);
-            margin-top: 1.1rem;
-        }
-        .error-text {
-            font-size: 0.85rem;
-            color: #ff616f;
-            min-height: 1.2rem;
-            margin-top: 0.55rem;
+        .message {
+            margin-top: 15px;
+            text-align: center;
+            color: #ffd700;
+            min-height: 24px;
+            font-size: 0.9rem;
         }
     </style>
+    <script src="js/shared_identity.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>输入联系方式开始试玩</h1>
-        <div class="subtitle">在黑暗中走红的开始</div>
-        <input type="tel" id="phoneInput" placeholder="例如：手机号 / 邮箱 " maxlength="64">
-        <button id="submitBtn" type="button">领取 180 分试玩</button>
-        <div id="errorText" class="error-text"></div>
-        <p class="note">仅用于绑定试玩账户，不发送短信，是您身份的标识</p>
+        <h1>📝 账号注册</h1>
+        
+        <div class="form-group">
+            <label>邮箱（推荐）</label>
+            <input type="email" id="register-email" placeholder="输入邮箱地址">
+        </div>
+
+        <div class="form-group">
+            <label>手机号（可选）</label>
+            <input type="tel" id="register-phone" placeholder="输入手机号">
+        </div>
+
+        <div class="form-group">
+            <label>设置密码</label>
+            <input type="password" id="register-password" placeholder="输入密码（至少6位）">
+        </div>
+
+        <div class="form-group">
+            <label>确认密码</label>
+            <input type="password" id="register-confirm" placeholder="再次输入密码">
+        </div>
+
+        <button onclick="handleRegister()">✅ 立即注册</button>
+        <button class="secondary-btn" onclick="window.location.href='index.html'">← 返回首页登录</button>
+        
+        <div id="register-message" class="message"></div>
     </div>
 
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="js/register_logic.js"></script>
+    <script src="js/db_client.js"></script>
+<script>
+        let inviteReferrerId = null;
+        (function () {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const ref = params.get('ref');
+                if (ref) {
+                    inviteReferrerId = ref;
+                    localStorage.setItem('invite_referrer_id', ref);
+                }
+            } catch (e) {}
+        })();
+
+        async function handleRegister() {
+            const email = document.getElementById('register-email').value.trim();
+            const phone = document.getElementById('register-phone').value.trim();
+            const password = document.getElementById('register-password').value;
+            const confirm = document.getElementById('register-confirm').value;
+            const messageEl = document.getElementById('register-message');
+            
+            // 验证输入
+            if (!email && !phone) {
+                messageEl.textContent = '❌ 邮箱或手机号至少填一项';
+                messageEl.style.color = '#ff4444';
+                return;
+            }
+            
+            if (!password || password.length < 6) {
+                messageEl.textContent = '❌ 密码至少6位';
+                messageEl.style.color = '#ff4444';
+                return;
+            }
+            
+            if (password !== confirm) {
+                messageEl.textContent = '❌ 两次密码不一致';
+                messageEl.style.color = '#ff4444';
+                return;
+            }
+            
+            messageEl.textContent = '⏳ 注册中...';
+            messageEl.style.color = '#ffd700';
+            
+            try {
+                const newUser = {
+                    id: 'USER_' + Math.floor(Math.random() * 100000),
+                    email,
+                    phone,
+                    balance_g: 180,
+                    created_at: new Date().toISOString(),
+                    referrer_id: inviteReferrerId || localStorage.getItem('invite_referrer_id') || null
+                };
+
+                const supabase = window.supabaseInstance;
+                let persistedUser = null;
+
+                if (supabase) {
+                    const appUsersPayload = {
+                        email: email || null,
+                        phone_number: phone || null,
+                        balance_g: 180,
+                        referrer_id: newUser.referrer_id,
+                        created_at: new Date().toISOString()
+                    };
+                    const usersPayload = {
+                        email: email || null,
+                        phone: phone || null,
+                        password_hash: password,
+                        balance_g: 180,
+                        referrer_id: newUser.referrer_id,
+                        created_at: new Date().toISOString()
+                    };
+
+                    try {
+                        const appUserRes = await supabase
+                            .from('app_users')
+                            .insert(appUsersPayload)
+                            .select()
+                            .single();
+                        if (!appUserRes.error && appUserRes.data) {
+                            persistedUser = {
+                                id: appUserRes.data.id,
+                                email: appUserRes.data.email || email,
+                                phone: appUserRes.data.phone_number || phone,
+                                balance_g: appUserRes.data.balance_g || 180
+                            };
+                        }
+                    } catch (error) {}
+
+                    if (!persistedUser) {
+                        try {
+                            const usersRes = await supabase
+                                .from('users')
+                                .insert(usersPayload)
+                                .select()
+                                .single();
+                            if (!usersRes.error && usersRes.data) {
+                                persistedUser = {
+                                    id: usersRes.data.id,
+                                    email: usersRes.data.email || email,
+                                    phone: usersRes.data.phone || phone,
+                                    balance_g: usersRes.data.balance_g || usersRes.data.gas_balance || 180
+                                };
+                            }
+                        } catch (error) {}
+                    }
+                }
+
+                // 检查是否已存在
+                const storedUsers = JSON.parse(localStorage.getItem('registered_users') || '[]');
+                if (email && storedUsers.some(u => u.email === email)) throw new Error("该邮箱已被注册");
+                if (phone && storedUsers.some(u => u.phone === phone)) throw new Error("该手机号已被注册");
+
+                storedUsers.push({ ...newUser, password });
+                localStorage.setItem('registered_users', JSON.stringify(storedUsers));
+                
+                // 自动登录
+                const currentUser = {
+                    id: persistedUser?.id || newUser.id,
+                    email: persistedUser?.email || newUser.email,
+                    phone: persistedUser?.phone || newUser.phone,
+                    gas_balance: 180
+                };
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                if (window.MayijuIdentity) {
+                    window.MayijuIdentity.saveProfile(currentUser, { device: 'desktop', silent: true });
+                }
+                
+                messageEl.textContent = '✅ 注册成功！正在跳转...';
+                messageEl.style.color = '#00cc66';
+                
+                // 延迟跳转
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error(error);
+                messageEl.textContent = `❌ ${error.message}`;
+                messageEl.style.color = '#ff4444';
+            }
+        }
+    </script>
 </body>
 </html>

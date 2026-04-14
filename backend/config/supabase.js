@@ -1,11 +1,47 @@
 const { createClient } = require('@supabase/supabase-js');
 
 // Supabase配置（使用环境变量）
-const supabaseUrl = process.env.SUPABASE_URL || 'your-supabase-url';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || 'your-anon-key';
+const supabaseUrl = (process.env.SUPABASE_URL || '')
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/`/g, '')
+    .replace(/\s+/g, '')
+    .trim();
+const supabaseKey = (process.env.SUPABASE_ANON_KEY || '')
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/`/g, '')
+    .replace(/\s+/g, '')
+    .trim();
 
 // 创建Supabase客户端
-const supabase = createClient(supabaseUrl, supabaseKey);
+const configured = Boolean(supabaseUrl && supabaseKey);
+
+const stubError = { message: 'Supabase not configured' };
+const stubResponse = { data: null, error: stubError, count: null };
+function stubBuilder() {
+    return {
+        select: () => stubBuilder(),
+        insert: () => stubBuilder(),
+        update: () => stubBuilder(),
+        delete: () => stubBuilder(),
+        eq: () => stubBuilder(),
+        not: () => stubBuilder(),
+        gte: () => stubBuilder(),
+        gt: () => stubBuilder(),
+        lte: () => stubBuilder(),
+        lt: () => stubBuilder(),
+        order: () => stubBuilder(),
+        limit: () => stubBuilder(),
+        single: () => stubBuilder(),
+        maybeSingle: () => stubBuilder(),
+        rpc: () => stubBuilder(),
+        then: (resolve, reject) => Promise.resolve(stubResponse).then(resolve, reject)
+    };
+}
+
+const supabase = configured ? createClient(supabaseUrl, supabaseKey) : {
+    from: () => stubBuilder(),
+    rpc: () => stubBuilder()
+};
 
 // 测试数据库连接
 async function testConnection() {

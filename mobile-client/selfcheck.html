@@ -1,0 +1,233 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>鎵嬫満绔嚜妫€涓績</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/db_client.js"></script>
+<style>
+        body {
+            margin: 0;
+            background: #07101a;
+            color: #f6f8fc;
+            font-family: Arial, sans-serif;
+        }
+        .page {
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 18px 16px 28px;
+        }
+        .card {
+            background: #101722;
+            border: 1px solid #223048;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+        h1, h2 {
+            margin: 0 0 12px;
+        }
+        .muted {
+            color: #92a1b8;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        button, a {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+            padding: 13px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            border: none;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .primary { background: #1f6feb; color: #fff; }
+        .secondary { background: #1b2434; color: #dde7f5; border: 1px solid #32435c; }
+        .warning { background: #ff7b00; color: #fff; }
+        .check-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 0;
+            border-top: 1px solid #1b2638;
+            font-size: 14px;
+        }
+        .check-item:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
+        .ok { color: #3ddc97; }
+        .warn { color: #ffd166; }
+        .fail { color: #ff7b7b; }
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #cbd5e1;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+    </style>
+    <script src="../js/shared_identity.js"></script>
+</head>
+<body>
+    <div class="page">
+        <div class="card">
+            <h1>鎵嬫満绔嚜妫€</h1>
+            <p class="muted">杩欓噷鍙互妫€鏌ョЩ鍔ㄧ椤甸潰銆佹暟鎹簱鍋ュ悍銆佸叡浜韩浠藉悓姝ワ紝骞舵竻鐞嗙Щ鍔ㄧ灞€閮ㄧ紦瀛樸€傛祻瑙堝櫒鏃犳硶鐩存帴娓呯悊鏁撮儴鎵嬫満鍐呭瓨锛屽彧鑳芥竻鐞嗘湰绯荤粺鍦ㄦ墜鏈烘祻瑙堝櫒涓殑缂撳瓨涓庤褰曘€?/p>
+        </div>
+
+        <div class="card">
+            <h2>妫€娴嬬粨鏋?/h2>
+            <div id="checkResults" class="muted">绛夊緟鎵ц鑷...</div>
+        </div>
+
+        <div class="card">
+            <h2>鎿嶄綔</h2>
+            <div class="actions">
+                <button class="primary" type="button" onclick="runChecks()">鎵ц鑷</button>
+                <button class="warning" type="button" onclick="cleanMobileCache()">娓呯悊绉诲姩缂撳瓨</button>
+                <a class="secondary" href="./portal.html">杩斿洖鎵嬫満绔?/a>
+                <a class="secondary" href="../zijian.html">鎵撳紑鐢佃剳绔嚜妫€</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>鏃ュ織</h2>
+            <pre id="logPanel">绛夊緟鎵ц...</pre>
+        </div>
+    </div>
+
+    <script>
+        const mobileChecks = [
+            { name: '鎵嬫満绔富鐣岄潰', url: './portal.html' },
+            { name: '鎵嬫満绔瓙绯荤粺', url: './subsystem.html' },
+            { name: '鎵嬫満绔崘璧?, url: './donation.html' },
+            { name: '鐢佃剳绔敞鍐?, url: '../register.html' },
+            { name: '鏁版嵁搴撳仴搴锋帴鍙?, url: '../api/health' }
+        ];
+
+        async function checkMobileInteractionContracts() {
+            try {
+                const response = await fetch('./portal.html', { method: 'GET', cache: 'no-store' });
+                if (!response.ok) {
+                    throw new Error('portal.html 璇诲彇澶辫触: ' + response.status);
+                }
+
+                const html = await response.text();
+                const execBindingOk = html.includes('class="mp-btn mp-exec" onclick="mp_exec()"');
+                const execHandlerOk = html.includes('window.mp_exec = function ()');
+                const clearBindingOk = html.includes('class="mp-btn mp-clear" onclick="mp_clearInput()"');
+                const clearHandlerOk = html.includes('window.mp_clearInput = function ()');
+                const clearRuleOk = html.includes('const hasDraft = Boolean(')
+                    && html.includes('mpData.pop();')
+                    && !html.includes('window.mp_clearInput = function () {\n    mpData.length = 0;');
+                const resetBindingOk = html.includes('class="mp-reset" onclick="mp_fullReset()"');
+                const resetHandlerOk = html.includes('window.mp_fullReset = function ()');
+                const resetRuleOk = html.includes('mpData.length = 0;');
+                const linkAuditOk = html.includes('data-url="./subsystem.html"')
+                    && html.includes('data-url="./donation.html"')
+                    && html.includes('data-url="./selfcheck.html"')
+                    && html.includes('window.mp_checkLinks = function ()');
+
+                return {
+                    ok: execBindingOk && execHandlerOk && clearBindingOk && clearHandlerOk && clearRuleOk && resetBindingOk && resetHandlerOk && resetRuleOk && linkAuditOk,
+                    details: '鎵ц=' + (execBindingOk && execHandlerOk ? '姝ｅ父' : '寮傚父') +
+                        ' | 娓呴櫎鎸夐挳=' + (clearBindingOk && clearHandlerOk ? '姝ｅ父' : '寮傚父') +
+                        ' | 娓呴櫎瑙勫垯=' + (clearRuleOk ? '鍗曠粍绾犻敊' : '寮傚父') +
+                        ' | 閲嶇疆鎸夐挳=' + (resetBindingOk && resetHandlerOk ? '姝ｅ父' : '寮傚父') +
+                        ' | 閲嶇疆瑙勫垯=' + (resetRuleOk ? '鍏ㄩ噺鍒犻櫎' : '寮傚父') +
+                        ' | 鍏ュ彛閾炬帴=' + (linkAuditOk ? '瀵艰埅姝ｅ父' : '寮傚父')
+                };
+            } catch (error) {
+                return { ok: false, details: error.message };
+            }
+        }
+
+        function log(message) {
+            const panel = document.getElementById('logPanel');
+            panel.textContent += '\n[' + new Date().toLocaleTimeString('zh-CN') + '] ' + message;
+        }
+
+        async function checkUrl(item) {
+            try {
+                const response = await fetch(item.url, { method: 'GET', cache: 'no-store' });
+                if (!response.ok) {
+                    return { state: 'fail', label: '寮傚父', details: 'HTTP ' + response.status };
+                }
+
+                if (item.url.includes('/api/health')) {
+                    const payload = await response.json();
+                    if (payload.status === 'ok' && payload.database === 'ok') {
+                        return { state: 'ok', label: '姝ｅ父', details: '鏁版嵁搴撳凡鑱旈€? };
+                    }
+                    return {
+                        state: 'warn',
+                        label: '闄嶇骇',
+                        details: payload.hint || payload.error || '鍋ュ悍鎺ュ彛鍙揪锛屼絾鏁版嵁搴撴湭瀹屽叏鑱旈€?
+                    };
+                }
+
+                return { state: 'ok', label: '姝ｅ父', details: '' };
+            } catch (error) {
+                return { state: 'fail', label: '寮傚父', details: error.message };
+            }
+        }
+
+        async function runChecks() {
+            document.getElementById('checkResults').innerHTML = '';
+            document.getElementById('logPanel').textContent = '寮€濮嬫墽琛屾墜鏈虹鑷...';
+
+            const profile = window.MayijuIdentity
+                ? await window.MayijuIdentity.syncProfile({ device: 'mobile' })
+                : null;
+            log('韬唤鍚屾瀹屾垚: ' + (profile && profile.id ? '宸茬櫥褰? : '鏈櫥褰?));
+
+            const rows = [];
+            for (const item of mobileChecks) {
+                const result = await checkUrl(item);
+                rows.push('<div class="check-item"><span>' + item.name + '</span><span class="' + result.state + '">' + result.label + '</span></div>');
+                log(item.name + ' -> ' + result.label + (result.details ? ' | ' + result.details : ''));
+            }
+
+            const storageOk = typeof localStorage !== 'undefined';
+            rows.push('<div class="check-item"><span>绉诲姩绔瓨鍌?/span><span class="' + (storageOk ? 'ok' : 'fail') + '">' + (storageOk ? '姝ｅ父' : '寮傚父') + '</span></div>');
+            log('绉诲姩绔瓨鍌?-> ' + (storageOk ? '姝ｅ父' : '寮傚父'));
+
+            const interactionContract = await checkMobileInteractionContracts();
+            rows.push('<div class="check-item"><span>鎵嬫満绔寜閽绾?/span><span class="' + (interactionContract.ok ? 'ok' : 'fail') + '">' + (interactionContract.ok ? '姝ｅ父' : '寮傚父') + '</span></div>');
+            log('鎵嬫満绔寜閽绾?-> ' + (interactionContract.ok ? '姝ｅ父' : '寮傚父') + ' | ' + interactionContract.details);
+
+            document.getElementById('checkResults').innerHTML = rows.join('');
+            if (window.MayijuIdentity) {
+                window.MayijuIdentity.saveDeviceState('mobile', { lastSelfCheckAt: new Date().toISOString() });
+            }
+        }
+
+        async function cleanMobileCache() {
+            const keys = ['pred_history', 'mobile_link_audit', 'mayiju_device_state_mobile'];
+            keys.forEach((key) => localStorage.removeItem(key));
+
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map((name) => caches.delete(name)));
+            }
+
+            document.getElementById('logPanel').textContent = '绉诲姩绔紦瀛樺凡娓呯悊锛屽彧褰卞搷鎵嬫満绔湰鍦扮紦瀛橈紝涓嶅奖鍝嶇數鑴戠璧勬枡鍜屾暟鎹簱鏁版嵁銆?;
+            document.getElementById('checkResults').innerHTML = '<div class="check-item"><span>缂撳瓨娓呯悊</span><span class="ok">瀹屾垚</span></div>';
+        }
+
+        window.addEventListener('DOMContentLoaded', runChecks);
+    </script>
+</body>
+</html>
+

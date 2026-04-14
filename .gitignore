@@ -1,7 +1,8 @@
-﻿node_modules/
+node_modules/
 .env
 .env.local
 .env.production
+.env.heal
 *.log
 logs/
 .DS_Store
@@ -15,3 +16,26 @@ backup_*/
 .vercel
 
 .vercel - 副本/
+.vercel_appdata/
+.vercel_localappdata/
+
+# Local Admin Tools
+local_admin.html
+admin_grant.html
+local-admin/
+
+# Local Reports / Local Artifacts
+Encryption_Deployment_Report_*.json
+Encryption_Deployment_Report_*.md
+Security_Audit_Report_*.md
+security_report.md
+url_health.json
+IDENTITY.json
+roster.json
+roster.csv
+backend/server.js.bak
+vercel.json.bak
+js/backup/
+scripts/mayiju_fuxi_energy_obfuscator.local.json
+.trae/
+*.ps1
