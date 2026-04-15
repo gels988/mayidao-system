@@ -825,7 +825,7 @@
                                     <input type="text" id="denominatorInput" maxlength="3" placeholder="00" oninput="previewCurrent()">
                                 </div>
                                 <button class="btn-input" onclick="addRecord()">输入</button>
-                                <button class="btn-clear" onclick="clearCurrentInputs()">清除</button>
+                                <button class="btn-clear" onclick="undoLastRecord()">清除</button>
                             </div>
 
                             <!-- 联动记录模块 -->
@@ -923,9 +923,9 @@
     -->
 
     <!-- Prediction Logic -->
-    <!-- Prediction dependencies required by main-integration.js -->
-    <script src="js/high-odds-base.js" defer></script>
-    <script src="js/high-odds-display.js" defer></script>
+    <!-- Disabled conflicting modules -->
+    <!-- <script src="js/high-odds-predictor.js"></script> -->
+    <!-- <script src="js/high-odds-display.js"></script> -->
     <script src="js/main-integration.js"></script>
     
     <script src="js/db_client.js"></script>
@@ -2590,21 +2590,6 @@
             console.log('[系统] 已撤销最后一条记录，剩余:', records.length);
         }
 
-        function clearCurrentInputs() {
-            const molInput = document.getElementById('molecularInput');
-            const denInput = document.getElementById('denominatorInput');
-
-            if (molInput) molInput.value = '';
-            if (denInput) denInput.value = '';
-
-            // 清空当前录入后，恢复主界面由历史记录驱动的显示状态。
-            if (window.mainIntegration && typeof window.mainIntegration.updateAllDisplays === 'function') {
-                window.mainIntegration.updateAllDisplays();
-            }
-
-            if (molInput) molInput.focus();
-        }
-
         // ==========================================
         // 清除所有
         // ==========================================
@@ -2724,7 +2709,6 @@
          });
 
         window.clearAll = clearAll; // 显式绑定到 window
-        window.clearCurrentInputs = clearCurrentInputs;
         window.clearForm = clearAll; // 兼容 window.clearForm
         window.undoLastRecord = undoLastRecord; // 显式绑定撤销函数
         window.addEventListener('mayiju-profile-updated', (event) => {
@@ -2740,119 +2724,162 @@
         });
 
     </script>
+    (function(){
+    // 【修改点】：不再初始化空的 mpData，而是直接读取电脑端的数据源
+    // 假设电脑端存储数据的 key 是 'mayiju_records'
+    const savedData = localStorage.getItem('mayiju_records');
+    const mpData = savedData ? JSON.parse(savedData).map(rec => ({
+        rawN: rec.mol,
+        rawD: rec.den,
+        n: rec.molSum,
+        d: rec.denSum
+    })) : [];
+
+    const $ = id => document.getElementById(id);
+    
+    // ... 剩下的逻辑保持不变 ...
 </body>
 </html>
-<!-- 🐜 MAYIJU 手机端融合模块 V3.0 [导航+对话+自检+修复版] -->
+
+
+<!-- 🐜 MAYIJU 手机端形态基因预测引擎 V4.4 [最终修复版] -->
 <div id="mp-wrapper">
   <style>
     /* === 作用域隔离：所有样式仅限 #mp-wrapper 内部 === */
-    #mp-wrapper{--mp-bg:#111;--mp-card:#1a1a1a;--mp-red:#e63946;--mp-blue:#457b9d;--mp-green:#2a9d8f;--mp-txt:#eee;--mp-dim:#666;width:min(100%,560px);min-height:calc(100vh - 24px);margin:12px auto;padding:clamp(12px,2.6vw,18px);display:grid;gap:clamp(10px,2vw,14px);align-content:start;font-family:'SF Mono','Courier New',monospace;color:var(--mp-txt);box-sizing:border-box;border-radius:16px;background:linear-gradient(180deg,#111 0%,#0a0a0a 100%);font-size:15px;line-height:1.5;box-shadow:0 18px 36px rgba(0,0,0,0.32)}
+    #mp-wrapper{
+      --mp-bg:#111;--mp-card:#1a1a1a;--mp-red:#e63946;--mp-blue:#457b9d;
+      --mp-green:#2a9d8f;--mp-txt:#eee;--mp-dim:#666;
+      width:100%;max-width:480px;margin:0 auto;font-family:'SF Mono','Courier New',monospace;
+      color:var(--mp-txt);padding:10px 8px;box-sizing:border-box;border-radius:8px;
+      background:var(--mp-bg);font-size:14px;line-height:1.4
+    }
     #mp-wrapper *{box-sizing:border-box;margin:0;padding:0}
-    .mp-panel{background:var(--mp-card);border-radius:12px;padding:clamp(10px,2vw,14px);border:1px solid rgba(255,255,255,0.04)}
     
     /* 顶部导航栏 */
-    .mp-nav-top{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;align-items:stretch;gap:8px}
-    .mp-nav-link{display:flex;align-items:center;justify-content:center;text-align:center;min-height:44px;padding:10px 8px;color:#74b9ff;text-decoration:none;font-size:13px;border:1px solid #2a2a2a;border-radius:10px;background:rgba(255,255,255,0.02)}
+    .mp-nav-top{display:flex;justify-content:space-between;align-items:center;
+      padding:6px 4px;margin-bottom:8px;background:var(--mp-card);border-radius:6px}
+    .mp-nav-link{flex:1;text-align:center;padding:6px 2px;color:#74b9ff;
+      text-decoration:none;font-size:12px;border-right:1px solid #333}
     .mp-nav-link:last-child{border-right:none}
     .mp-nav-link.active{color:#ffd32a;font-weight:bold}
-    .mp-reset{min-height:44px;background:#dc3545;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer}
-    
+    .mp-reset{background:#dc3545;color:#fff;border:none;border-radius:4px;
+      padding:4px 10px;font-size:12px;cursor:pointer;margin-left:6px}
+
     /* 第1行：输入控制 */
-    .mp-row-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) auto auto;gap:8px}
-    .mp-input{width:100%;min-width:0;min-height:48px;background:#000;border:1px solid #333;color:#fff;padding:12px 8px;border-radius:10px;text-align:center;font-size:17px}
-    .mp-btn{min-height:48px;padding:12px 14px;border:none;border-radius:10px;color:#fff;font-weight:bold;cursor:pointer;font-size:14px;white-space:nowrap}
+    .mp-row-input{display:flex;gap:6px;padding:8px;background:var(--mp-card);
+      border-radius:6px;margin-bottom:8px}
+    .mp-input{flex:1;min-width:55px;background:#000;border:1px solid #333;
+      color:#fff;padding:10px 4px;border-radius:4px;text-align:center;font-size:16px}
+    .mp-btn{padding:10px 12px;border:none;border-radius:4px;color:#fff;
+      font-weight:bold;cursor:pointer;font-size:13px;white-space:nowrap}
     .mp-exec{background:#007bff} .mp-clear{background:#6c757d}
-    
+
     /* 第2行：历史记录（带颜色+滚动） */
-    .mp-scroll{white-space:nowrap;overflow-x:auto;padding:6px 0;min-height:28px;font-size:15px;letter-spacing:1px}
-    .mp-scroll::-webkit-scrollbar{height:3px} .mp-scroll::-webkit-scrollbar-thumb{background:#444;border-radius:2px}
-    
+    .mp-scroll{white-space:nowrap;overflow-x:auto;padding:6px 0;font-size:14px;letter-spacing:1px}
+    .mp-scroll::-webkit-scrollbar{height:3px}
+    .mp-scroll::-webkit-scrollbar-thumb{background:#444;border-radius:2px}
+
     /* 第3行：八卦数字（带抵消划线） */
-    .mp-bagua{display:flex;gap:14px;overflow-x:auto;padding:8px 0;font-size:clamp(18px,3.8vw,22px);font-weight:900}
+    .mp-bagua{display:flex;gap:14px;overflow-x:auto;padding:6px 0;font-size:18px;font-weight:900;justify-content:center}
     .mp-bagua span[data-cancel="1"]{text-decoration:line-through;color:var(--mp-dim)}
+
+    /* 第4行：主预测 - 核心圆圈样式 */
+    .mp-pred{display:flex;align-items:center;justify-content:center;gap:16px;
+      padding:10px;background:var(--mp-card);border-radius:6px;margin-bottom:8px;min-height:85px}
     
-    /* 第4行：主预测 */
-    .mp-pred{display:flex;align-items:center;justify-content:center;gap:18px;min-height:116px}
-    .mp-circle{width:84px;height:84px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;transition:0.25s;border:2px solid #555}
-    .pred-circle{display:inline-flex;align-items:center;justify-content:center;width:84px;height:84px;border-radius:50%;color:#fff;font-size:24px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.2);position:relative;user-select:none;border:2px solid transparent}
+    /* 预测圆圈基础样式 */
+    .pred-circle{
+      display:inline-flex;align-items:center;justify-content:center;
+      width:65px;height:65px;border-radius:50%;color:#fff;font-size:20px;
+      font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.2);position:relative;
+      user-select:none;border:2px solid transparent;transition:all 0.2s ease
+    }
     .circle-red{background:linear-gradient(135deg,#ff4d4d,#cc0000);border-color:#ff8f8f}
     .circle-blue{background:linear-gradient(135deg,#4d94ff,#0044cc);border-color:#8db7ff}
     .circle-green{background:linear-gradient(135deg,#33cc33,#008800);border-color:#74f174}
-    .circle-text{text-shadow:1px 1px 2px rgba(0,0,0,0.6);letter-spacing:1px}
-    .circle-glow.circle-red{box-shadow:0 0 8px 2px rgba(255,77,77,0.55)}
-    .circle-glow.circle-blue{box-shadow:0 0 8px 2px rgba(77,148,255,0.55)}
-    .circle-glow.circle-green{box-shadow:0 0 8px 2px rgba(51,204,51,0.55)}
-    .mp-info{flex:1;text-align:left;font-size:14px}
-    .mp-info span{display:block;margin:4px 0}
-    .mp-entropy{color:#f1c40f}
     
+    /* 增强状态：持/变/平 文字样式 */
+    .circle-text{
+      text-shadow:1px 1px 2px rgba(0,0,0,0.6);letter-spacing:1px;
+      display:flex;flex-direction:column;align-items:center;justify-content:center
+    }
+    .circle-text .main{font-size:18px;line-height:1}
+    .circle-text .sub{font-size:11px;opacity:0.95;margin-top:-2px}
+    
+    /* 发光增强效果 */
+    .circle-glow.circle-red{box-shadow:0 0 12px 3px rgba(255,77,77,0.7)}
+    .circle-glow.circle-blue{box-shadow:0 0 12px 3px rgba(77,148,255,0.7)}
+    .circle-glow.circle-green{box-shadow:0 0 12px 3px rgba(51,204,51,0.7)}
+    
+    .mp-info{text-align:center;font-size:12px}
+    .mp-info span{display:block;margin:2px 0}
+    .mp-entropy{color:#f1c40f}
+
     /* 第5行：机器人对话 + Web4.0握手 */
-    .mp-robot{padding:8px;background:linear-gradient(135deg,#0d0d0d,#1a1a1a);border-radius:6px;margin-bottom:8px;border:1px solid #222}
+    .mp-robot{padding:8px;background:linear-gradient(135deg,#0d0d0d,#1a1a1a);
+      border-radius:6px;margin-bottom:8px;border:1px solid #222}
     .mp-robot-title{font-size:11px;color:#666;margin-bottom:4px;letter-spacing:1px}
     .mp-robot-text{font-size:11px;color:#888;line-height:1.5;white-space:pre-wrap}
-    .r-handshake{min-height:24px;background:#0d0d0d;display:flex;justify-content:center;align-items:center;font-family:'Courier New',monospace;font-size:9px;color:#2a2a2a;letter-spacing:2px;overflow:hidden;white-space:nowrap;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;margin-top:6px}
-    
-    /* 第6行：18×6 路单网格 */
-    .mp-grid{display:grid;grid-template-columns:repeat(18,1fr);grid-template-rows:repeat(6,1fr);gap:2px;width:100%;min-height:210px;aspect-ratio:18/6;background:#222;border-radius:10px;padding:4px}
-    .mp-cell{background:#0a0a0a;border-radius:4px;display:flex;align-items:center;justify-content:center;position:relative}
-    .mp-cell .dot{width:12px;height:12px;border-radius:50%}
-    .mp-cell .dot.red{background:var(--mp-red)} .mp-cell .dot.blue{background:var(--mp-blue)} .mp-cell .dot.green{background:var(--mp-green)}
-    .mp-cell .ties{position:absolute;bottom:1px;right:2px;font-size:7px;color:#fff;line-height:1}
-    
-    /* 链接状态指示 */
-    .mp-link-ok{color:#2ecc71!important} .mp-link-err{color:#e74c3c!important;text-decoration:line-through}
+    .r-handshake{height:2.2vh;background:#0d0d0d;display:flex;justify-content:center;
+      align-items:center;font-family:'Courier New',monospace;font-size:9px;color:#2a2a2a;
+      letter-spacing:2px;overflow:hidden;white-space:nowrap;border-top:1px solid #1a1a1a;
+      border-bottom:1px solid #1a1a1a;margin-top:6px}
 
-    @media (max-width: 560px){
-      #mp-wrapper{width:100%;min-height:100vh;margin:0;border-radius:0}
-      .mp-nav-top{grid-template-columns:repeat(2,minmax(0,1fr))}
-      .mp-row-input{grid-template-columns:repeat(2,minmax(0,1fr))}
-      .mp-btn,.mp-reset{width:100%}
-      .mp-pred{flex-direction:row;align-items:center}
-      .mp-grid{min-height:180px}
-    }
+    /* 第6行：18×6 路单网格 */
+    .mp-grid{display:grid;grid-template-columns:repeat(18,1fr);grid-template-rows:repeat(6,1fr);
+      gap:1px;width:100%;aspect-ratio:18/6;background:#222;border-radius:4px}
+    .mp-cell{background:#0a0a0a;display:flex;align-items:center;justify-content:center;position:relative}
+    .mp-cell .dot{width:11px;height:11px;border-radius:50%}
+    .mp-cell .dot.red{background:var(--mp-red)}
+    .mp-cell .dot.blue{background:var(--mp-blue)}
+    .mp-cell .dot.green{background:var(--mp-green)}
+    .mp-cell .ties{position:absolute;bottom:1px;right:2px;font-size:7px;color:#fff;line-height:1}
+
+    /* 链接状态指示 */
+    .mp-link-ok{color:#2ecc71!important}
+    .mp-link-err{color:#e74c3c!important;text-decoration:line-through}
   </style>
 
-  <!-- 🔗 顶部导航：子系统 | 捐赠 | 自检 | 重置 -->
-  <div class="mp-nav-top mp-panel">
-    <a href="/?t=9" class="mp-nav-link mp-check-link" data-url="/?t=9">🔗子系统</a>
-    <a href="/?t=9" class="mp-nav-link mp-check-link" data-url="/?t=9">💎捐赠</a>
-    <a href="/?t=9" class="mp-nav-link mp-check-link" data-url="/?t=9">🔍自检</a>
+  <!-- 🔗 顶部导航 -->
+  <div class="mp-nav-top">
+    <a href="mobile-client/portal.html?m=9" class="mp-nav-link mp-check-link" data-url="mobile-client/portal.html?m=9">🔗子系统</a>
+    <a href="mobile-client/portal.html?m=9" class="mp-nav-link mp-check-link" data-url="mobile-client/portal.html?m=9">💎捐赠</a>
+    <a href="mobile-client/portal.html?m=9" class="mp-nav-link mp-check-link" data-url="mobile-client/portal.html?m=9">🔍自检</a>
     <button class="mp-reset" onclick="mp_fullReset()">🗑️重置</button>
   </div>
 
   <!-- 第1行：输入 + 执行/清除 -->
-  <div class="mp-row-input mp-panel">
+  <div class="mp-row-input">
     <input type="number" id="mp-num" class="mp-input" placeholder="分子" inputmode="numeric">
     <input type="number" id="mp-den" class="mp-input" placeholder="分母" inputmode="numeric">
     <button class="mp-btn mp-exec" onclick="mp_exec()">执行</button>
-    <button class="mp-btn mp-clear" onclick="mp_clearInput()">清除</button>
+    <button class="mp-btn mp-clear" onclick="mp_clearLast()">清除本局</button>
   </div>
 
   <!-- 第2行：历史记录（带颜色） -->
-  <div class="mp-panel">
+  <div style="background:var(--mp-card);border-radius:6px;padding:6px;margin-bottom:8px">
     <div id="mp-history" class="mp-scroll">历史记录: 等待输入...</div>
   </div>
 
   <!-- 第3行：八卦数字（带抵消） -->
-  <div class="mp-panel">
+  <div style="background:var(--mp-card);border-radius:6px;padding:6px;margin-bottom:8px">
     <div id="mp-bagua" class="mp-bagua">八卦: --</div>
   </div>
 
   <!-- 第4行：主预测 + 熵值 -->
-  <div class="mp-pred mp-panel">
-    <div id="mp-circle" class="mp-circle">?</div>
+  <div class="mp-pred">
+    <div id="mp-circle" class="pred-circle">?</div>
     <div class="mp-info">
       <span id="mp-action">等待趋势</span>
       <span class="mp-entropy">熵值: <span id="mp-ent">0.0%</span></span>
     </div>
   </div>
 
-  <!-- 第5行：机器人对话 + Web4.0协议握手 -->
-<div data-robot-dialog-slot data-robot-variant="mobile"></div>
-  
+  <!-- 第5行：机器人对话槽位 -->
+  <div data-robot-dialog-slot data-robot-variant="mobile"></div>
 
   <!-- 第6行：18×6 状态机网格 -->
-  <div class="mp-panel">
+  <div style="background:var(--mp-card);border-radius:6px;padding:6px">
     <div id="mp-grid" class="mp-grid"></div>
   </div>
 
@@ -2861,19 +2888,41 @@
     const mpData = [];
     const $ = id => document.getElementById(id);
 
-    // 手机端输入按完整数字归一为 0-9 点数后再参与计算。
-    // 例如 90 -> 9，避免第二局开始仍把原始 90 直接拿去比较而误判。
+    // ========== 工具函数 ==========
     const normalizeMpValue = rawValue => {
       const digits = String(rawValue ?? '').replace(/\D/g, '');
       if(!digits) return NaN;
       return digits.split('').reduce((sum, digit) => sum + Number(digit || 0), 0) % 10;
     };
+    
     const toDigits = rawValue => String(rawValue ?? '').replace(/\D/g, '').split('').filter(Boolean).map(Number);
+    
     const padTwoDigits = digits => {
       const source = digits.slice(0, 2);
       while(source.length < 2) source.unshift(0);
       return source;
     };
+    
+    const sum = arr => arr.reduce((a, b) => a + b, 0);
+    const isOdd = n => Math.abs(n % 2) === 1;
+    const isEven = n => Math.abs(n % 2) === 0;
+    const countZeros = arr => arr.filter(g => g === 0).length;
+
+    // 颜色判断：分子>分母=P，分母>分子=B（红改为B），相等=G
+    const colorOf = (n,d) => {
+      if(n === d) return 'G';
+      return n > d ? 'P' : 'B';  // ✅ 所有R改为B
+    };
+    
+    // 八卦映射（✅ 统一使用B，不使用R）
+    const baguaMap = {
+      'PPP':1,'BPP':2,'PBP':3,'BBP':4,
+      'PPB':5,'BPB':6,'PBB':7,'BBB':8
+    };
+    
+    const toBaguaChar = c => c==='G'?'P':c;
+
+    // 构建基因描述符（用于预测计算）
     const buildGeneDescriptor = item => {
       const topRow = padTwoDigits(toDigits(item.rawN ?? item.n));
       const bottomRow = padTwoDigits(toDigits(item.rawD ?? item.d));
@@ -2883,279 +2932,254 @@
       return {
         num: item.n,
         den: item.d,
+        rawN: item.rawN,
+        rawD: item.rawD,
         genes,
         allDigits,
-        baseColor: baseColorKey === 'P' ? 'blue' : (baseColorKey === 'R' ? 'red' : 'green')
+        baseColor: baseColorKey === 'P' ? 'blue' : (baseColorKey === 'B' ? 'red' : 'green')
       };
     };
+
+    // ========== 🔥 核心预测引擎：形态基因算法 🔥 ==========
     function calculatePredictionCircle(curr, history) {
       const { num, den, genes, allDigits, baseColor } = curr;
       const [topL, topR, botL, botR] = genes;
-      const sum = arr => arr.reduce((a, b) => a + b, 0);
-      const hasNum = (arr, target) => arr.includes(target);
-      const isOdd = n => Math.abs(n % 2) === 1;
-      const isEven = n => Math.abs(n % 2) === 0;
-
+      
       let finalColor = baseColor === 'green' ? 'green' : baseColor;
       let finalText = '';
-      let isGreen = false;
+      let isGreenMode = false;
       let greenText = '';
 
-      const totalSum = num + den;
-      const sValue = totalSum === 0 ? 0 : (Math.abs(num - den) / totalSum) * 100;
-      if (totalSum > 0 && sValue < 5) {
-        isGreen = true;
-        greenText = '平';
+      // ===== 🟢 绿色逻辑优先判断（9条规则） =====
+      if (num === den) { isGreenMode = true; greenText = '平'; }
+      
+      if (history.length >= 2) {
+        const prev1Sum = Math.abs(history[0].num) + Math.abs(history[0].den);
+        const prev2Sum = Math.abs(history[1].num) + Math.abs(history[1].den);
+        if (prev1Sum === prev2Sum) { isGreenMode = true; greenText = '平'; }
       }
-
-      if (num === den) {
-        isGreen = true;
-        greenText = '平';
-      }
-
-      if ((num === 0 && den !== 0) || (num !== 0 && den === 0)) {
-        isGreen = true;
-        greenText = '';
-      }
-
-      if (topL + botR === 9 && topR + botL === 9) {
-        isGreen = true;
-        greenText = '平';
-      }
-
+      
       const oddCount = genes.filter(isOdd).length;
-      if (oddCount === 4 || oddCount === 0) {
-        isGreen = true;
-        greenText = '平';
-      }
-
-      const sortedDigits = [...new Set(allDigits)].sort((a, b) => a - b);
-      for (let i = 0; i <= sortedDigits.length - 3; i += 1) {
-        if (sortedDigits[i + 1] - sortedDigits[i] === 1 && sortedDigits[i + 2] - sortedDigits[i + 1] === 1) {
-          isGreen = true;
-          greenText = '平';
+      if (oddCount === 4 || oddCount === 0) { isGreenMode = true; greenText = '平'; }
+      
+      const uniqueSorted = [...new Set(allDigits)].sort((a,b)=>a-b);
+      for(let i=0; i<=uniqueSorted.length-3; i++){
+        if(uniqueSorted[i+1]-uniqueSorted[i]===1 && uniqueSorted[i+2]-uniqueSorted[i+1]===1){
+          isGreenMode = true; greenText = '平'; break;
         }
       }
-
+      
       if (history.length > 0) {
         const prevDiff = Math.abs(history[0].num - history[0].den);
         const currDiff = Math.abs(num - den);
-        if (prevDiff > 1 && currDiff === 1) {
-          isGreen = true;
-          greenText = '平';
-        }
+        if (prevDiff > 2 && currDiff === 1) { isGreenMode = true; greenText = '平'; }
       }
-
-      if (history.length >= 2) {
-        const prev1AbsSum = Math.abs(history[0].num) + Math.abs(history[0].den);
-        const prev2AbsSum = Math.abs(history[1].num) + Math.abs(history[1].den);
-        if (prev1AbsSum === prev2AbsSum) {
-          isGreen = true;
-          greenText = '平';
-        }
+      
+      if (num === 0 && den === 0) { isGreenMode = true; greenText = '平'; }
+      else if ((num === 0 && den !== 0) || (num !== 0 && den === 0)) { isGreenMode = true; greenText = ''; }
+      
+      const totalSum = num + den;
+      if (totalSum > 0) {
+        const S = (Math.abs(num - den) / totalSum) * 100;
+        if (S < 5) { isGreenMode = true; greenText = '平'; }
       }
-
-      const pairCodes = ['05', '50', '16', '61', '27', '72', '38', '83', '49', '94'];
+      
+      if ((topL + botR === 9) && (topR + botL === 9)) { isGreenMode = true; greenText = '平'; }
+      
+      const pairCodes = ['05','50','16','61','27','72','38','83','49','94'];
       const candidatePairs = [
         `${topL}${topR}`, `${botL}${botR}`, `${topL}${botL}`,
         `${topR}${botR}`, `${topL}${botR}`, `${topR}${botL}`
       ];
-      if (candidatePairs.some(pair => pairCodes.includes(pair))) {
-        isGreen = true;
-        greenText = greenText || '';
-      }
+      const matchedPairs = candidatePairs.filter(p => pairCodes.includes(p));
+      if (matchedPairs.length >= 2) { isGreenMode = true; greenText = ''; }
 
-      if (isGreen) {
+      if (isGreenMode) {
         return { color: 'green', text: greenText };
       }
 
+      // ===== 🔴🔵 红/蓝逻辑判断（9条规则） =====
       let isHold = false;
       let isChange = false;
 
       if (Math.abs(num - den) >= 5) isHold = true;
-      if (allDigits.some(value => value === 8 || value === 9)) isHold = true;
-
-      const avg = genes.length ? sum(genes) / genes.length : 0;
-      if (avg === 5) isHold = true;
-      if (avg < 3 || avg > 7) isChange = true;
-
-      if (topL + botL > topR + botR) isHold = true;
-
+      
+      const numDigits = toDigits(curr.rawN ?? num);
+      const denDigits = toDigits(curr.rawD ?? den);
+      if (numDigits.some(v=>v===8||v===9) || denDigits.some(v=>v===8||v===9)) isHold = true;
+      
+      if (history.length >= 3) {
+        const colors = [baseColor, history[0].baseColor, history[1].baseColor, history[2].baseColor];
+        if (colors.every(c => c === baseColor)) isHold = true;
+      }
+      
+      const geneAvg = genes.length ? sum(genes) / genes.length : 0;
+      if (geneAvg === 5) isHold = true;
+      if (geneAvg < 3 || geneAvg > 7) isChange = true;
+      
+      const leftSum = topL + botL;
+      const rightSum = topR + botR;
+      if (leftSum > rightSum) isHold = true;
+      
       if (isOdd(num) && isOdd(den)) isHold = true;
-      if ((isOdd(num) && isEven(den)) || (isEven(num) && isOdd(den))) isChange = true;
-
-      const zeroCount = allDigits.filter(g => g === 0).length;
-      if (zeroCount > 0) isChange = true;
-      if (zeroCount > 0 && zeroCount % 2 === 0) isHold = true;
-
+      else if ((isOdd(num) && isEven(den)) || (isEven(num) && isOdd(den))) isChange = true;
+      
+      const zeroCount = countZeros(allDigits);
+      if (zeroCount > 0) {
+        if (zeroCount % 2 === 1) isChange = true;
+        else isHold = true;
+      }
+      
       if ((topL === 4 || topL === 9) && num > den) isHold = true;
       if (topL === 5 && num < den) isChange = true;
 
       if (history.length >= 1) {
-        if (Math.abs(history[0].num - history[0].den) === 1 && Math.abs(num - den) === 1) isHold = true;
-        const p1C = history[0].baseColor;
-        if (p1C === finalColor) isHold = true;
+        const prev = history[0];
+        const prevDiff = Math.abs(prev.num - prev.den);
+        const currDiff = Math.abs(num - den);
+        
+        if (prevDiff === 1 && currDiff === 1) isHold = true;
+        if (prev.baseColor === baseColor) isHold = true;
+        
         if (history.length >= 2) {
-          const p2C = history[1].baseColor;
-          if (p2C !== p1C && finalColor === p2C) isChange = true;
-          if (history.length >= 3) {
-            const p3C = history[2].baseColor;
-            if (p3C === p2C && p2C === p1C && p1C === finalColor) isHold = true;
-          }
+          const prev2 = history[1];
+          if (prev2.baseColor !== prev.baseColor && baseColor === prev2.baseColor) isChange = true;
+          if (prev2.baseColor === prev.baseColor && prev.baseColor === baseColor) isHold = true;
         }
       }
 
-      if (isChange) {
-        finalText = '变';
-      } else if (isHold) {
-        finalText = '持';
-      }
+      if (isChange) finalText = '变';
+      else if (isHold) finalText = '持';
 
       return { color: finalColor, text: finalText };
     }
-    function renderPredictionCircle(result, context) {
+
+    // ========== 渲染预测圆圈 ==========
+    function renderPredictionCircle(result) {
       const circle = $('mp-circle');
       const act = $('mp-action');
       if (!circle || !act) return;
 
       if (!result) {
-        circle.className = 'mp-circle';
-        circle.textContent = '?';
+        circle.className = 'pred-circle';
+        circle.innerHTML = '<span class="circle-text"><span class="main">?</span></span>';
         act.textContent = '等待趋势';
         return;
       }
 
-      circle.className = `mp-circle pred-circle circle-${result.color}${result.text ? ' circle-glow' : ''}`;
-      circle.innerHTML = `<span class="circle-text">${result.text || ''}</span>`;
+      let classes = `pred-circle circle-${result.color}`;
+      if (result.text) classes += ' circle-glow';
+      circle.className = classes;
 
       const colorLabel = result.color === 'red' ? '红' : (result.color === 'blue' ? '蓝' : '绿');
-      if (result.color === 'green') {
-        act.textContent = result.text === '平' ? '下局: 绿+平 | 平衡 / 平牌信号' : '下局: 绿 | 观望 / 混沌';
-      } else if (result.text) {
-        act.textContent = `下局: ${colorLabel}+${result.text} | ${result.text === '持' ? '持续特征' : '变盘信号'}`;
+      const mainChar = result.color === 'green' ? '绿' : colorLabel;
+      
+      if (result.text) {
+        circle.innerHTML = `<span class="circle-text"><span class="main">${mainChar}</span><span class="sub">${result.text}</span></span>`;
       } else {
-        act.textContent = `下局: ${colorLabel} | 一般信号`;
+        circle.innerHTML = `<span class="circle-text"><span class="main">${mainChar}</span></span>`;
+      }
+
+      if (result.color === 'green') {
+        if (result.text === '平') {
+          act.textContent = '下局: 绿+平 | 平衡 / 平牌信号';
+        } else {
+          act.textContent = '下局: 绿 | 观望 / 混沌区间';
+        }
+      } else if (result.text) {
+        const signal = result.text === '持' ? '持续特征增强' : '变盘概率提升';
+        act.textContent = `下局: ${colorLabel}+${result.text} | ${signal}`;
+      } else {
+        act.textContent = `下局: ${colorLabel} | 一般性预测`;
       }
     }
-    
-    // ✅ 颜色逻辑修复：分子大=蓝('P')，分母大=红('R')，相等=绿('G')
-    const colorOf = (n,d) => {
-      if(n===d) return 'G';
-      return n>d ? 'P' : 'R';  // P=Blue, R=Red, G=Green
-    };
-    
-    // ✅ 八卦映射（您定义的规则）
-    const baguaMap = {
-      'PPP':1,'BPP':2,'PBP':3,'BBP':4,
-      'PPB':5,'BPB':6,'PBB':7,'BBB':8
-    };
-    // 八卦编码统一使用 P/B：蓝=P，红=B，平局G临时并入蓝P 参与编码。
-    const toBaguaChar = c => {
-      if (c === 'R') return 'B';
-      if (c === 'G') return 'P';
-      return 'P';
-    };
 
-    // ================= 执行按钮 =================
+    // ========== 执行按钮：添加新数据 ==========
     window.mp_exec = function(){
       const rawN = $('mp-num').value.trim();
       const rawD = $('mp-den').value.trim();
       const n = normalizeMpValue(rawN);
       const d = normalizeMpValue(rawD);
-      if(!/^\d+$/.test(rawN)||!/^\d+$/.test(rawD)||isNaN(n)||isNaN(d)) return alert('请输入有效非负整数');
+      
+      if(!/^\d+$/.test(rawN) || !/^\d+$/.test(rawD) || isNaN(n) || isNaN(d)) {
+        return alert('请输入有效非负整数');
+      }
       
       mpData.push({ rawN, rawD, n, d });
-      $('mp-num').value=''; $('mp-den').value='';
+      $('mp-num').value = ''; 
+      $('mp-den').value = '';
       render();
-      mp_checkLinks(); // 输入后自动复检链接
+      mp_checkLinks();
     };
     
-    // ================= 清除（优先清输入，否则仅撤销最近1组） =================
-    window.mp_clearInput = function(){
-      const numEl = $('mp-num');
-      const denEl = $('mp-den');
-      const hasDraft = Boolean((numEl.value || '').trim() || (denEl.value || '').trim());
-
-      if (hasDraft) {
-        numEl.value=''; denEl.value='';
-        numEl.focus();
-        return;
-      }
-
-      if (mpData.length > 0) {
-        mpData.pop();
-        render();
-      }
-
-      numEl.focus();
+    // ========== 🔧 清除本局：删除最后一项并刷新 ==========
+    window.mp_clearLast = function(){
+      if (mpData.length === 0) return;
+      mpData.pop();
+      $('mp-num').value = ''; 
+      $('mp-den').value = '';
+      render();
     };
     
-    // ================= 全重置（清空所有） =================
+    // ========== 全重置 ==========
     window.mp_fullReset = function(){
       if(confirm('确认重置？将清空所有历史数据与预测状态')){
-        mpData.length=0;
-        $('mp-num').value=''; $('mp-den').value='';
+        mpData.length = 0;
+        $('mp-num').value = ''; 
+        $('mp-den').value = '';
         render();
       }
     };
     
-    // ================= 链接自检 =================
+    // ========== 链接自检 ==========
     window.mp_checkLinks = function(){
       document.querySelectorAll('.mp-check-link').forEach(link=>{
         const targetUrl = link.getAttribute('data-url');
         const exists = Boolean(targetUrl);
         link.classList.toggle('mp-link-ok', exists);
         link.classList.toggle('mp-link-err', !exists);
-        if(!exists) console.warn('⚠️ 链接目标未配置');
       });
     };
     
-    // ================= 主渲染函数 =================
+    // ========== 主渲染函数 ==========
     function render(){
-      // 🔹 第2行：历史记录（带颜色）
+      // 🔹 第2行：历史记录
       const h = $('mp-history');
       if(!mpData.length){
         h.innerHTML = '<span style="color:#666">历史记录: 等待输入...</span>';
-      }else{
+      } else {
         h.innerHTML = mpData.map(x=>{
           const c = colorOf(x.n,x.d);
-          const color = c==='P'?'#457b9d':c==='R'?'#e63946':'#2a9d8f';
-          const rawN = String(x.rawN ?? x.n);
+          const color = c==='P'?'#457b9d':c==='B'?'#e63946':'#2a9d8f';
           const displayRaw = `${x.rawN ?? x.n}/${x.rawD ?? x.d}`;
-          const label = (x.n===7&&x.d===6)
-            ? '👑'
-            : (rawN.length===3 && rawN.split('').reduce((sum, digit) => sum + Number(digit || 0), 0) === 8)
-              ? '🐼'
-              : displayRaw;
+          const label = (x.n===7&&x.d===6) ? '👑' : 
+                       (String(x.rawN??x.n).length===3 && toDigits(x.rawN??x.n).reduce((s,d)=>s+d,0)===8) ? '🐼' : displayRaw;
           return `<span style="color:${color};margin:0 0.45em">${label}</span>`;
         }).join('  ');
       }
       h.scrollLeft = h.scrollWidth;
 
-      // 🔹 第3行：八卦 + 抵消规则
+      // 🔹 第3行：八卦 + 抵消规则（✅ 使用B代替R）
       const arr = mpData.map(x=>toBaguaChar(colorOf(x.n,x.d)));
       let nums = [];
       for(let i=0;i<=arr.length-3;i+=3){
         const s = arr[i]+arr[i+1]+arr[i+2];
         nums.push(baguaMap[s]||0);
       }
-      
-      // 抵消规则：合9 / 重复 / 差1或3
       let cancel = new Set();
       for(let i=0;i<nums.length;i++){
         for(let j=i+1;j<nums.length;j++){
-          if(nums[i]+nums[j]===9) {cancel.add(i);cancel.add(j);}
-          if(nums[i]===nums[j]) {cancel.add(i);cancel.add(j);}
-          if(Math.abs(nums[i]-nums[j])===1||Math.abs(nums[i]-nums[j])===3) {cancel.add(i);cancel.add(j);}
+          if(nums[i]+nums[j]===9 || nums[i]===nums[j] || Math.abs(nums[i]-nums[j])===1 || Math.abs(nums[i]-nums[j])===3) {
+            cancel.add(i); cancel.add(j);
+          }
         }
       }
-      
       $('mp-bagua').innerHTML = nums.length ? 
-        nums.map((n,i)=>`<span ${cancel.has(i)?'data-cancel="1"':''}>${n}</span>`).join(' ') 
+        nums.map((n,i)=>`<span ${cancel.has(i)?'data-cancel="1"':''}>${n}</span>`).join('  ') 
         : '<span style="color:#666">八卦: --</span>';
 
-      // 🔹 第4行：预测逻辑（形态基因分析引擎）
-      const circle = $('mp-circle'), act = $('mp-action'), ent = $('mp-ent');
+      // 🔹 第4行：预测逻辑
+      const ent = $('mp-ent');
       if(!mpData.length){
         renderPredictionCircle(null);
         ent.textContent='0.0%';
@@ -3163,16 +3187,13 @@
       }
 
       const currentRoundData = buildGeneDescriptor(mpData.at(-1));
-      const historyData = mpData
-        .slice(0, -1)
-        .reverse()
-        .map(buildGeneDescriptor);
+      const historyData = mpData.slice(0, -1).reverse().map(buildGeneDescriptor);
       const result = calculatePredictionCircle(currentRoundData, historyData);
-      renderPredictionCircle(result, currentRoundData);
+      renderPredictionCircle(result);
       
-      // 动态熵值（近10局香农熵）
+      // 动态熵值
       const recent = mpData.slice(-10).map(x=>colorOf(x.n,x.d));
-      const cnt={R:0,P:0,G:0}; recent.forEach(c=>cnt[c]++);
+      const cnt={B:0,P:0,G:0}; recent.forEach(c=>cnt[c]++);
       let H=0,total=recent.length;
       for(let k in cnt) if(cnt[k]){ let p=cnt[k]/total; H -= p*Math.log2(p); }
       ent.textContent = ((H/Math.log2(3))*100).toFixed(1)+'%';
@@ -3181,7 +3202,7 @@
       renderGrid();
     }
     
-    // 🔹 18×6 网格渲染（同色下沉/异色右移/平局叠加/）
+    // 🔹 18×6 网格渲染
     function renderGrid(){
       const g = $('mp-grid'); g.innerHTML='';
       const R=6,C=18;
@@ -3190,37 +3211,31 @@
       
       mpData.forEach(item=>{
         const col = colorOf(item.n,item.d);
-        if(col==='G'){ // 平局：叠加"/"
+        if(col==='G'){
           if(grid[r][c]) grid[r][c].ties++;
           else grid[r][c]={col,ties:1};
           return;
         }
         if(grid[r][c]){
-          if(grid[r][c].col!==col){
-            c++;
-            r=0;
-          } else {
+          if(grid[r][c].col!==col){ c++; r=0; }
+          else {
             const nextRow = r + 1;
-            if(nextRow < R && !grid[nextRow][c]){
-              r = nextRow;
-            } else {
-              c++;
-            }
+            if(nextRow < R && !grid[nextRow][c]) r = nextRow;
+            else { c++; }
           }
         }
-        if(c>=C){ c=C-1; r=Math.min(r, R-1); return; } // 满列锁定
+        if(c>=C){ c=C-1; r=Math.min(r, R-1); return; }
         if(r>=R) r=R-1;
         grid[r][c] = grid[r][c] || {col,ties:0};
       });
       
-      // 渲染单元格
       for(let i=0;i<R;i++){
         for(let j=0;j<C;j++){
           const cell = document.createElement('div'); cell.className='mp-cell';
           const v = grid[i][j];
           if(v){
             const dot = document.createElement('div');
-            dot.className = `dot ${v.col==='P'?'blue':(v.col==='R'?'red':'green')}`;
+            dot.className = `dot ${v.col==='P'?'blue':(v.col==='B'?'red':'green')}`;
             if(v.ties>0){
               const t = document.createElement('span');
               t.className='ties'; t.textContent = '/'.repeat(v.ties);
@@ -3233,14 +3248,22 @@
       }
     }
     
-    // ================= 初始化 =================
-    document.addEventListener('DOMContentLoaded', ()=>{
-      mp_checkLinks(); // 首次加载检查链接
+    // ========== 同步到手机引擎 ==========
+    window.syncToMobileEngine = function(mol, den) {
+      $('mp-num').value = mol;
+      $('mp-den').value = den;
+      window.mp_exec();
+    };
+    
+    // ========== 初始化 ==========
+    document.addEventListener('DOMContentLoaded', ()=>{ 
+      mp_checkLinks(); 
       render();
     });
-    
-    // 兼容：直接粘贴时可能已加载完成
-    if(document.readyState!=='loading') { mp_checkLinks(); render(); }
+    if(document.readyState!=='loading') { 
+      mp_checkLinks(); 
+      render();
+    }
     
   })();
   </script>
