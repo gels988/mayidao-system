@@ -194,6 +194,11 @@ class DynamicsEngine {
             this.baguaTrendState.invalidBuffer = 0;
             this._historyWindowResetPending = false;
         }
+        
+        // Update Model Stats for Dynamic Weights (3-Layer Logic)
+        if (window.EncryptedLogic && typeof window.EncryptedLogic.updateModelStats === 'function') {
+            window.EncryptedLogic.updateModelStats(result.winner);
+        }
     }
 
     onPredict(history) {

@@ -67,7 +67,7 @@ async function submitRegistration() {
                 .from('app_users')
                 .insert([{ 
                     phone_number: phone, 
-                    balance_g: 300 
+                    balance_g: 180 
                 }]);
             
             if (insertError) throw insertError;
@@ -93,7 +93,7 @@ async function submitRegistration() {
             alert("注册失败，请稍后重试");
         }
         submitBtn.disabled = false;
-        submitBtn.textContent = "领取 300 分试玩";
+        submitBtn.textContent = "领取 180 分试玩";
     }
 }
 
