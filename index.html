@@ -60,6 +60,13 @@ body{margin:0;padding:20px;font-family:Arial,sans-serif;background:#f0f0f0;displ
 </ul>
 </div>
 
+<!-- ❌ 缺失或错误的 viewport -->
+<!-- <meta name="viewport" content="width=device-width">  // 缺少 initial-scale -->
+
+<!-- ✅ 正确写法（必须放在 <head> 最前面） -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<!-- ⚠️ 注意：user-scalable=no 可能影响部分输入法，测试时可临时改为 yes -->
 <div id="right-panel">
 <div class="phone-frame">
 <div class="phone-screen">
@@ -210,6 +217,53 @@ window.addEventListener('message',function(_0xm9){if(_0xm9.data&&_0xm9.data.sour
 </body>
 </html>
 
+<!-- 📱 移动端输入兼容性增强 -->
+<script>
+(function() {
+  // 1. 确保输入框可聚焦
+  document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('input, textarea, [contenteditable]');
+    inputs.forEach(el => {
+      el.style.pointerEvents = 'auto';
+      el.style.webkitUserModify = 'read-write-plaintext-only'; // iOS 兼容
+    });
+  });
+
+  // 2. 修复 touchstart 阻止问题
+  document.addEventListener('touchstart', function(e) {
+    const target = e.target;
+    if (target.closest('input, textarea, [contenteditable="true"], button, a')) {
+      return; // 允许交互元素正常响应
+    }
+  }, { passive: true }); // ✅ 关键：passive: true 避免阻止滚动
+
+  // 3. 修复键盘弹出后的布局偏移
+  let resizeTimer;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      // 键盘收起后，确保焦点元素可见
+      const active = document.activeElement;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+        active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 300);
+  });
+
+  // 4. 调试模式：点击输入框时输出信息
+  if (location.hostname.includes('vercel.app')) {
+    document.addEventListener('click', function(e) {
+      if (e.target.matches('input, textarea')) {
+        console.log('✅ Input focused:', e.target.id || e.target.name, {
+          disabled: e.target.disabled,
+          readOnly: e.target.readOnly,
+          style: window.getComputedStyle(e.target)
+        });
+      }
+    });
+  }
+})();
+</script>
 
 <!-- 🐜 MAYIJU 手机端形态基因预测引擎 V4.5 [完整加密版] -->
 <div id="mp-wrapper">
