@@ -1,0 +1,400 @@
+/* G2-GOLD V3.2 Mobile Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #121212;
+    color: #e0e0e0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+}
+
+#app {
+    width: 100%;
+    max-width: 480px; /* Mobile width */
+    padding: 20px;
+    background-color: #1e1e1e;
+    min-height: 100vh;
+}
+
+h1 {
+    color: #ffd700;
+    text-align: center;
+}
+
+/* Login Screen */
+#login-screen {
+    text-align: center;
+    margin-top: 50px;
+}
+
+input[type="text"], input[type="number"] {
+    width: 80%;
+    padding: 10px;
+    margin: 10px 0;
+    background: #333;
+    border: 1px solid #555;
+    color: white;
+    font-size: 16px;
+    border-radius: 5px;
+}
+
+button {
+    background-color: #ffd700;
+    color: #000;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 80%;
+    margin-top: 10px;
+}
+
+button:active {
+    background-color: #e6c200;
+}
+
+.small-btn {
+    width: auto;
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.secondary-btn {
+    background-color: #444;
+    color: #aaa;
+    margin-top: 20px;
+}
+
+/* Dashboard */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.coin-badge {
+    background: #333;
+    padding: 5px 10px;
+    border-radius: 15px;
+    color: #ffd700;
+}
+
+#status-panel {
+    background: #252525;
+    padding: 10px;
+    text-align: center;
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 20px;
+}
+
+.input-area {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    background: #2a2a2a;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group label {
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 5px;
+}
+
+#btn-predict {
+    width: 100%;
+    background: linear-gradient(45deg, #ffd700, #ffaa00);
+}
+
+/* Prediction Panel */
+#prediction-panel {
+    text-align: center;
+    margin: 20px 0;
+    padding: 15px;
+    background: #2a2a2a;
+    border-radius: 10px;
+    border: 1px solid #444;
+}
+
+.pred-box {
+    font-size: 24px;
+    font-weight: bold;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+}
+
+.player { color: #4facfe; }
+.banker { color: #ff5858; }
+
+/* Prediction Circle */
+.pred-visual {
+    display: inline-block;
+    width: 80px; /* Increased from 60px */
+    height: 80px; /* Increased from 60px */
+    border-radius: 50%;
+    margin-bottom: 5px;
+    box-shadow: none;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+}
+.pred-visual.player { background-color: #007bff; border: 3px solid #004a99; }
+.pred-visual.banker { background-color: #dc3545; border: 3px solid #8b1a2b; }
+.pred-visual.neutral { background-color: transparent; border: 3px solid #28a745; }
+
+/* Matrix */
+#game-matrix {
+    display: flex;
+    overflow-x: auto;
+    background: #fff;
+    height: 180px; /* Increased height for 6 cells */
+    padding: 2px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.grid-col {
+    display: flex;
+    flex-direction: column;
+    width: 26px; /* Increased width */
+    border-right: 1px solid #eee;
+}
+
+.grid-cell {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    border-bottom: 1px solid #eee;
+    position: relative; /* For dots and overlays */
+}
+
+/* Circles */
+.grid-cell .circle {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 12px;
+    position: relative;
+    box-sizing: border-box;
+    color: white; /* Text color for solid */
+}
+
+/* Blue Circle (Player) - Solid */
+.grid-cell .circle.blue {
+    background-color: #007bff;
+    border: none;
+}
+
+/* Red Circle (Banker) - Solid */
+.grid-cell .circle.red {
+    background-color: #dc3545;
+    border: none;
+}
+
+/* Green Circle (Balance) - Solid */
+.grid-cell .circle.green {
+    background-color: #28a745;
+    border: none;
+}
+
+/* Visual Grading Effects (New) */
+.player-solid {
+    background-color: #007bff !important;
+    box-shadow: 0 0 20px #007bff; /* Enhanced glow */
+    border: none !important;
+}
+.banker-solid {
+    background-color: #dc3545 !important;
+    box-shadow: 0 0 20px #dc3545; /* Enhanced glow */
+    border: none !important;
+}
+.neutral-evolving {
+    box-shadow: 0 0 10px #28a745;
+    animation: breathe 2s infinite;
+}
+.glow-blue {
+    background-color: transparent !important;
+    border: 3px solid #28a745 !important; /* Green circle base */
+    box-shadow: 0 0 30px 10px rgba(0, 102, 255, 0.8) !important;
+    animation: glow-pulse-blue 2s infinite ease-in-out;
+}
+.glow-red {
+    background-color: transparent !important;
+    border: 3px solid #28a745 !important; /* Green circle base */
+    box-shadow: 0 0 30px 10px rgba(255, 0, 0, 0.8) !important;
+    animation: glow-pulse-red 2s infinite ease-in-out;
+}
+.green {
+    background-color: transparent !important;
+    border: 3px solid #28a745 !important;
+    box-shadow: 0 0 10px #28a745; /* Subtle green glow */
+}
+
+/* Markers */
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    position: absolute;
+    z-index: 10;
+    border: 1px solid white;
+}
+
+/* Blue Pair Dot (Top Left) */
+.dot.blue-pair {
+    background-color: #007bff;
+    top: 0;
+    left: 0;
+}
+
+/* Red Pair Dot (Bottom Right) */
+.dot.red-pair {
+    background-color: #dc3545;
+    bottom: 0;
+    right: 0;
+}
+
+/* Green Slash (Tie) */
+.slash {
+    position: absolute;
+    width: 80%;
+    height: 2px;
+    background-color: #28a745;
+    transform: rotate(-45deg);
+    top: 50%;
+    left: 10%;
+    z-index: 5;
+}
+
+/* Crown Icon */
+.crown-icon {
+    font-size: 10px;
+    color: gold;
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    text-shadow: 1px 1px 1px black;
+}
+
+
+/* Bagua History Styling */
+.history-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 2px;
+}
+
+.hist-score {
+    font-size: 10px;
+    color: #888;
+    margin-bottom: 2px;
+}
+
+.hist-bagua {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 12px;
+    position: relative; /* For slashes */
+}
+
+.bagua-blue {
+    border: 1px solid #007bff;
+    color: #007bff;
+}
+
+.bagua-red {
+    border: 1px solid #dc3545;
+    color: #dc3545;
+}
+
+.slash-overlay {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    transform: rotate(-45deg);
+    z-index: 5;
+}
+
+.slash-green { background-color: #28a745; } /* Sum-9 Balance */
+.slash-red { background-color: #dc3545; }   /* Repeat Cancellation */
+
+/* --- NEW STYLES --- */
+
+/* History Panel (Bagua) - Scrollable Container */
+#history-panel {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 10px 5px;
+    background: #252525;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    min-height: 70px;
+    align-items: flex-start; /* Align top */
+    /* Custom Scrollbar for Webkit */
+    scrollbar-width: thin;
+    scrollbar-color: #555 #222;
+}
+
+#history-panel::-webkit-scrollbar {
+    height: 6px;
+}
+
+#history-panel::-webkit-scrollbar-track {
+    background: #222;
+}
+
+#history-panel::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+}
+
+/* Override .history-col for horizontal layout */
+.history-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 4px; /* Spacing between columns */
+    min-width: 28px; /* Ensure 7-9 fit in 320px+ */
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+/* Binary Code (Mol/Denom) Label */
+.hist-score {
+    font-size: 11px;
+    color: #ffd700; /* Gold for importance */
+    margin-bottom: 4px;
+    font-family: 'Consolas', monospace;
+    letter-spacing: 1px;
+    font-weight: bold;
+}
