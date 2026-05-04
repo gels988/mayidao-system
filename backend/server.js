@@ -7,9 +7,21 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
-    .split(',')
-    .map(origin => origin.trim())
+const DEFAULT_ALLOWED_ORIGINS = [
+    'https://mayidao-gels988.vercel.app'
+];
+
+function normalizeOrigin(origin) {
+    return (origin || '')
+        .trim()
+        .replace(/\/+$/, '');
+}
+
+const allowedOrigins = [
+    ...DEFAULT_ALLOWED_ORIGINS,
+    ...(process.env.ALLOWED_ORIGINS || '').split(',')
+]
+    .map(normalizeOrigin)
     .filter(Boolean);
 
 // 中间件
@@ -19,11 +31,12 @@ app.use(cors({
             callback(null, true);
             return;
         }
-        if (allowedOrigins.length === 0) {
-            callback(new Error('CORS origin not configured'));
+        const normalizedOrigin = normalizeOrigin(origin);
+        if (allowedOrigins.length === 0 || allowedOrigins.includes(normalizedOrigin)) {
+            callback(null, true);
             return;
         }
-        callback(null, allowedOrigins.includes(origin));
+        callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true
 }));

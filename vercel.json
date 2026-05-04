@@ -1,39 +1,9 @@
-﻿{
+{
   "version": 2,
-  "name": "mayidao-gels988",
-  "builds": [
-    {
-      "src": "api/index.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "."
-      }
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "query",
-          "key": "t"
-        }
-      ],
-      "destination": "/mobile-client/portal.html"
-    },
-    {
-      "source": "/selfcheck.html",
-      "destination": "/mobile-client/selfcheck.html"
-    }
-  ],
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "installCommand": null,
+  "devCommand": null,
   "headers": [
     {
       "source": "/(.*)",
@@ -43,23 +13,16 @@
           "value": "public, max-age=0, must-revalidate"
         },
         {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob: data:"
         }
       ]
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "crons": [
+  "rewrites": [
     {
-      "path": "/api/health",
-      "schedule": "0 0 * * *"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
-  ],
-  "regions": [
-    "hkg1"
   ]
 }
-

@@ -112,8 +112,14 @@
             try {
                 const response = await fetch('../api/health', { cache: 'no-store' });
                 const payload = await response.json();
-                healthEl.textContent = payload.status === 'ok' ? '正常' : '降级';
-                healthEl.className = 'value ' + (payload.status === 'ok' ? 'status-ok' : 'status-warn');
+                if (payload.database === 'not_configured') {
+                    healthEl.textContent = '数据库未配置';
+                    healthEl.className = 'value status-warn';
+                    return;
+                }
+                const isHealthy = response.ok && payload.status === 'ok' && payload.database === 'connected';
+                healthEl.textContent = isHealthy ? '正常' : '降级';
+                healthEl.className = 'value ' + (isHealthy ? 'status-ok' : 'status-warn');
             } catch (error) {
                 healthEl.textContent = '不可达';
                 healthEl.className = 'value status-warn';

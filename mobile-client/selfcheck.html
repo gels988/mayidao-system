@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -167,8 +167,15 @@
 
                 if (item.url.includes('/api/health')) {
                     const payload = await response.json();
-                    if (payload.status === 'ok' && payload.database === 'ok') {
-                        return { state: 'ok', label: '姝ｅ父', details: '鏁版嵁搴撳凡鑱旈€? };
+                    if (response.ok && payload.status === 'ok' && payload.database === 'connected') {
+                        return { state: 'ok', label: '姝ｅ父', details: '鏁版嵁搴撳凡鑱旈€?' };
+                    }
+                    if (payload.database === 'not_configured') {
+                        return {
+                            state: 'warn',
+                            label: '闄嶇骇',
+                            details: '数据库未配置'
+                        };
                     }
                     return {
                         state: 'warn',

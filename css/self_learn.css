@@ -15,3 +15,57 @@
    color: #fff; 
    font-size: 14px; 
  }
+
+ /* 📱 移动端输入框兼容性修复 */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari 专属修复 */
+  input, textarea {
+    -webkit-appearance: none; /* 移除默认样式干扰 */
+    font-size: 16px !important; /* 防止 iOS 自动缩放 */
+  }
+}
+
+/* 确保输入框可交互 */
+input, textarea, [contenteditable] {
+  pointer-events: auto !important;
+  -webkit-tap-highlight-color: rgba(0,0,0,0.1); /* 点击反馈 */
+  touch-action: manipulation; /* 允许触摸操作 */
+}
+
+/* 修复可能的遮罩层问题 */
+.modal, .overlay, .popup {
+  /* 确保遮罩层不拦截输入框 */
+  pointer-events: none;
+}
+.modal input, 
+.modal textarea,
+.overlay input {
+  pointer-events: auto !important; /* 子元素恢复交互 */
+}
+
+/* 防止全局 user-select: none 误伤 */
+input, textarea {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  user-select: text !important;
+}
+
+/* ❌ 常见问题：有透明遮罩层覆盖输入框 */
+.overlay, .modal-backdrop, .loading-mask {
+  pointer-events: auto; /* 会拦截所有触摸事件 */
+  z-index: 9999;        /* 层级过高 */
+}
+
+/* ✅ 修复方案 */
+/* 方案A：确保输入框层级最高 */
+input, textarea {
+  position: relative;
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+}
+
+/* 方案B：检查是否有全局样式误伤 */
+* {
+  /* 确保没有这行！*/
+  /* pointer-events: none; */ 
+}
